@@ -1,0 +1,539 @@
+{
+    "Generic": {
+        "types": [
+            "Elision",
+            "LastElision",
+            "ImportMetaExpr",
+            "NewTargetExpr",
+            "This",
+            "True",
+            "False",
+            "Null",
+            "One",
+            "Zero",
+            "DebuggerStmt",
+            "EmptyStmt",
+            "DefaultConstructor",
+            "NewTargetRef",
+            "SuperCallRef",
+            "SuperPropRef",
+            "AwaitExprRef",
+            "YieldExprRef",
+            "ArgumentsRef",
+            "AwaitRef"
+        ],
+        "members": {
+        }
+    },
+    "ContainsListStack": {
+        "members": {
+            "list": "RJS_List",
+            "bot": "RJS_AstContainsListStack*"
+        }
+    },
+    "Value": {
+        "types": [
+            "Value",
+            "IdRef",
+            "StrRef"
+        ],
+        "members": {
+            "value": "RJS_Value"
+        }
+    },
+    "ValueEntry": {
+        "members": {
+            "value": "RJS_Value",
+            "he": "RJS_HashEntry",
+            "id": "int"
+        }
+    },
+    "TemplateEntry": {
+        "members": {
+            "str": "RJS_Value",
+            "raw_str": "RJS_Value"
+        }
+    },
+    "Rest": {
+        "members": {
+            "binding": "RJS_Value"
+        }
+    },
+    "Id": {
+        "members": {
+            "identifier": "RJS_AstValueEntry*",
+            "flags": "int"
+        }
+    },
+    "ValueExpr": {
+        "members": {
+            "ve": "RJS_AstValueEntry*",
+            "flags": "int"
+        }
+    },
+    "BindingRef": {
+        "members": {
+            "decl": "RJS_AstDecl*",
+            "name": "RJS_AstValueEntry*",
+            "he": "RJS_HashEntry",
+            "id": "int"
+        }
+    },
+    "PropRef": {
+        "members": {
+            "func": "RJS_AstFunc*",
+            "prop": "RJS_AstValueEntry*",
+            "he": "RJS_HashEntry",
+            "id": "int"
+        }
+    },
+    "PrivEnv": {
+        "members": {
+            "bot": "RJS_AstPrivEnv*",
+            "id": "int",
+            "priv_id_hash": "RJS_Hash",
+            "priv_id_list": "RJS_List"
+        }
+    },
+    "PrivId": {
+        "members": {
+            "he": "RJS_HashEntry",
+            "identifier": "RJS_Value",
+            "ve": "RJS_AstValueEntry*",
+            "flags": "int"
+        }
+    },
+    "PrivIdRef": {
+        "members": {
+            "identifier": "RJS_Value",
+            "prop_ref": "RJS_Value",
+            "func": "RJS_AstFunc*"
+        }
+    },
+    "UnaryExpr": {
+        "types": [
+            "NotExpr",
+            "RevExpr",
+            "NegExpr",
+            "ToNumExpr",
+            "DelExpr",
+            "TypeOfExpr",
+            "VoidExpr",
+            "PreIncExpr",
+            "PreDecExpr",
+            "PostIncExpr",
+            "PostDecExpr",
+            "YieldExpr",
+            "YieldStarExpr",
+            "SpreadExpr",
+            "ParenthesesExpr",
+            "ImportExpr",
+            "AwaitExpr",
+            "OptionalExpr",
+            "OptionalBase"
+        ],
+        "members": {
+            "operand": "RJS_Value"
+        }
+    },
+    "BinaryExpr": {
+        "types": [
+            "MemberExpr",
+            "PrivMemberExpr",
+            "SuperMemberExpr",
+            "AddExpr",
+            "SubExpr",
+            "MulExpr",
+            "DivExpr",
+            "ModExpr",
+            "ExpExpr",
+            "ShlExpr",
+            "ShrExpr",
+            "UShrExpr",
+            "LtExpr",
+            "GtExpr",
+            "LeExpr",
+            "GeExpr",
+            "EqExpr",
+            "NeExpr",
+            "StrictEqExpr",
+            "StrictNeExpr",
+            "InExpr",
+            "InstanceOfExpr",
+            "BitAndExpr",
+            "BitXorExpr",
+            "BitOrExpr",
+            "AndExpr",
+            "OrExpr",
+            "QuesExpr",
+            "AssiExpr",
+            "AddAssiExpr",
+            "SubAssiExpr",
+            "MulAssiExpr",
+            "DivAssiExpr",
+            "ModAssiExpr",
+            "ExpAssiExpr",
+            "ShlAssiExpr",
+            "ShrAssiExpr",
+            "UShrAssiExpr",
+            "BitAndAssiExpr",
+            "BitXorAssiExpr",
+            "BitOrAssiExpr",
+            "AndAssiExpr",
+            "OrAssiExpr",
+            "QuesAssiExpr"
+        ],
+        "members": {
+            "operand1": "RJS_Value",
+            "operand2": "RJS_Value"
+        }
+    },
+    "CondExpr": {
+        "members": {
+            "cond": "RJS_Value",
+            "true_value": "RJS_Value",
+            "false_value": "RJS_Value"
+        }
+    },
+    "Call": {
+        "types": [
+            "CallExpr",
+            "SuperCallExpr",
+            "NewExpr"
+        ],
+        "members": {
+            "func": "RJS_Value",
+            "arg_list": "RJS_List"
+        }
+    },
+    "ArrowParams": {
+        "types": [
+            "ArrowParams",
+            "AsyncArrowParams"
+        ],
+        "members": {
+            "param_list": "RJS_List",
+            "no_strict_list": "RJS_Value"
+        }
+    },
+    "List": {
+        "types": [
+            "List",
+            "CommaExpr",
+            "Array",
+            "Object",
+            "ArrayBinding",
+            "ObjectBinding",
+            "VarDecl",
+            "LetDecl",
+            "ConstDecl"
+        ],
+        "members": {
+            "list": "RJS_List"
+        }
+    },
+    "Template": {
+        "members": {
+            "func": "RJS_Value",
+            "templ_list": "RJS_List",
+            "expr_list": "RJS_List",
+            "ve": "RJS_AstValueEntry*"
+        }
+    },
+    "Prop": {
+        "types": [
+            "Prop",
+            "SetProto"
+        ],
+        "members": {
+            "name": "RJS_Value",
+            "value": "RJS_Value",
+            "init": "RJS_Value",
+            "computed": "RJS_Bool"
+        }
+    },
+    "ClassElem": {
+        "members": {
+            "type": "RJS_AstClassElemType",
+            "is_static": "RJS_Bool",
+            "name": "RJS_Value",
+            "func": "RJS_AstFunc*",
+            "is_af": "RJS_Bool",
+            "computed": "RJS_Bool"
+        }
+    },
+    "ExprStmt": {
+        "types": [
+            "ExprStmt",
+            "DefaultExprStmt",
+            "ReturnStmt",
+            "ThrowStmt"
+        ],
+        "members": {
+            "expr": "RJS_Value"
+        }
+    },
+    "LabelStmt": {
+        "members": {
+            "identifier": "RJS_Value",
+            "stmt": "RJS_Value",
+            "bot": "RJS_AstLabelStmt*"
+        }
+    },
+    "Block": {
+        "members": {
+            "decl": "RJS_AstDecl*",
+            "stmt_list": "RJS_List",
+            "lex_table": "RJS_Value",
+            "func_table": "RJS_Value",
+            "break_js": "RJS_AstJumpStack"
+        }
+    },
+    "IfStmt": {
+        "members": {
+            "cond": "RJS_Value",
+            "if_stmt": "RJS_Value",
+            "else_stmt": "RJS_Value",
+            "break_js": "RJS_AstJumpStack"
+        }
+    },
+    "LoopStmt": {
+        "types": [
+            "WhileStmt",
+            "DoWhileStmt"
+        ],
+        "members": {
+            "cond": "RJS_Value",
+            "loop_stmt": "RJS_Value",
+            "break_js": "RJS_AstJumpStack",
+            "continue_js": "RJS_AstJumpStack"
+        }
+    },
+    "ForStmt": {
+        "types": [
+            "ForStmt",
+            "ForInStmt",
+            "ForOfStmt",
+            "AwaitForOfStmt"
+        ],
+        "members": {
+            "init": "RJS_Value",
+            "cond": "RJS_Value",
+            "step": "RJS_Value",
+            "loop_stmt": "RJS_Value",
+            "break_js": "RJS_AstJumpStack",
+            "continue_js": "RJS_AstJumpStack",
+            "decl": "RJS_AstDecl*",
+            "lex_table": "RJS_Value"
+        }
+    },
+    "WithStmt": {
+        "members": {
+            "with_expr": "RJS_Value",
+            "with_stmt": "RJS_Value",
+            "decl": "RJS_AstDecl*",
+            "break_js": "RJS_AstJumpStack"
+        }
+    },
+    "TryStmt": {
+        "members": {
+            "try_block": "RJS_Value",
+            "catch_binding": "RJS_Value",
+            "catch_block": "RJS_Value",
+            "final_block": "RJS_Value",
+            "catch_decl": "RJS_AstDecl*",
+            "catch_table": "RJS_Value",
+            "break_js": "RJS_AstJumpStack"
+        }
+    },
+    "JumpStmt": {
+        "types": [
+            "BreakStmt",
+            "ContinueStmt"
+        ],
+        "members": {
+            "dest": "RJS_AstJumpStack*"
+        }
+    },
+    "Case": {
+        "members": {
+            "cond": "RJS_Value",
+            "stmt_list": "RJS_List",
+            "label": "int"
+        }
+    },
+    "SwitchStmt": {
+        "members": {
+            "cond": "RJS_Value",
+            "case_list": "RJS_List",
+            "break_js": "RJS_AstJumpStack",
+            "decl": "RJS_AstDecl*",
+            "lex_table": "RJS_Value",
+            "func_table": "RJS_Value"
+        }
+    },
+    "BindingElem": {
+        "members": {
+            "binding": "RJS_Value",
+            "init": "RJS_Value"
+        }
+    },
+    "BindingProp": {
+        "members": {
+            "name": "RJS_Value",
+            "binding": "RJS_Value",
+            "init": "RJS_Value",
+            "prop_ref": "RJS_Value"
+        }
+    },
+    "Binding": {
+        "members": {
+            "name": "RJS_Value",
+            "decl": "RJS_Value",
+            "type": "RJS_AstDeclType",
+            "he": "RJS_HashEntry"
+        }
+    },
+    "DeclItem": {
+        "members": {
+            "binding_ref": "RJS_AstBindingRef*",
+            "type": "RJS_AstDeclType",
+            "he": "RJS_HashEntry"
+        }
+    },
+    "Decl": {
+        "members": {
+            "item_hash": "RJS_Hash",
+            "item_list": "RJS_List",
+            "binding_ref_hash": "RJS_Hash",
+            "binding_ref_list": "RJS_List",
+            "binding_ref_num": "size_t",
+            "bot": "RJS_AstDecl*",
+            "func": "RJS_AstFunc*",
+            "id": "int"
+        }
+    },
+    "FuncDeclRef": {
+        "members": {
+            "func": "RJS_AstFunc*",
+            "decl_item": "RJS_AstDeclItem*"
+        }
+    },
+    "BindingInit": {
+        "members": {
+            "binding_ref": "RJS_AstBindingRef*",
+            "flags": "int",
+            "bot_binding_ref": "RJS_AstBindingRef*",
+            "param_index": "int"
+        }
+    },
+    "BindingTable": {
+        "members": {
+            "binding_init_list": "RJS_List",
+            "decl": "RJS_AstDecl*",
+            "num": "size_t",
+            "id": "int"
+        }
+    },
+    "FuncTable": {
+        "members": {
+            "func_decl_ref_list": "RJS_List",
+            "decl": "RJS_AstDecl*",
+            "num": "size_t",
+            "id": "int"
+        }
+    },
+    "NoStrictListStack": {
+        "members": {
+            "list": "RJS_List",
+            "bot": "RJS_AstNoStrictListStack*"
+        }
+    },
+    "Func": {
+        "members": {
+            "name": "RJS_AstValueEntry*",
+            "binding_name": "RJS_AstValueEntry*",
+            "stmt_list": "RJS_List",
+            "param_list": "RJS_List",
+            "bot": "RJS_AstFunc*",
+            "param_decl": "RJS_AstDecl*",
+            "var_decl": "RJS_AstDecl*",
+            "lex_decl": "RJS_AstDecl*",
+            "flags": "int",
+            "label_stack": "RJS_AstLabelStmt*",
+            "break_stack": "RJS_AstJumpStack*",
+            "continue_stack": "RJS_AstJumpStack*",
+            "data": "void*",
+            "id": "int",
+            "block_stack": "RJS_Ast*",
+            "param_table": "RJS_Value",
+            "var_table": "RJS_Value",
+            "lex_table": "RJS_Value",
+            "func_table": "RJS_Value",
+            "param_len": "size_t",
+            "prop_ref_hash": "RJS_Hash",
+            "prop_ref_start": "size_t",
+            "prop_ref_num": "size_t"
+        }
+    },
+    "FuncRef": {
+        "types": [
+            "FuncDecl",
+            "FuncExpr"
+        ],
+        "members": {
+            "func": "RJS_AstFunc*",
+            "decl": "RJS_AstDecl*",
+            "binding_ref": "RJS_AstBindingRef*",
+            "lex_table": "RJS_Value"
+        }
+    },
+    "Class": {
+        "members": {
+            "name": "RJS_AstValueEntry*",
+            "binding_name": "RJS_AstValueEntry*",
+            "extends": "RJS_Value",
+            "elem_list": "RJS_List",
+            "bot": "RJS_AstClass*",
+            "priv_env": "RJS_AstPrivEnv*",
+            "priv_id_ref_list": "RJS_List",
+            "constructor": "RJS_AstClassElem*",
+            "decl": "RJS_AstDecl*",
+            "name_table": "RJS_Value"
+        }
+    },
+    "ClassRef": {
+        "types": [
+            "ClassDecl",
+            "ClassExpr"
+        ],
+        "members": {
+            "clazz": "RJS_AstClass*"
+        }
+    },
+    "ModuleRequest": {
+        "members": {
+            "name": "RJS_AstValueEntry*",
+            "he": "RJS_HashEntry",
+            "id": "int"
+        }
+    },
+    "Import": {
+        "members": {
+            "module": "RJS_AstModuleRequest*",
+            "local_name": "RJS_AstValueEntry*",
+            "import_name": "RJS_AstValueEntry*",
+            "he": "RJS_HashEntry"
+        }
+    },
+    "Export": {
+        "members": {
+            "module": "RJS_AstModuleRequest*",
+            "local_name": "RJS_AstValueEntry*",
+            "import_name": "RJS_AstValueEntry*",
+            "export_name": "RJS_AstValueEntry*",
+            "has_str": "RJS_Bool",
+            "he": "RJS_HashEntry"
+        }
+    }
+}

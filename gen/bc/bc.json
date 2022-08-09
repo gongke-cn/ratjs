@@ -1,0 +1,458 @@
+{
+    "init": {
+        "types": [
+            "script_init",
+            "eval_init"
+        ],
+        "params": {
+            "decl": "decl",
+            "var_table": "binding_table",
+            "lex_table": "binding_table",
+            "func_table": "func_table"
+        }
+    },
+    "no_param": {
+        "types": [
+            "unmapped_args",
+            "class_init",
+            "push_class",
+            "push_super_call",
+            "push_concat",
+            "next_array_item",
+            "array_elision_item",
+            "pop_state",
+            "finally",
+            "try_end",
+            "throw_ref_error",
+            "debugger",
+            "async_for_step",
+            "generator_start",
+            "set_af_field"
+        ]
+    },
+    "decl": {
+        "types": [
+            "set_decl",
+            "set_var_env",
+            "push_lex_env"
+        ],
+        "params": {
+            "decl": "decl"
+        }
+    },
+    "binding_table": {
+        "types": [
+            "next_lex_env",
+            "binding_table_init",
+            "mapped_args"
+        ],
+        "params": {
+            "table": "binding_table"
+        }
+    },
+    "func_table": {
+        "types": [
+            "top_func_table_init",
+            "func_table_init"
+        ],
+        "params": {
+            "table": "func_table"
+        }
+    },
+    "store": {
+        "types": [
+            "push_enum",
+            "push_iter",
+            "push_async_iter",
+            "restore_lex_env",
+            "yield",
+            "yield_iter_start",
+            "arg_add",
+            "spread_args_add",
+            "push_new",
+            "push_array_assi",
+            "push_object_assi",
+            "array_add_item",
+            "array_spread_items",
+            "object_spread_props",
+            "throw_error",
+            "return_value",
+            "await",
+            "require_object"
+        ],
+        "params": {
+            "value": "rr"
+        }
+    },
+    "load": {
+        "types": [
+            "load_undefined",
+            "load_null",
+            "load_true",
+            "load_false",
+            "load_this",
+            "load_object_proto",
+            "load_func_proto",
+            "load_import_meta",
+            "load_new_target",
+            "load_super_constr",
+            "load_1",
+            "load_0",
+            "yield_resume",
+            "yield_iter_next",
+            "save_lex_env",
+            "top_lex_env",
+            "call",
+            "tail_call",
+            "super_call",
+            "eval",
+            "tail_eval",
+            "new",
+            "get_array_item",
+            "rest_array_items",
+            "rest_object_props",
+            "push_new_array",
+            "push_new_object",
+            "catch_error",
+            "await_resume"
+        ],
+        "params": {
+            "dest": "wr"
+        }
+    },
+    "load_arg": {
+        "params": {
+            "id": "index",
+            "dest": "wr"
+        }
+    },
+    "load_rest_args": {
+        "params": {
+            "id": "index",
+            "dest": "wr"
+        }
+    },
+    "load_value": {
+        "types": [
+            "load_value",
+            "load_regexp"
+        ],
+        "params": {
+            "value": "value",
+            "dest": "wr"
+        }
+    },
+    "load_with_base": {
+        "params": {
+            "env": "rr",
+            "dest": "wr"
+        }
+    },
+    "unary": {
+        "types": [
+            "is_undefined",
+            "is_undefined_null",
+            "to_number",
+            "to_numeric",
+            "to_prop",
+            "negative",
+            "reverse",
+            "typeof",
+            "not",
+            "import",
+            "dup",
+            "get_proto",
+            "object_create",
+            "get_object_prop_expr",
+            "inc",
+            "dec"
+        ],
+        "params": {
+            "operand": "rr",
+            "result": "wr"
+        }
+    },
+    "binary": {
+        "types": [
+            "add",
+            "sub",
+            "mul",
+            "div",
+            "mod",
+            "exp",
+            "shl",
+            "shr",
+            "ushr",
+            "lt",
+            "le",
+            "gt",
+            "ge",
+            "eq",
+            "ne",
+            "strict_eq",
+            "strict_ne",
+            "and",
+            "xor",
+            "or",
+            "has_prop",
+            "has_priv",
+            "instanceof",
+            "del_prop_expr",
+            "prop_get_expr",
+            "super_prop_get_expr"
+        ],
+        "params": {
+            "operand1": "rr",
+            "operand2": "rr",
+            "result": "wr"
+        }
+    },
+    "del_binding": {
+        "params": {
+            "env": "rr",
+            "binding": "binding",
+            "result": "wr"
+        }
+    },
+    "constr_create": {
+        "params": {
+            "constr_parent": "rr",
+            "proto": "rr",
+            "func": "func",
+            "obj": "wr"
+        }
+    },
+    "default_constr": {
+        "types": [
+            "default_constr",
+            "derived_default_constr"
+        ],
+        "params": {
+            "constr_parent": "rr",
+            "proto": "rr",
+            "name": "value",
+            "obj": "wr"
+        }
+    },
+    "func_create": {
+        "params": {
+            "func": "func",
+            "dest": "wr"
+        }
+    },
+    "class_elem": {
+        "types": [
+            "method_add",
+            "static_method_add",
+            "getter_add",
+            "static_getter_add",
+            "setter_add",
+            "static_setter_add",
+            "field_add",
+            "inst_field_add",
+            "object_method_add",
+            "object_getter_add",
+            "object_setter_add"
+        ],
+        "params": {
+            "name": "rr",
+            "func": "func"
+        }
+    },
+    "priv_class_elem": {
+        "types": [
+            "priv_method_add",
+            "static_priv_method_add",
+            "priv_getter_add",
+            "static_priv_getter_add",
+            "priv_setter_add",
+            "static_priv_setter_add",
+            "priv_field_add",
+            "priv_inst_field_add"
+        ],
+        "params": {
+            "priv": "value",
+            "func": "func"
+        }
+    },
+    "static_block_add": {
+        "params": {
+            "func": "func"
+        }
+    },
+    "binding_resolve": {
+        "params": {
+            "binding": "binding",
+            "env": "wr"
+        }
+    },
+    "binding_init": {
+        "params": {
+            "env": "rr",
+            "binding": "binding",
+            "value": "rr"
+        }
+    },
+    "binding_set": {
+        "params": {
+            "env": "rr",
+            "binding": "binding",
+            "value": "rr"
+        }
+    },
+    "binding_get": {
+        "params": {
+            "env": "rr",
+            "binding": "binding",
+            "dest": "wr"
+        }
+    },
+    "typeof_binding": {
+        "params": {
+            "binding": "binding",
+            "dest": "wr"
+        }
+    },
+    "del_prop": {
+        "params": {
+            "base": "rr",
+            "prop": "prop",
+            "result": "wr"
+        }
+    },
+    "prop_get": {
+        "params": {
+            "base": "rr",
+            "prop": "prop",
+            "dest": "wr"
+        }
+    },
+    "super_prop_get": {
+        "params": {
+            "thiz": "rr",
+            "prop": "prop",
+            "dest": "wr"
+        }
+    },
+    "priv_get": {
+        "params": {
+            "base": "rr",
+            "priv": "prop",
+            "dest": "wr"
+        }
+    },
+    "prop_set": {
+        "params": {
+            "base": "rr",
+            "prop": "prop",
+            "value": "rr"
+        }
+    },
+    "prop_set_expr": {
+        "params": {
+            "base": "rr",
+            "prop": "rr",
+            "value": "rr"
+        }
+    },
+    "super_prop_set": {
+        "params": {
+            "thiz": "rr",
+            "prop": "prop",
+            "value": "rr"
+        }
+    },
+    "super_prop_set_expr": {
+        "params": {
+            "thiz": "rr",
+            "prop": "rr",
+            "value": "rr"
+        }
+    },
+    "priv_set": {
+        "params": {
+            "base": "rr",
+            "priv": "prop",
+            "value": "rr"
+        }
+    },
+    "push_call": {
+        "params": {
+            "func": "rr",
+            "thiz": "rr"
+        }
+    },
+    "get_object_prop": {
+        "params": {
+            "prop": "prop",
+            "dest": "wr"
+        }
+    },
+    "object_add_prop": {
+        "types": [
+            "object_add_prop",
+            "object_add_func"
+        ],
+        "params": {
+            "prop": "rr",
+            "value": "rr"
+        }
+    },
+    "set_proto": {
+        "params": {
+            "obj": "rr",
+            "proto": "rr"
+        }
+    },
+    "push_with": {
+        "params": {
+            "value": "rr",
+            "decl": "decl"
+        }
+    },
+    "push_try": {
+        "params": {
+            "catch_label": "label",
+            "final_label": "label"
+        }
+    },
+    "jump": {
+        "params": {
+            "label": "label"
+        }
+    },
+    "jump_cond": {
+        "types": [
+            "jump_true",
+            "jump_false"
+        ],
+        "params": {
+            "value": "rr",
+            "label": "label"
+        }
+    },
+    "for_step": {
+        "types": [
+            "for_step",
+            "async_for_step_resume"
+        ],
+        "params": {
+            "value": "wr",
+            "done": "wr"
+        }
+    },
+    "nop": {
+        "pseudo": true
+    },
+    "stub": {
+        "pseudo": true,
+        "params": {
+            "label": "label"
+        }
+    },
+    "set_priv_env": {
+        "params": {
+            "priv_env": "priv_env"
+        }
+    }
+}
