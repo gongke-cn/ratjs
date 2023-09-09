@@ -324,6 +324,7 @@ $(O)/$(1)$(EXE_SUFFIX): $$(patsubst %.c,$(O)/%.o,$(2))
 	$$(info CC $$^ -> $$@)
 	$(Q)$(CC) -o $$@ $$(patsubst %.c,$(O)/%.o,$(2)) $(3) $(LIBS)
 	$(Q)echo '#!/bin/bash' > $$@.sh
+	$(Q)echo 'if [ ! -L $(O)/libratjs$(DLIB_SUFFIX).$(SO_MAJOR_VERSION) ]; then cd $(O); rm -f libratjs$(DLIB_SUFFIX).$(SO_MAJOR_VERSION); ln -s libratjs$(DLIB_SUFFIX) libratjs$(DLIB_SUFFIX).$(SO_MAJOR_VERSION); cd ..; fi' >> $$@.sh
 	$(Q)echo 'LD_LIBRARY_PATH=$$$${LD_LIBRARY_PATH}:$(O) $(O)/$(1)$(EXE_SUFFIX) "$$$$@"' >> $$@.sh
 	$(Q)chmod a+x $$@.sh
 endef
@@ -526,9 +527,10 @@ install: uninstall
 	$(info INSTALL)
 	$(Q)install -m 644 -s $(LIBRATJS_SLIB) $(INSTALL_PREFIX)/lib
 	$(Q)install -m 644 -T -s $(LIBRATJS_DLIB) $(INSTALL_PREFIX)/lib/libratjs.so.$(SO_MAJOR_VERSION).$(SO_MINOR_VERSION).$(SO_MICRO_VERSION)
-	$(Q)ln -s $(INSTALL_PREFIX)/lib/libratjs.so.$(SO_MAJOR_VERSION).$(SO_MINOR_VERSION).$(SO_MICRO_VERSION) $(INSTALL_PREFIX)/lib/libratjs.so.$(SO_MAJOR_VERSION).$(SO_MINOR_VERSION)
-	$(Q)ln -s $(INSTALL_PREFIX)/lib/libratjs.so.$(SO_MAJOR_VERSION).$(SO_MINOR_VERSION).$(SO_MICRO_VERSION) $(INSTALL_PREFIX)/lib/libratjs.so.$(SO_MAJOR_VERSION)
-	$(Q)ln -s $(INSTALL_PREFIX)/lib/libratjs.so.$(SO_MAJOR_VERSION).$(SO_MINOR_VERSION).$(SO_MICRO_VERSION) $(INSTALL_PREFIX)/lib/libratjs.so
+	$(Q)cd $(INSTALL_PREFIX)/lib;\
+	ln -s libratjs.so.$(SO_MAJOR_VERSION).$(SO_MINOR_VERSION).$(SO_MICRO_VERSION) libratjs.so.$(SO_MAJOR_VERSION).$(SO_MINOR_VERSION);\
+	ln -s libratjs.so.$(SO_MAJOR_VERSION).$(SO_MINOR_VERSION).$(SO_MICRO_VERSION) libratjs.so.$(SO_MAJOR_VERSION);\
+	ln -s libratjs.so.$(SO_MAJOR_VERSION).$(SO_MINOR_VERSION).$(SO_MICRO_VERSION) libratjs.so
 	$(Q)install -m 755 -s $(RATJS) $(INSTALL_PREFIX)/bin
 	$(Q)install -m 644 include/ratjs.h $(INSTALL_PREFIX)/include
 	$(Q)mkdir -m 755 $(INSTALL_PREFIX)/include/ratjs
