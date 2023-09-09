@@ -1,6 +1,6 @@
-# RATJS - a small JavaScript engine
+# Rat Javascript - a small javascript engine
 
-RATJS is a small JavaScript engine written in C. You can use it to run JavaScript programs, or embed it into your program as a script engine
+RATJS is a small javascript engine written in C. You can use it to run javascript programs, or embed it into your program as a script engine
 
 ## Feature
 
@@ -106,9 +106,9 @@ $ make dist-clean
 
 ## Usage
 
-### Execute JavaScript
+### Execute javascript
 
-Run program "ratjs" to execute your JavaScript program.
+Run program "ratjs" to execute your javascript program.
 
 To run the "js" script file:
 ```
