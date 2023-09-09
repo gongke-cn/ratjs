@@ -251,7 +251,6 @@ script_code_values[] = {
     {"Kali",    USCRIPT_KAYAH_LI},
     {"Katakana",USCRIPT_KATAKANA},
     {"Kana",    USCRIPT_KATAKANA},
-    {"Kawi",    USCRIPT_KAWI},
     {"Kharoshthi", USCRIPT_KHAROSHTHI},
     {"Khar",    USCRIPT_KHAROSHTHI},
     {"Khmer",   USCRIPT_KHMER},
@@ -314,8 +313,6 @@ script_code_values[] = {
     {"Mult",    USCRIPT_MULTANI},
     {"Myanmar", USCRIPT_MYANMAR},
     {"Mymr",    USCRIPT_MYANMAR},
-    {"Nag_Mundari", USCRIPT_NAG_MUNDARI},
-    {"Nagm",    USCRIPT_NAG_MUNDARI},
     {"Nandinagari", USCRIPT_NANDINAGARI},
     {"Nand",    USCRIPT_NANDINAGARI},
     {"Old_North_Arabian", USCRIPT_OLD_NORTH_ARABIAN},
@@ -454,6 +451,11 @@ script_code_values[] = {
     {"Zyyy",    USCRIPT_COMMON},
     {"Unknown", USCRIPT_UNKNOWN},
     {"Zzzz",    USCRIPT_UNKNOWN},
+#if U_ICU_VERSION_MAJOR_NUM >= 72
+    {"Kawi",    USCRIPT_KAWI},
+    {"Nag_Mundari", USCRIPT_NAG_MUNDARI},
+    {"Nagm",    USCRIPT_NAG_MUNDARI},
+#endif /*U_ICU_VERSION_MAJOR_NUM >= 72*/
     {NULL}
 };
 
