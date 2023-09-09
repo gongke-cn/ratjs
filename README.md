@@ -1,6 +1,8 @@
-# Rat Javascript - a small javascript engine
+# Rat Javascript - a small javascript/ecmascript interpreter
 
-RATJS is a small javascript engine written in C. You can use it to run javascript programs, or embed it into your program as a script engine
+[中文](README_zh.md)
+
+RATJS is a small javascript/ecmascript interpreter written in C. You can use it to run javascript programs, or embed it into your program as a script engine
 
 ## Feature
 
@@ -34,16 +36,16 @@ RATJS is a small javascript engine written in C. You can use it to run javascrip
 
 ## Dependence
 
-* icu4c (http://icu-project.org/download/latest_milestone.html): Required if configured with ENC_CONV=icu
-* gmp (http://gmplib.org): Required if configured with ENABLE_BIG_INT=1
+* [icu4c](http://icu-project.org/download/latest_milestone.html): Required if configured with ENC_CONV=icu
+* [gmp](http://gmplib.org): Required if configured with ENABLE_BIG_INT=1
 
 ## Build
 
 RATJS use GNU make to build the source code.
 The following libraries and headers are required for building:
 
-* c-json (https://github.com/json-c/json-c/wiki)
-* libyaml (http://pyyaml.org/wiki/LibYAML): Required if you want to build test262 program
+* [c-json](https://github.com/json-c/json-c/wiki)
+* [libyaml](http://pyyaml.org/wiki/LibYAML): Required if you want to build test262 program
 
 ### Options
 
@@ -81,8 +83,7 @@ $ make dist-clean
 
 ### Build on Windows
 
-To build RATJS on Windows, you need setup MinGW environment.
-(https://www.mingw-w64.org)
+To build RATJS on Windows, you need setup [MinGW](https://www.mingw-w64.org) environment.
 
 Configure the project.
 ```
@@ -170,6 +171,4 @@ You can refer to the relevant programs in the "demo" directory to study how to e
 
 ## License
 
-This project is licensed under the terms of the MIT license.
-
-## 
+This project is licensed under the terms of the [MIT license](LICENSE).
