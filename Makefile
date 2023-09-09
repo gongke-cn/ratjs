@@ -2,6 +2,10 @@ MAJOR_VERSION := 0
 MINOR_VERSION := 0
 MICRO_VERSION := 1
 
+SO_MAJOR_VERSION := 0
+SO_MINOR_VERSION := 0
+SO_MICRO_VERSION := 1
+
 # Quiet
 Q ?= @
 # Output directory
@@ -295,7 +299,7 @@ endef
 define build_dlib =
 $(O)/$(1)$(DLIB_SUFFIX): $$(patsubst %.c,$(O)/%.o,$(2))
 	$$(info CC $$^ -> $$@)
-	$(Q)$(CC) -o $$@ $$^ -shared $(LIBS)
+	$(Q)$(CC) -o $$@ $$^ -shared $(LIBS) -Wl,-soname,$(1)$(DLIB_SUFFIX).$(SO_MAJOR_VERSION)
 endef
 
 # Build library
@@ -521,10 +525,10 @@ demo-clean:
 install: uninstall
 	$(info INSTALL)
 	$(Q)install -m 644 -s $(LIBRATJS_SLIB) $(INSTALL_PREFIX)/lib
-	$(Q)install -m 644 -T -s $(LIBRATJS_DLIB) $(INSTALL_PREFIX)/lib/libratjs.so.$(MAJOR_VERSION).$(MINOR_VERSION).$(MICRO_VERSION)
-	$(Q)ln -s $(INSTALL_PREFIX)/lib/libratjs.so.$(MAJOR_VERSION).$(MINOR_VERSION).$(MICRO_VERSION) $(INSTALL_PREFIX)/lib/libratjs.so.$(MAJOR_VERSION).$(MINOR_VERSION)
-	$(Q)ln -s $(INSTALL_PREFIX)/lib/libratjs.so.$(MAJOR_VERSION).$(MINOR_VERSION).$(MICRO_VERSION) $(INSTALL_PREFIX)/lib/libratjs.so.$(MAJOR_VERSION)
-	$(Q)ln -s $(INSTALL_PREFIX)/lib/libratjs.so.$(MAJOR_VERSION).$(MINOR_VERSION).$(MICRO_VERSION) $(INSTALL_PREFIX)/lib/libratjs.so
+	$(Q)install -m 644 -T -s $(LIBRATJS_DLIB) $(INSTALL_PREFIX)/lib/libratjs.so.$(SO_MAJOR_VERSION).$(SO_MINOR_VERSION).$(SO_MICRO_VERSION)
+	$(Q)ln -s $(INSTALL_PREFIX)/lib/libratjs.so.$(SO_MAJOR_VERSION).$(SO_MINOR_VERSION).$(SO_MICRO_VERSION) $(INSTALL_PREFIX)/lib/libratjs.so.$(SO_MAJOR_VERSION).$(SO_MINOR_VERSION)
+	$(Q)ln -s $(INSTALL_PREFIX)/lib/libratjs.so.$(SO_MAJOR_VERSION).$(SO_MINOR_VERSION).$(SO_MICRO_VERSION) $(INSTALL_PREFIX)/lib/libratjs.so.$(SO_MAJOR_VERSION)
+	$(Q)ln -s $(INSTALL_PREFIX)/lib/libratjs.so.$(SO_MAJOR_VERSION).$(SO_MINOR_VERSION).$(SO_MICRO_VERSION) $(INSTALL_PREFIX)/lib/libratjs.so
 	$(Q)install -m 755 -s $(RATJS) $(INSTALL_PREFIX)/bin
 	$(Q)install -m 644 include/ratjs.h $(INSTALL_PREFIX)/include
 	$(Q)mkdir -m 755 $(INSTALL_PREFIX)/include/ratjs
@@ -535,9 +539,9 @@ uninstall:
 	$(info UNINSTALL)
 	$(Q)$(RM) $(INSTALL_PREFIX)/lib/libratjs$(SLIB_SUFFIX)
 	$(Q)$(RM) $(INSTALL_PREFIX)/lib/libratjs$(DLIB_SUFFIX)
-	$(Q)$(RM) $(INSTALL_PREFIX)/lib/libratjs$(DLIB_SUFFIX).$(MAJOR_VERSION)
-	$(Q)$(RM) $(INSTALL_PREFIX)/lib/libratjs$(DLIB_SUFFIX).$(MAJOR_VERSION).$(MINOR_VERSION)
-	$(Q)$(RM) $(INSTALL_PREFIX)/lib/libratjs$(DLIB_SUFFIX).$(MAJOR_VERSION).$(MINOR_VERSION).$(MICRO_VERSION)
+	$(Q)$(RM) $(INSTALL_PREFIX)/lib/libratjs$(DLIB_SUFFIX).$(SO_MAJOR_VERSION)
+	$(Q)$(RM) $(INSTALL_PREFIX)/lib/libratjs$(DLIB_SUFFIX).$(SO_MAJOR_VERSION).$(SO_MINOR_VERSION)
+	$(Q)$(RM) $(INSTALL_PREFIX)/lib/libratjs$(DLIB_SUFFIX).$(SO_MAJOR_VERSION).$(SO_MINOR_VERSION).$(SO_MICRO_VERSION)
 	$(Q)$(RM) $(INSTALL_PREFIX)/bin/ratjs$(EXE_SUFFIX)
 	$(Q)$(RMDIR) $(INSTALL_PREFIX)/include/ratjs
 	$(Q)$(RM) $(INSTALL_PREFIX)/include/ratjs.h
