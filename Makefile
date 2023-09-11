@@ -1,6 +1,6 @@
 MAJOR_VERSION := 0
-MINOR_VERSION := 0
-MICRO_VERSION := 1
+MINOR_VERSION := 1
+MICRO_VERSION := 0
 
 SO_MAJOR_VERSION := 0
 SO_MINOR_VERSION := 0
@@ -18,7 +18,7 @@ RMDIR := rm -rf
 # Make directory command
 MKDIR := mkdir -p
 # Install prefix
-INSTALL_PREFIX := /usr
+INSTALL_PREFIX ?= /usr
 
 -include $(O)/config.mk
 
@@ -31,6 +31,8 @@ endif
 
 # Archive program
 AR := $(CROSS_COMPILE)ar
+# ranlib program
+RANLIB := $(CROSS_COMPILE)ranlib
 
 # Compiling flags
 CFLAGS += -Wall -O2 -fPIC -Iinclude -I$(O)/include -I$(O)/src/lib
@@ -50,6 +52,8 @@ ifeq ($(ARCH),win)
 	endif
 	LIBRATJS_SRCS += src/lib/rjs_arch_win_opt.c
 else
+	# Default architecture is linux
+	ARCH        := linux
 	# Suffix of static library
 	SLIB_SUFFIX := .a
 	# Suffix of dynamic library
@@ -293,14 +297,24 @@ define build_slib =
 $(O)/$(1)$(SLIB_SUFFIX): $$(patsubst %.c,$(O)/%.o,$(2))
 	$$(info AR $$^ -> $$@)
 	$(Q)$(AR) rcs $$@ $$^
+	$(Q)$(RANLIB) $$@
 endef
 
 # Link dynamic library
+ifeq ($(ARCH),win)
+define build_dlib =
+$(O)/$(1)$(DLIB_SUFFIX): $$(patsubst %.c,$(O)/%.o,$(2))
+	$$(info CC $$^ -> $$@)
+	$(Q)$(CC) -o $$@ $$^ -shared $(LIBS) -Wl,--out-implib,$(O)/$(1)$(DLIB_SUFFIX).a
+	$(Q)$(RANLIB) $(O)/$(1)$(DLIB_SUFFIX).a
+endef
+else
 define build_dlib =
 $(O)/$(1)$(DLIB_SUFFIX): $$(patsubst %.c,$(O)/%.o,$(2))
 	$$(info CC $$^ -> $$@)
 	$(Q)$(CC) -o $$@ $$^ -shared $(LIBS) -Wl,-soname,$(1)$(DLIB_SUFFIX).$(SO_MAJOR_VERSION)
 endef
+endif
 
 # Build library
 define build_lib =
@@ -310,25 +324,13 @@ $(eval $(call build_dlib,$(1),$(2)))
 endef
 
 # Build executable program
-ifeq ($(ARCH),win)
 define build_exe =
 $$(eval $$(call compile_srcs,$(2)))
 $(O)/$(1)$(EXE_SUFFIX): $$(patsubst %.c,$(O)/%.o,$(2))
 	$$(info CC $$^ -> $$@)
 	$(Q)$(CC) -o $$@ $$(patsubst %.c,$(O)/%.o,$(2)) $(3) $(LIBS)
+	$(Q)O=$(O) SO_MAJOR_VERSION=$(SO_MAJOR_VERSION) ./build/gen_exe_shell_$(ARCH).sh $(1)
 endef
-else
-define build_exe =
-$$(eval $$(call compile_srcs,$(2)))
-$(O)/$(1)$(EXE_SUFFIX): $$(patsubst %.c,$(O)/%.o,$(2))
-	$$(info CC $$^ -> $$@)
-	$(Q)$(CC) -o $$@ $$(patsubst %.c,$(O)/%.o,$(2)) $(3) $(LIBS)
-	$(Q)echo '#!/bin/bash' > $$@.sh
-	$(Q)echo 'if [ ! -L $(O)/libratjs$(DLIB_SUFFIX).$(SO_MAJOR_VERSION) ]; then cd $(O); rm -f libratjs$(DLIB_SUFFIX).$(SO_MAJOR_VERSION); ln -s libratjs$(DLIB_SUFFIX) libratjs$(DLIB_SUFFIX).$(SO_MAJOR_VERSION); cd ..; fi' >> $$@.sh
-	$(Q)echo 'LD_LIBRARY_PATH=$$$${LD_LIBRARY_PATH}:$(O) $(O)/$(1)$(EXE_SUFFIX) "$$$$@"' >> $$@.sh
-	$(Q)chmod a+x $$@.sh
-endef
-endif
 
 # Compile a C file to host object file
 define compile_host_o =
@@ -526,11 +528,7 @@ demo-clean:
 install: uninstall
 	$(info INSTALL)
 	$(Q)install -m 644 -s $(LIBRATJS_SLIB) $(INSTALL_PREFIX)/lib
-	$(Q)install -m 644 -T -s $(LIBRATJS_DLIB) $(INSTALL_PREFIX)/lib/libratjs.so.$(SO_MAJOR_VERSION).$(SO_MINOR_VERSION).$(SO_MICRO_VERSION)
-	$(Q)cd $(INSTALL_PREFIX)/lib;\
-	ln -s libratjs.so.$(SO_MAJOR_VERSION).$(SO_MINOR_VERSION).$(SO_MICRO_VERSION) libratjs.so.$(SO_MAJOR_VERSION).$(SO_MINOR_VERSION);\
-	ln -s libratjs.so.$(SO_MAJOR_VERSION).$(SO_MINOR_VERSION).$(SO_MICRO_VERSION) libratjs.so.$(SO_MAJOR_VERSION);\
-	ln -s libratjs.so.$(SO_MAJOR_VERSION).$(SO_MINOR_VERSION).$(SO_MICRO_VERSION) libratjs.so
+	$(Q)O=$(O) SO_MAJOR_VERSION=$(SO_MAJOR_VERSION) SO_MINOR_VERSION=$(SO_MINOR_VERSION) SO_MICRO_VERSION=$(SO_MICRO_VERSION) INSTALL_PREFIX=$(INSTALL_PREFIX) ./build/install_dlib_$(ARCH).sh
 	$(Q)install -m 755 -s $(RATJS) $(INSTALL_PREFIX)/bin
 	$(Q)install -m 644 include/ratjs.h $(INSTALL_PREFIX)/include
 	$(Q)mkdir -m 755 $(INSTALL_PREFIX)/include/ratjs
@@ -540,10 +538,7 @@ install: uninstall
 uninstall:
 	$(info UNINSTALL)
 	$(Q)$(RM) $(INSTALL_PREFIX)/lib/libratjs$(SLIB_SUFFIX)
-	$(Q)$(RM) $(INSTALL_PREFIX)/lib/libratjs$(DLIB_SUFFIX)
-	$(Q)$(RM) $(INSTALL_PREFIX)/lib/libratjs$(DLIB_SUFFIX).$(SO_MAJOR_VERSION)
-	$(Q)$(RM) $(INSTALL_PREFIX)/lib/libratjs$(DLIB_SUFFIX).$(SO_MAJOR_VERSION).$(SO_MINOR_VERSION)
-	$(Q)$(RM) $(INSTALL_PREFIX)/lib/libratjs$(DLIB_SUFFIX).$(SO_MAJOR_VERSION).$(SO_MINOR_VERSION).$(SO_MICRO_VERSION)
+	$(Q)SO_MAJOR_VERSION=$(SO_MAJOR_VERSION) SO_MINOR_VERSION=$(SO_MINOR_VERSION) SO_MICRO_VERSION=$(SO_MICRO_VERSION) INSTALL_PREFIX=$(INSTALL_PREFIX) ./build/install_dlib_$(ARCH).sh -u
 	$(Q)$(RM) $(INSTALL_PREFIX)/bin/ratjs$(EXE_SUFFIX)
 	$(Q)$(RMDIR) $(INSTALL_PREFIX)/include/ratjs
 	$(Q)$(RM) $(INSTALL_PREFIX)/include/ratjs.h

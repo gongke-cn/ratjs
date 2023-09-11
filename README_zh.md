@@ -94,6 +94,11 @@ $ make ARCH=win config
 $ make
 ```
 
+安装RATJS连接库和可执行程序。
+```
+$ make install
+```
+
 清除构建中间文件。
 ```
 $ make clean

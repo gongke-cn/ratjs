@@ -95,6 +95,11 @@ Build the libraries and executable programs.
 $ make
 ```
 
+Install the libraries and executable programs.
+```
+$ make install
+```
+
 Clear intermediate files.
 ```
 $ make clean
