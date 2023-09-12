@@ -62,10 +62,6 @@
     #include "include/rjs_arch_linux.h"
 #endif
 
-#if ENABLE_BIG_INT
-    #include <gmp.h>
-#endif
-
 #include <rjs_string_table.h>
 #include <rjs_object_table.h>
 

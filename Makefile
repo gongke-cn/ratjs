@@ -2,9 +2,9 @@ MAJOR_VERSION := 0
 MINOR_VERSION := 1
 MICRO_VERSION := 0
 
-SO_MAJOR_VERSION := 0
+SO_MAJOR_VERSION := 1
 SO_MINOR_VERSION := 0
-SO_MICRO_VERSION := 1
+SO_MICRO_VERSION := 0
 
 # Quiet
 Q ?= @
@@ -123,15 +123,40 @@ endif
 endif
 
 ENC_CONV_DEFAULT := icu
-ENC_CONV_DESC    := character encoding converter
+ENC_CONV_DESC    := character encoding converter. icu4c, libiconv or internal UTF8/UTF16/UCS converter. if select icu, can support full ECMA262 unicode features
 ENC_CONV_ENUM    := icu|iconv|internal
 CONFIG_H_ITEMS   += ENC_CONV_ICU ENC_CONV_ICONV ENC_CONV_INTERNAL
 CONFIG_ITEMS     += ENC_CONV
 
+# Big integer
+ifndef ENABLE_BIG_INT
+	ENABLE_BIG_INT := internal
+endif
+ENABLE_BIG_INT_GMP      := 1
+ENABLE_BIG_INT_INTERNAL := 2
+ifeq ($(ENABLE_BIG_INT),gmp)
+	ENABLE_BIG_INT_C_VALUE := $(ENABLE_BIG_INT_GMP)
+	LIBRATJS_SRCS += src/lib/rjs_big_int_gmp_opt.c
+	LIBS += -lgmp
+else
+ifeq ($(ENABLE_BIG_INT),internal)
+	ENABLE_BIG_INT_C_VALUE := $(ENABLE_BIG_INT_INTERNAL)
+	LIBRATJS_SRCS += src/lib/rjs_big_int_internal_opt.c
+else
+	ENABLE_BIG_INT_C_VALUE := 0
+endif
+endif
+
+ENABLE_BIG_INT_DEFAULT := internal
+ENABLE_BIG_INT_DESC    := big integer. use internal big integer implement, link with libgmp or disable big integer feature
+ENABLE_BIG_INT_ENUM    := internal|gmp|0
+CONFIG_H_ITEMS   += ENABLE_BIG_INT_GMP ENABLE_BIG_INT_INTERNAL
+CONFIG_ITEMS     += ENABLE_BIG_INT
+
+# Configure options
 $(eval $(call bool_config,ENABLE_MODULE,1,enable module,src/lib/rjs_module_opt.c src/lib/rjs_module_env_opt.c src/lib/rjs_module_ns_object_opt.c))
 $(eval $(call bool_config,ENABLE_SCRIPT,1,enable script))
 $(eval $(call bool_config,ENABLE_PRIV_NAME,1,enable private name,src/lib/rjs_private_name_opt.c))
-$(eval $(call bool_config,ENABLE_BIG_INT,1,enable big integer,src/lib/rjs_big_int_opt.c))
 $(eval $(call bool_config,ENABLE_GENERATOR,1,enable genrtator,src/lib/rjs_generator_opt.c))
 $(eval $(call bool_config,ENABLE_ASYNC,1,enable async function,src/lib/rjs_async_function_opt.c))
 $(eval $(call bool_config,ENABLE_ARROW_FUNC,1,enable arrow function))
@@ -157,13 +182,9 @@ $(eval $(call bool_config,ENABLE_REFLECT,1,enable reflect object))
 $(eval $(call bool_config,ENABLE_HASHBANG_COMMENT,1,enable hashbang comment))
 $(eval $(call bool_config,ENABLE_LEGACY_OPTIONAL,1,enable legacy optional functions))
 $(eval $(call bool_config,ENABLE_CALLER,1,enable Function.caller))
-$(eval $(call bool_config,ENABLE_COLOR_CONSOLE,1,enable color console output))
+$(eval $(call bool_config,ENABLE_COLOR_CONSOLE,1,enable color terminal output))
 $(eval $(call bool_config,ENABLE_FUNC_SOURCE,1,enable function source))
 $(eval $(call bool_config,ENABLE_EXTENSION,1,enable extension functions,src/lib/rjs_extension_opt.c))
-
-ifeq ($(ENABLE_BIG_INT),1)
-	LIBS += -lgmp
-endif
 
 # Host C
 HOST_CC := cc

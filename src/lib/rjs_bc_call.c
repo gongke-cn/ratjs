@@ -413,7 +413,8 @@ do_bc_inc (RJS_Runtime *rt, RJS_Value *v, RJS_Value *rv)
 {
 #if ENABLE_BIG_INT
     if (rjs_value_is_big_int(rt, v)) {
-        rjs_big_int_inc(rt, v, rv);
+        if (rjs_big_int_inc(rt, v, rv) == RJS_ERR)
+            return RJS_ERR;
     }
     else
 #endif /*ENABLE_BIG_INT*/
@@ -428,7 +429,8 @@ do_bc_dec (RJS_Runtime *rt, RJS_Value *v, RJS_Value *rv)
 {
 #if ENABLE_BIG_INT
     if (rjs_value_is_big_int(rt, v)) {
-        rjs_big_int_dec(rt, v, rv);
+        if (rjs_big_int_dec(rt, v, rv) == RJS_ERR)
+            return RJS_ERR;
     }
     else
 #endif /*ENABLE_BIG_INT*/

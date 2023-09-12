@@ -20,6 +20,7 @@ RATJS is a small javascript/ecmascript interpreter written in C. You can use it 
 	+ Atomics
 	+ Map/Set/WeakSet/WeakMap
 	+ WeakRef/FinalizationRegistry
+	+ Private identifier
 	+ Multiply realm
 	+ Module/Async module
 * Extension

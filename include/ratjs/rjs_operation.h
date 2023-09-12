@@ -343,17 +343,6 @@ extern RJS_Bool
 rjs_big_int_same_value (RJS_Runtime *rt, RJS_Value *v1, RJS_Value *v2);
 
 /**
- * Check if 2 big integer values are equal. (_0 == -0)
- * \param rt The current runtime.
- * \param v1 Value 1.
- * \param v2 Value 2.
- * \retval RJS_TRUE v1 == v2.
- * \retval RJS_FALSE v1 != v2.
- */
-extern RJS_Bool
-rjs_big_int_same_value_0 (RJS_Runtime *rt, RJS_Value *v1, RJS_Value *v2);
-
-/**
  * Check if the big integer is zero.
  * \param rt The current runtime.
  * \param v The value.
@@ -421,7 +410,7 @@ rjs_same_value_0 (RJS_Runtime *rt, RJS_Value *v1, RJS_Value *v2)
 
 #if ENABLE_BIG_INT
     if (t1 == RJS_VALUE_BIG_INT)
-        return rjs_big_int_same_value_0(rt, v1, v2);
+        return rjs_big_int_same_value(rt, v1, v2);
 #endif /*ENABLE_BIG_INT*/
 
     return rjs_same_value_non_numeric(rt, v1, v2);

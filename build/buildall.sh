@@ -24,6 +24,7 @@ if [ "x$1" = "xclean" ]; then
     clean out_conv_internal
     clean out_no_module
     clean out_no_script
+    clean out_big_int_gmp
     clean out_no_big_int
     clean out_no_priv_name
     clean out_no_generator
@@ -61,6 +62,7 @@ else
     build out_conv_internal ENC_CONV=internal
     build out_no_module ENABLE_MODULE=0
     build out_no_script ENABLE_SCRIPT=0
+    build out_big_int_gmp ENABLE_BIG_INT=gmp
     build out_no_big_int ENABLE_BIG_INT=0
     build out_no_priv_name ENABLE_PRIV_NAME=0
     build out_no_generator ENABLE_GENERATOR=0

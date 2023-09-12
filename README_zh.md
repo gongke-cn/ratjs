@@ -20,6 +20,7 @@ RATJS是一个用C语言实现的小型javascript/ecmascript解释器。你可�
 	+ Atomics
 	+ Map/Set/WeakSet/WeakMap
 	+ WeakRef/FinalizationRegistry
+	+ Private identifier
 	+ Multiply realm
 	+ Module/Async module
 * 扩展

@@ -31,15 +31,36 @@
 #ifndef _RJS_BIG_INT_INTERNAL_H_
 #define _RJS_BIG_INT_INTERNAL_H_
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+#if ENABLE_BIG_INT == ENABLE_BIG_INT_GMP
+
+#include <gmp.h>
 
 /**Big integer.*/
 struct RJS_BigInt_s {
     RJS_GcThing  gc_thing; /**< Base GC thing data.*/
     __mpz_struct mpz;      /**< Big integer data.*/
 };
+
+#else /*ENABLE_BIG_INT != ENABLE_BIG_INT_GMP*/
+
+/**The big integer data.*/
+typedef struct {
+    uint32_t *n;     /**< The number buffer.*/
+    int       size;  /**< The size of the number buffer.*/
+    int       cap;   /**< The capacity of the number buffer.*/
+} RJS_BI;
+
+/*Big integer.*/
+struct RJS_BigInt_s {
+    RJS_GcThing  gc_thing; /**< Base GC thing data.*/
+    RJS_BI       bi;       /**< The big integer data.*/
+};
+
+#endif
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /**
  * Convert the number to big integer.
@@ -51,15 +72,6 @@ struct RJS_BigInt_s {
  */
 extern RJS_Result
 rjs_number_to_big_int (RJS_Runtime *rt, RJS_Number n, RJS_Value *v);
-
-/**
- * Create a new big integer.
- * \param rt The current runtime.
- * \param[out] v Return the big integer value.
- * \return The pointer to the big integer.
- */
-extern RJS_BigInt*
-rjs_big_int_new (RJS_Runtime *rt, RJS_Value *v);
 
 /**
  * Create the big integer from the NULL terminated characters.
@@ -145,8 +157,10 @@ rjs_big_int_bitwise_not (RJS_Runtime *rt, RJS_Value *v, RJS_Value *rv);
  * \param rt The current runtime.
  * \param v Input number.
  * \param[out] rv Return value.
+ * \retval RJS_OK On success.
+ * \retval RJS_ERR On error.
  */
-extern void
+extern RJS_Result
 rjs_big_int_inc (RJS_Runtime *rt, RJS_Value *v, RJS_Value *rv);
 
 /**
@@ -154,8 +168,10 @@ rjs_big_int_inc (RJS_Runtime *rt, RJS_Value *v, RJS_Value *rv);
  * \param rt The current runtime.
  * \param v Input number.
  * \param[out] rv Return value.
+ * \retval RJS_OK On success.
+ * \retval RJS_ERR On error.
  */
-extern void
+extern RJS_Result
 rjs_big_int_dec (RJS_Runtime *rt, RJS_Value *v, RJS_Value *rv);
 
 /**

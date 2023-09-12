@@ -74,6 +74,19 @@ big_int_new (RJS_Runtime *rt, RJS_Value *v)
     return bi;
 }
 
+/*Allocate a new big integer and initialize it.*/
+static RJS_BigInt*
+big_int_new_init (RJS_Runtime *rt, RJS_Value *v)
+{
+    RJS_BigInt *bi;
+
+    bi = big_int_new(rt, v);
+
+    mpz_init(&bi->mpz);
+
+    return bi;
+}
+
 /**
  * Convert the number to big integer.
  * \param rt The current runtime.
@@ -96,24 +109,6 @@ rjs_number_to_big_int (RJS_Runtime *rt, RJS_Number n, RJS_Value *v)
     mpz_init_set_d(&bi->mpz, n);
 
     return RJS_OK;
-}
-
-/**
- * Create a new big integer.
- * \param rt The current runtime.
- * \param[out] v Return the big integer value.
- * \return The pointer to the big integer.
- */
-RJS_BigInt*
-rjs_big_int_new (RJS_Runtime *rt, RJS_Value *v)
-{
-    RJS_BigInt *bi;
-
-    bi = big_int_new(rt, v);
-
-    mpz_init(&bi->mpz);
-
-    return bi;
 }
 
 /**
@@ -300,7 +295,7 @@ rjs_big_int_from_uint64 (RJS_Runtime *rt, RJS_Value *v, uint64_t i)
     }
 #endif /*SIZEOF_LIMB == 8*/
 
-return RJS_OK;
+    return RJS_OK;
 }
 
 /**
@@ -452,28 +447,6 @@ rjs_big_int_same_value (RJS_Runtime *rt, RJS_Value *v1, RJS_Value *v2)
 }
 
 /**
- * Check if 2 big integer values are equal. (_0 == -0)
- * \param rt The current runtime.
- * \param v1 Value 1.
- * \param v2 Value 2.
- * \retval RJS_TRUE v1 == v2.
- * \retval RJS_FALSE v1 != v2.
- */
-RJS_Bool
-rjs_big_int_same_value_0 (RJS_Runtime *rt, RJS_Value *v1, RJS_Value *v2)
-{
-    RJS_BigInt *bi1, *bi2;
-    int         r;
-
-    bi1 = rjs_value_get_big_int(rt, v1);
-    bi2 = rjs_value_get_big_int(rt, v2);
-
-    r = mpz_cmp(&bi1->mpz, &bi2->mpz);
-
-    return (r == 0);
-}
-
-/**
  * Check if the big integer is zero.
  * \param rt The current runtime.
  * \param v The value.
@@ -532,7 +505,7 @@ rjs_big_int_unary_minus (RJS_Runtime *rt, RJS_Value *v, RJS_Value *rv)
     RJS_BigInt *src, *dst;
 
     src = rjs_value_get_big_int(rt, v);
-    dst = rjs_big_int_new(rt, rv);
+    dst = big_int_new_init(rt, rv);
 
     mpz_neg(&dst->mpz, &src->mpz);
 
@@ -553,7 +526,7 @@ rjs_big_int_bitwise_not (RJS_Runtime *rt, RJS_Value *v, RJS_Value *rv)
     RJS_BigInt *src, *dst;
 
     src = rjs_value_get_big_int(rt, v);
-    dst = rjs_big_int_new(rt, rv);
+    dst = big_int_new_init(rt, rv);
 
     mpz_com(&dst->mpz, &src->mpz);
 
@@ -565,16 +538,20 @@ rjs_big_int_bitwise_not (RJS_Runtime *rt, RJS_Value *v, RJS_Value *rv)
  * \param rt The current runtime.
  * \param v Input number.
  * \param[out] rv Return value.
+ * \retval RJS_OK On success.
+ * \retval RJS_ERR On error.
  */
-void
+RJS_Result
 rjs_big_int_inc (RJS_Runtime *rt, RJS_Value *v, RJS_Value *rv)
 {
     RJS_BigInt *src, *dst;
 
     src = rjs_value_get_big_int(rt, v);
-    dst = rjs_big_int_new(rt, rv);
+    dst = big_int_new_init(rt, rv);
 
     mpz_add_ui(&dst->mpz, &src->mpz, 1);
+
+    return RJS_OK;
 }
 
 /**
@@ -582,16 +559,20 @@ rjs_big_int_inc (RJS_Runtime *rt, RJS_Value *v, RJS_Value *rv)
  * \param rt The current runtime.
  * \param v Input number.
  * \param[out] rv Return value.
+ * \retval RJS_OK On success.
+ * \retval RJS_ERR On error.
  */
-void
+RJS_Result
 rjs_big_int_dec (RJS_Runtime *rt, RJS_Value *v, RJS_Value *rv)
 {
     RJS_BigInt *src, *dst;
 
     src = rjs_value_get_big_int(rt, v);
-    dst = rjs_big_int_new(rt, rv);
+    dst = big_int_new_init(rt, rv);
 
     mpz_sub_ui(&dst->mpz, &src->mpz, 1);
+
+    return RJS_OK;
 }
 
 /**
@@ -610,7 +591,7 @@ rjs_big_int_add (RJS_Runtime *rt, RJS_Value *v1, RJS_Value *v2, RJS_Value *rv)
 
     src1 = rjs_value_get_big_int(rt, v1);
     src2 = rjs_value_get_big_int(rt, v2);
-    dst  = rjs_big_int_new(rt, rv);
+    dst  = big_int_new_init(rt, rv);
 
     mpz_add(&dst->mpz, &src1->mpz, &src2->mpz);
 
@@ -633,7 +614,7 @@ rjs_big_int_subtract (RJS_Runtime *rt, RJS_Value *v1, RJS_Value *v2, RJS_Value *
 
     src1 = rjs_value_get_big_int(rt, v1);
     src2 = rjs_value_get_big_int(rt, v2);
-    dst  = rjs_big_int_new(rt, rv);
+    dst  = big_int_new_init(rt, rv);
 
     mpz_sub(&dst->mpz, &src1->mpz, &src2->mpz);
 
@@ -656,7 +637,7 @@ rjs_big_int_multiply (RJS_Runtime *rt, RJS_Value *v1, RJS_Value *v2, RJS_Value *
 
     src1 = rjs_value_get_big_int(rt, v1);
     src2 = rjs_value_get_big_int(rt, v2);
-    dst  = rjs_big_int_new(rt, rv);
+    dst  = big_int_new_init(rt, rv);
 
     mpz_mul(&dst->mpz, &src1->mpz, &src2->mpz);
 
@@ -683,7 +664,7 @@ rjs_big_int_divide (RJS_Runtime *rt, RJS_Value *v1, RJS_Value *v2, RJS_Value *rv
     if (mpz_sgn(&src2->mpz) == 0)
         return rjs_throw_range_error(rt, _("cannot be divided by 0"));
 
-    dst  = rjs_big_int_new(rt, rv);
+    dst = big_int_new_init(rt, rv);
 
     mpz_tdiv_q(&dst->mpz, &src1->mpz, &src2->mpz);
 
@@ -710,7 +691,7 @@ rjs_big_int_remainder (RJS_Runtime *rt, RJS_Value *v1, RJS_Value *v2, RJS_Value 
     if (mpz_sgn(&src2->mpz) == 0)
         return rjs_throw_range_error(rt, _("cannot be divided by 0"));
 
-    dst = rjs_big_int_new(rt, rv);
+    dst = big_int_new_init(rt, rv);
 
     mpz_tdiv_r(&dst->mpz, &src1->mpz, &src2->mpz);
 
@@ -738,7 +719,7 @@ rjs_big_int_exponentiate (RJS_Runtime *rt, RJS_Value *v1, RJS_Value *v2, RJS_Val
     if (mpz_sgn(&src2->mpz) < 0)
         return rjs_throw_range_error(rt, _("exponent cannot < 0"));
 
-    dst  = rjs_big_int_new(rt, rv);
+    dst = big_int_new_init(rt, rv);
 
     exp = mpz_get_ui(&src2->mpz);
     mpz_pow_ui(&dst->mpz, &src1->mpz, exp);
@@ -763,7 +744,7 @@ rjs_big_int_left_shift (RJS_Runtime *rt, RJS_Value *v1, RJS_Value *v2, RJS_Value
 
     src1 = rjs_value_get_big_int(rt, v1);
     src2 = rjs_value_get_big_int(rt, v2);
-    dst  = rjs_big_int_new(rt, rv);
+    dst  = big_int_new_init(rt, rv);
 
     bits = mpz_get_si(&src2->mpz);
 
@@ -792,7 +773,7 @@ rjs_big_int_signed_right_shift (RJS_Runtime *rt, RJS_Value *v1, RJS_Value *v2, R
 
     src1 = rjs_value_get_big_int(rt, v1);
     src2 = rjs_value_get_big_int(rt, v2);
-    dst  = rjs_big_int_new(rt, rv);
+    dst  = big_int_new_init(rt, rv);
 
     bits = mpz_get_si(&src2->mpz);
 
@@ -835,7 +816,7 @@ rjs_big_int_bitwise_and (RJS_Runtime *rt, RJS_Value *v1, RJS_Value *v2, RJS_Valu
 
     src1 = rjs_value_get_big_int(rt, v1);
     src2 = rjs_value_get_big_int(rt, v2);
-    dst  = rjs_big_int_new(rt, rv);
+    dst  = big_int_new_init(rt, rv);
 
     mpz_and(&dst->mpz, &src1->mpz, &src2->mpz);
 
@@ -858,7 +839,7 @@ rjs_big_int_bitwise_xor (RJS_Runtime *rt, RJS_Value *v1, RJS_Value *v2, RJS_Valu
 
     src1 = rjs_value_get_big_int(rt, v1);
     src2 = rjs_value_get_big_int(rt, v2);
-    dst  = rjs_big_int_new(rt, rv);
+    dst  = big_int_new_init(rt, rv);
 
     mpz_xor(&dst->mpz, &src1->mpz, &src2->mpz);
 
@@ -881,7 +862,7 @@ rjs_big_int_bitwise_or (RJS_Runtime *rt, RJS_Value *v1, RJS_Value *v2, RJS_Value
 
     src1 = rjs_value_get_big_int(rt, v1);
     src2 = rjs_value_get_big_int(rt, v2);
-    dst  = rjs_big_int_new(rt, rv);
+    dst  = big_int_new_init(rt, rv);
 
     mpz_ior(&dst->mpz, &src1->mpz, &src2->mpz);
 
@@ -969,7 +950,7 @@ rjs_big_int_as_int_n (RJS_Runtime *rt, int64_t bits, RJS_Value *v, RJS_Value *rv
     mpz_t        tmp;
 
     src = rjs_value_get_big_int(rt, v);
-    dst = rjs_big_int_new(rt, rv);
+    dst = big_int_new_init(rt, rv);
 
     mpz_init(tmp);
     mpz_fdiv_r_2exp(tmp, &src->mpz, bits);
@@ -1008,7 +989,7 @@ rjs_big_int_as_uint_n (RJS_Runtime *rt, int64_t bits, RJS_Value *v, RJS_Value *r
     RJS_BigInt *src, *dst;
 
     src = rjs_value_get_big_int(rt, v);
-    dst = rjs_big_int_new(rt, rv);
+    dst = big_int_new_init(rt, rv);
 
     mpz_fdiv_r_2exp(&dst->mpz, &src->mpz, bits);
 
