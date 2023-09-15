@@ -82,7 +82,7 @@ static void
 show_help (char *cmd)
 {
     fprintf(stdout, _(
-            "Usage: %s [option]... FILE [js_options]...\n"
+            "Usage: %s [options] FILE [js_options]\n"
             "Options:\n"
 #if ENABLE_SCRIPT && ENABLE_MODULE
             "  -s               load the file as script\n"
