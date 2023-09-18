@@ -830,3 +830,67 @@ rjs_perform_proimise_then (RJS_Runtime *rt, RJS_Value *promisev, RJS_Value *fulf
 
     return RJS_OK;
 }
+
+/**
+ * Perform "then" operation of the promise.
+ * \param rt The current runtime.
+ * \param promise The promise.
+ * \param fulfill The fulfill callback.
+ * \param reject The reject callback.
+ * \param rv The return value.
+ * \retval RJS_OK On success.
+ * \retval RJS_ERR On error.
+ */
+RJS_Result
+rjs_promise_then (RJS_Runtime *rt, RJS_Value *promise, RJS_Value *fulfill, RJS_Value *reject, RJS_Value *rv)
+{
+    size_t     top = rjs_value_stack_save(rt);
+    RJS_Value *fcb = rjs_value_stack_push(rt);
+    RJS_Value *rcb = rjs_value_stack_push(rt);
+    RJS_Result r;
+
+    if (fulfill)
+        rjs_value_copy(rt, fcb, fulfill);
+
+    if (reject)
+        rjs_value_copy(rt, rcb, reject);
+
+    r = rjs_invoke(rt, promise, rjs_pn_then(rt), fcb, 2, rv);
+
+    rjs_value_stack_restore(rt, top);
+    return r;
+}
+
+/**
+ * Perform "then" operation of the promise with native functions.
+ * \param rt The current runtime.
+ * \param promise The promise.
+ * \param fulfill The fulfill callback.
+ * \param reject The reject callback.
+ * \param rv The return value.
+ * \retval RJS_OK On success.
+ * \retval RJS_ERR On error.
+ */
+RJS_Result
+rjs_promise_then_native (RJS_Runtime *rt, RJS_Value *promise, RJS_NativeFunc fulfill, RJS_NativeFunc reject, RJS_Value *rv)
+{
+    size_t     top = rjs_value_stack_save(rt);
+    RJS_Value *fcb = rjs_value_stack_push(rt);
+    RJS_Value *rcb = rjs_value_stack_push(rt);
+    RJS_Result r;
+
+    if (fulfill) {
+        if ((r = rjs_builtin_func_object_new(rt, fcb, NULL, NULL, NULL, fulfill, 0)) == RJS_ERR)
+            goto end;
+    }
+
+    if (reject) {
+        if ((r = rjs_builtin_func_object_new(rt, rcb, NULL, NULL, NULL, reject, 0)) == RJS_ERR)
+            goto end;
+    }
+
+    r = rjs_invoke(rt, promise, rjs_pn_then(rt), fcb, 2, rv);
+end:
+    rjs_value_stack_restore(rt, top);
+    return r;
+}

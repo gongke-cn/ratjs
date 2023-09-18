@@ -1025,22 +1025,10 @@ rjs_module_evaluate (RJS_Runtime *rt, RJS_Value *modv, RJS_Value *promise)
         }
     }
 
-    if (promise) {
+    if (promise)
         rjs_value_copy(rt, promise, mod->top_level_capability.promise);
 
-        r = RJS_OK;
-    } else {
-        while (mod->status != RJS_MODULE_STATUS_EVALUATED) {
-            if ((r = rjs_solve_events(rt)) == RJS_ERR)
-                goto end;
-        }
-
-        if (mod->eval_result == RJS_ERR)
-            rjs_throw(rt, &mod->eval_error);
-
-        r = mod->eval_result;
-    }
-end:
+    r = RJS_OK;
     rjs_value_stack_restore(rt, top);
     return r;
 }
@@ -1868,6 +1856,56 @@ rjs_module_import_meta (RJS_Runtime *rt, RJS_Value *modv, RJS_Value *v)
 
     rjs_value_copy(rt, v, &mod->import_meta);
     return RJS_OK;
+}
+
+/**
+ * Load all the export values of the module to the object.
+ * \param rt The current runtime.
+ * \param modv The module value.
+ * \param o The object to store the export values.
+ * \retval RJS_OK On success.
+ * \retval RJS_ERR On error.
+ */
+RJS_Result
+rjs_module_load_exports (RJS_Runtime *rt, RJS_Value *modv, RJS_Value *o)
+{
+    RJS_Module      *mod;
+    RJS_ExportEntry *ee;
+    size_t           i;
+    RJS_Result       r;
+    size_t           top = rjs_value_stack_save(rt);
+    RJS_Value       *key = rjs_value_stack_push(rt);
+    RJS_Value       *ev  = rjs_value_stack_push(rt);
+
+    assert(rjs_value_is_module(rt, modv));
+
+    mod = rjs_value_get_gc_thing(rt, modv);
+
+    assert(mod->status == RJS_MODULE_STATUS_EVALUATED);
+
+    rjs_hash_foreach_c(&mod->export_hash, i, ee, RJS_ExportEntry, he) {
+        RJS_BindingName  bn;
+        RJS_PropertyName pn;
+
+        rjs_value_set_string(rt, key, ee->he.key);
+
+        rjs_binding_name_init(rt, &bn, key);
+        r = rjs_env_get_binding_value(rt, mod->env, &bn, RJS_TRUE, ev);
+        rjs_binding_name_deinit(rt, &bn);
+        if (r == RJS_ERR)
+            goto end;
+
+        rjs_property_name_init(rt, &pn, key);
+        r = rjs_create_data_property_or_throw(rt, o, &pn, ev);
+        rjs_property_name_deinit(rt, &pn);
+        if (r == RJS_ERR)
+            goto end;
+    }
+
+    r = RJS_OK;
+end:
+    rjs_value_stack_restore(rt, top);
+    return r;
 }
 
 /**

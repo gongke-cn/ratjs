@@ -81,6 +81,21 @@ typedef struct {
 extern RJS_Result
 rjs_promise_new (RJS_Runtime *rt, RJS_Value *v, RJS_Value *exec, RJS_Value *new_target);
 
+/**
+ * Perform promise then operation.
+ * \param rt The current runtime.
+ * \param promise The promise.
+ * \param fulfill On fulfill callback function.
+ * \param reject On reject callback function.
+ * \param result_pc Result promise capability.
+ * \param[out] rpromise The result promise.
+ * \retval RJS_OK On success.
+ * \retval RJS_ERR On error.
+ */
+extern RJS_Result
+rjs_perform_proimise_then (RJS_Runtime *rt, RJS_Value *promise, RJS_Value *fulfill, RJS_Value *reject,
+        RJS_PromiseCapability *result_pc, RJS_Value *rpromise);
+
 #ifdef __cplusplus
 }
 #endif

@@ -67,8 +67,16 @@ typedef struct {
 
 /*Module lookup directory list.*/
 static RJS_List     module_dir_list;
-
+/*Module evaluation result.*/
+static RJS_Result   module_eval_result;
+/*Module evaluation return value.*/
+static RJS_Value   *module_eval_rv;
 #endif /*ENABLE_MODULE*/
+
+/*Main function's result.*/
+static RJS_Result   main_result;
+/*Main function's retuen value.*/
+static RJS_Value   *main_rv;
 
 /*Show version information.*/
 static void
@@ -89,6 +97,7 @@ show_help (char *cmd)
 #endif /*ENABLE_SCRIPT && ENABLE_MODULE*/
 #if ENABLE_MODULE
             "  -m DIR           add module lookup directory\n"
+            "  -l MODULE        load a module ans add its exports to global object\n"
 #endif /*ENABLE_MODULE*/
 #if ENABLE_SCRIPT
             "  -i FILE          include a script file\n"
@@ -201,6 +210,72 @@ module_dir_add (const char *dir)
     rjs_list_append(&module_dir_list, &md->ln);
 }
 
+/*Module evaluation ok callback.*/
+static RJS_NF(on_module_eval_ok)
+{
+    RJS_Value *arg = rjs_argument_get(rt, args, argc, 0);
+
+    rjs_value_copy(rt, module_eval_rv, arg);
+    rjs_value_set_undefined(rt, rv);
+    module_eval_result = RJS_OK;
+    return RJS_OK;
+}
+
+/*Module evaluation error callback.*/
+static RJS_NF(on_module_eval_error)
+{
+    RJS_Value *arg = rjs_argument_get(rt, args, argc, 0);
+
+    rjs_value_copy(rt, module_eval_rv, arg);
+    rjs_value_set_undefined(rt, rv);
+    module_eval_result = RJS_ERR;
+    return RJS_OK;
+}
+
+/*Load a module's exports to the global object.*/
+static RJS_Result
+module_load (const char *name)
+{
+    size_t     top     = rjs_value_stack_save(rt);
+    RJS_Value *str     = rjs_value_stack_push(rt);
+    RJS_Value *mod     = rjs_value_stack_push(rt);
+    RJS_Value *promise = rjs_value_stack_push(rt);
+    RJS_Value *res     = rjs_value_stack_push(rt);
+    RJS_Realm *realm   = rjs_realm_current(rt);
+    RJS_Result r;
+
+    rjs_string_from_enc_chars(rt, str, name, -1, NULL);
+
+    if ((r = rjs_resolve_imported_module(rt, NULL, str, mod)) == RJS_ERR)
+        goto end;
+
+    if ((r = rjs_module_link(rt, mod)) == RJS_ERR)
+        goto end;
+
+    module_eval_result = 0;
+    module_eval_rv     = res;
+
+    if ((r = rjs_module_evaluate(rt, mod, promise)) == RJS_ERR)
+        goto end;
+
+    if ((r = rjs_promise_then_native(rt, promise, on_module_eval_ok, on_module_eval_error, NULL)) == RJS_ERR)
+        goto end;
+
+    while (module_eval_result == 0)
+        rjs_solve_jobs(rt);
+
+    if (module_eval_result == RJS_ERR) {
+        rjs_throw(rt, res);
+        r = RJS_ERR;
+        goto end;
+    }
+
+    r = rjs_module_load_exports(rt, mod, rjs_global_object(realm));
+end:
+    rjs_value_stack_restore(rt, top);
+    return r;
+}
+
 #endif /*ENABLE_MODULE*/
 
 /*Dump the error message.*/
@@ -225,8 +300,9 @@ static RJS_Result
 parse_options (int argc, char **argv)
 {
     while (1) {
-        int c;
-        int opt_idx;
+        int        c;
+        int        opt_idx;
+        RJS_Result r;
 
         enum {
             OPT_HELP = 256,
@@ -240,7 +316,7 @@ parse_options (int argc, char **argv)
                 "s"
 #endif /*ENABLE_SCRIPT && ENABLE_MODULE*/
 #if ENABLE_MODULE
-                "m:"
+                "l:m:"
 #endif /*ENABLE_MODULE*/
 #if ENABLE_SCRIPT
                 "i:"
@@ -271,13 +347,18 @@ parse_options (int argc, char **argv)
         case 'm':
             module_dir_add(optarg);
             break;
+        case 'l':
+            if ((r = module_load(optarg)) == RJS_ERR) {
+                dump_error();
+                return r;
+            }
+            break;
 #endif /*ENABLE_MODULE*/
 #if ENABLE_SCRIPT
         case 'i': {
             size_t      top    = rjs_value_stack_save(rt);
             RJS_Value  *script = rjs_value_stack_push(rt);
             RJS_Realm  *realm  = rjs_realm_current(rt);
-            RJS_Result  r;
 
             if ((r = rjs_script_from_file(rt, script, optarg, realm, RJS_FALSE)) == RJS_ERR)
                 return r;
@@ -341,6 +422,28 @@ parse_options (int argc, char **argv)
     if (optind < argc)
         js_filename = argv[optind];
 
+    return RJS_OK;
+}
+
+/*Main function ok callback.*/
+static RJS_NF(on_main_ok)
+{
+    RJS_Value *arg = rjs_argument_get(rt, args, argc, 0);
+
+    rjs_value_copy(rt, main_rv, arg);
+    rjs_value_set_undefined(rt, rv);
+    main_result = RJS_OK;
+    return RJS_OK;
+}
+
+/*Main function error callback.*/
+static RJS_NF(on_main_error)
+{
+    RJS_Value *arg = rjs_argument_get(rt, args, argc, 0);
+
+    rjs_value_copy(rt, main_rv, arg);
+    rjs_value_set_undefined(rt, rv);
+    main_result = RJS_ERR;
     return RJS_OK;
 }
 
@@ -455,17 +558,42 @@ main (int argc, char **argv)
             if (!compile_only) {
                 RJS_Environment *env;
                 RJS_BindingName  bn;
+                RJS_Value       *promise;
 
+                /*Link the module.*/
                 if ((r = rjs_module_link(rt, exec)) == RJS_ERR) {
                     dump_error();
                     goto end;
                 }
 
-                if ((r = rjs_module_evaluate(rt, exec, rv)) == RJS_ERR) {
+                /*Evaluate the module.*/
+                promise = rjs_value_stack_push(rt);
+
+                module_eval_result = 0;
+                module_eval_rv     = rv;
+
+                if ((r = rjs_module_evaluate(rt, exec, promise)) == RJS_ERR) {
                     dump_error();
                     goto end;
                 }
 
+                /*Wait the evaluation end.*/
+                if ((r = rjs_promise_then_native(rt, promise, on_module_eval_ok,
+                        on_module_eval_error, NULL)) == RJS_ERR) {
+                    dump_error();
+                    goto end;
+                }
+
+                while (module_eval_result == 0)
+                    rjs_solve_jobs(rt);
+
+                if (module_eval_result == RJS_ERR) {
+                    rjs_throw(rt, rv);
+                    dump_error();
+                    goto end;
+                }
+
+                /*Get "main" binding.*/
                 env = rjs_module_get_env(rt, exec);
 
                 rjs_binding_name_init(rt, &bn, main_str);
@@ -497,7 +625,7 @@ main (int argc, char **argv)
 
             /*Run the script.*/
             if (!compile_only) {
-                if ((r = rjs_script_evaluation(rt, exec, rv)) == RJS_ERR) {
+                if ((r = rjs_script_evaluation(rt, exec, NULL)) == RJS_ERR) {
                     dump_error();
                     goto end;
                 }
@@ -533,6 +661,30 @@ main (int argc, char **argv)
             dump_error();
             goto end;
         }
+
+        /*Wait main function.*/
+        if (rjs_value_is_promise(rt, rv)) {
+            RJS_Value *promise = rjs_value_stack_push(rt);
+
+            rjs_value_copy(rt, promise, rv);
+
+            main_result = 0;
+            main_rv     = rv;
+
+            if ((r = rjs_promise_then_native(rt, promise, on_main_ok, on_main_error, NULL)) == RJS_ERR) {
+                dump_error();
+                goto end;
+            }
+
+            while (main_result == 0)
+                rjs_solve_jobs(rt);
+
+            if (main_result == RJS_ERR) {
+                rjs_throw(rt, rv);
+                dump_error();
+                goto end;
+            }
+        }
     }
 
     if (rjs_value_is_number(rt, rv))
@@ -540,7 +692,7 @@ main (int argc, char **argv)
     else
         ec = 0;
 
-    rjs_solve_events(rt);
+    rjs_solve_jobs(rt);
     dump_error();
 end:
     /*Release property name "main".*/

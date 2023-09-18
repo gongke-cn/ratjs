@@ -94,7 +94,6 @@ rjs_runtime_new (void)
     rt->error_ip      = 0;
     rt->error_flag    = RJS_FALSE;
     rt->error_context = NULL;
-    rt->event_func    = NULL;
     rt->mod_path_func = NULL;
 
     rjs_native_data_init(&rt->native_data);
@@ -229,21 +228,6 @@ rjs_runtime_get_data (RJS_Runtime *rt)
 }
 
 /**
- * Set the solve event function.
- * \param rt The current runtime.
- * \param fn The function.
- * \retval RJS_OK On success.
- * \retval RJS_ERR On error.
- */
-RJS_Result
-rjs_set_event_func (RJS_Runtime *rt, RJS_EventFunc fn)
-{
-    rt->event_func = fn;
-
-    return RJS_OK;
-}
-
-/**
  * Set the module pathname function.
  * \param rt The current runtime.
  * \param fn The function.
@@ -256,25 +240,4 @@ rjs_set_module_path_func (RJS_Runtime *rt, RJS_ModulePathFunc fn)
     rt->mod_path_func = fn;
 
     return RJS_OK;
-}
-
-/**
- * Sovle the events.
- * \param rt The current runtime.
- * \retval RJS_OK On success.
- * \retval RJS_ERR On error.
- */
-RJS_Result
-rjs_solve_events (RJS_Runtime *rt)
-{
-    RJS_Result r;
-
-    rjs_solve_jobs(rt);
-
-    if (rt->event_func)
-        r = rt->event_func(rt);
-    else
-        r = RJS_OK;
-
-    return r;
 }

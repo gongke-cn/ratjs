@@ -57,6 +57,13 @@ rjs_job_enqueue (RJS_Runtime *rt, RJS_JobFunc func, RJS_Realm *realm,
         RJS_ScanFunc scan, RJS_FreeFunc free, void *data);
 
 /**
+ * Resolve all the jobs in queue.
+ * \param rt The current runtime.
+ */
+extern void
+rjs_solve_jobs (RJS_Runtime *rt);
+
+/**
  * @}
  */
 

@@ -192,12 +192,22 @@ rjs_module_link (RJS_Runtime *rt, RJS_Value *mod);
  * \param rt The current runtime.
  * \param mod The module.
  * \param[out] promise Return the evaluation promise.
- * If promise is NULL, the function will waiting until the module evaluated.
  * \retval RJS_OK On success.
  * \retval RJS_ERR On error.
  */
 extern RJS_Result
 rjs_module_evaluate (RJS_Runtime *rt, RJS_Value *mod, RJS_Value *promise);
+
+/**
+ * Load all the export values of the module to the object.
+ * \param rt The current runtime.
+ * \param mod The module.
+ * \param o The object to store the export values.
+ * \retval RJS_OK On success.
+ * \retval RJS_ERR On error.
+ */
+extern RJS_Result
+rjs_module_load_exports (RJS_Runtime *rt, RJS_Value *mod, RJS_Value *o);
 
 /**
  * Set the module's native data.

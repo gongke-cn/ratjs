@@ -46,13 +46,6 @@ typedef struct {
 } RJS_Job;
 
 /**
- * Resolve all the jobs in queue.
- * \param rt The current runtime.
- */
-extern void
-rjs_solve_jobs (RJS_Runtime *rt);
-
-/**
  * Initialize the jobs queue in the rt.
  * \param rt The current runtime.
  */

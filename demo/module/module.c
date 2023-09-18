@@ -80,12 +80,31 @@ module_path_check (RJS_Runtime *rt, const char *base,
     return RJS_OK;
 }
 
+/*Module evaluation result.*/
+static int module_result = 0;
+
+/*Callback function invoked when module evaluate ok.*/
+static RJS_NF(on_module_ok)
+{
+    rjs_value_set_undefined(rt, rv);
+    module_result = 1;
+    return RJS_OK;
+}
+
+/*Callback function invoked when module evaluate error.*/
+static RJS_NF(on_module_error)
+{
+    rjs_value_set_undefined(rt, rv);
+    module_result = -1;
+    return RJS_OK;
+}
+
 int
 main (int argc, char **argv)
 {
     RJS_Runtime *rt;
     size_t       top;
-    RJS_Value   *modv;
+    RJS_Value   *modv, *promisev;
     RJS_Result   r;
     char        *mod_name;
     int          rc = 1;
@@ -125,12 +144,26 @@ main (int argc, char **argv)
         goto end;
     }
 
+    /*Allocate a value from native value stack to store the module evaluation promise.*/
+    promisev = rjs_value_stack_push(rt);
+
     /*Execute the module.*/
-    r = rjs_module_evaluate(rt, modv, NULL);
+    r = rjs_module_evaluate(rt, modv, promisev);
     if (r == RJS_ERR) {
         fprintf(stderr, "module evalute failed\n");
         goto end;
     }
+
+    /*Set the promise then callback functions.*/
+    r = rjs_promise_then_native(rt, promisev, on_module_ok, on_module_error, NULL);
+    if (r == RJS_ERR) {
+        fprintf(stderr, "rjs_promise_then_native failed\n");
+        goto end;
+    }
+
+    /*Wait until the module loaded.*/
+    while (module_result == 0)
+        rjs_solve_jobs(rt);
 
     /*
      * Restore the native stack's top pointer.

@@ -87,16 +87,6 @@ extern RJS_Result
 rjs_set_agent_can_block (RJS_Runtime *rt, RJS_Bool f);
 
 /**
- * Set the solve event function.
- * \param rt The current runtime.
- * \param fn The function.
- * \retval RJS_OK On success.
- * \retval RJS_ERR On error.
- */
-extern RJS_Result
-rjs_set_event_func (RJS_Runtime *rt, RJS_EventFunc fn);
-
-/**
  * Set the module pathname function.
  * \param rt The current runtime.
  * \param fn The function.
@@ -105,15 +95,6 @@ rjs_set_event_func (RJS_Runtime *rt, RJS_EventFunc fn);
  */
 extern RJS_Result
 rjs_set_module_path_func (RJS_Runtime *rt, RJS_ModulePathFunc fn);
-
-/**
- * Sovle the events.
- * \param rt The current runtime.
- * \retval RJS_OK On success.
- * \retval RJS_ERR On error.
- */
-extern RJS_Result
-rjs_solve_events (RJS_Runtime *rt);
 
 /**
  * Get the value undefined.

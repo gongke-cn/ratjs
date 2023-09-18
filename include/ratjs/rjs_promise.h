@@ -121,19 +121,30 @@ extern RJS_Result
 rjs_promise_resolve (RJS_Runtime *rt, RJS_Value *constr, RJS_Value *v, RJS_Value *promise);
 
 /**
- * Perform promise then operation.
+ * Perform "then" operation of the promise.
  * \param rt The current runtime.
  * \param promise The promise.
- * \param fulfill On fulfill callback function.
- * \param reject On reject callback function.
- * \param result_pc Result promise capability.
- * \param[out] rpromise The result promise.
+ * \param fulfill The fulfill callback.
+ * \param reject The reject callback.
+ * \param rv The return value.
  * \retval RJS_OK On success.
  * \retval RJS_ERR On error.
  */
 extern RJS_Result
-rjs_perform_proimise_then (RJS_Runtime *rt, RJS_Value *promise, RJS_Value *fulfill, RJS_Value *reject,
-        RJS_PromiseCapability *result_pc, RJS_Value *rpromise);
+rjs_promise_then (RJS_Runtime *rt, RJS_Value *promise, RJS_Value *fulfill, RJS_Value *reject, RJS_Value *rv);
+
+/**
+ * Perform "then" operation of the promise with native functions.
+ * \param rt The current runtime.
+ * \param promise The promise.
+ * \param fulfill The fulfill callback.
+ * \param reject The reject callback.
+ * \param rv The return value.
+ * \retval RJS_OK On success.
+ * \retval RJS_ERR On error.
+ */
+extern RJS_Result
+rjs_promise_then_native (RJS_Runtime *rt, RJS_Value *promise, RJS_NativeFunc fulfill, RJS_NativeFunc reject, RJS_Value *rv);
 
 /**
  * @}

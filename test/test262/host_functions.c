@@ -699,7 +699,7 @@ int
 async_wait (RJS_Runtime *rt)
 {
     while (!async_end)
-        rjs_solve_events(rt);
+        rjs_solve_jobs(rt);
 
     if (async_end == -1)
         return -1;
