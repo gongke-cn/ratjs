@@ -292,6 +292,56 @@ end:
     return r;
 }
 
+/*Get the environemt variable.*/
+static RJS_NF(ext_getenv)
+{
+    RJS_Value  *name = rjs_argument_get(rt, args, argc, 0);
+    size_t      top  = rjs_value_stack_save(rt);
+    RJS_Value  *nstr = rjs_value_stack_push(rt);
+    const char *ncstr;
+    char       *rcstr;
+    RJS_Result  r;
+
+    if ((r = rjs_to_string(rt, name, nstr)) == RJS_ERR)
+        goto end;
+
+    ncstr = rjs_string_to_enc_chars(rt, nstr, NULL, NULL);
+    rcstr = getenv(ncstr);
+
+    if (!rcstr) {
+        rjs_value_set_undefined(rt, rv);
+        r = RJS_OK;
+    } else {
+        r = rjs_string_from_enc_chars(rt, rv, rcstr, -1, NULL);
+    }
+end:
+    rjs_value_stack_restore(rt, top);
+    return r;
+}
+
+/*Run system command.*/
+static RJS_NF(ext_system)
+{ 
+    RJS_Value  *cmd  = rjs_argument_get(rt, args, argc, 0);
+    size_t      top  = rjs_value_stack_save(rt);
+    RJS_Value  *str  = rjs_value_stack_push(rt);
+    const char *cstr;
+    RJS_Result  r;
+
+    if ((r = rjs_to_string(rt, cmd, str)) == RJS_ERR)
+        goto end;
+
+    cstr = rjs_string_to_enc_chars(rt, str, NULL, NULL);
+
+    r = system(cstr);
+
+    rjs_value_set_number(rt, rv, r);
+    r = RJS_OK;
+end:
+    rjs_value_stack_restore(rt, top);
+    return r;
+}
+
 /*Extension functions description.*/
 static const RJS_BuiltinFuncDesc
 ext_function_descs[] = {
@@ -344,6 +394,16 @@ ext_function_descs[] = {
         "chmod",
         2,
         ext_chmod
+    },
+    {
+        "getenv",
+        1,
+        ext_getenv
+    },
+    {
+        "system",
+        1,
+        ext_system
     },
     {NULL}
 };
@@ -847,6 +907,177 @@ end:
     return r;
 }
 
+/*File.prototype.getChar*/
+static RJS_NF(File_prototype_getChar)
+{
+    RJS_File  *file;
+    RJS_Result r;
+    int        c;
+
+    if (rjs_native_object_get_tag(rt, thiz) != file_tag) {
+        r = rjs_throw_type_error(rt, _("the object is not a file"));
+        goto end;
+    }
+
+    file = rjs_native_object_get_data(rt, thiz);
+    if (!file->fp) {
+        r = rjs_throw_type_error(rt, _("the file is closed"));
+        goto end;
+    }
+
+    c = fgetc(file->fp);
+    if (c == EOF) {
+        rjs_value_set_undefined(rt, rv);
+    } else {
+        rjs_value_set_number(rt, rv, c);
+    }
+
+    r = RJS_OK;
+end:
+    return r;
+}
+
+/*File.prototype.putChar*/
+static RJS_NF(File_prototype_putChar)
+{
+    RJS_Value *chr = rjs_argument_get(rt, args, argc, 0);
+    int32_t    i;
+    RJS_File  *file;
+    RJS_Result r;
+
+    if (rjs_native_object_get_tag(rt, thiz) != file_tag) {
+        r = rjs_throw_type_error(rt, _("the object is not a file"));
+        goto end;
+    }
+
+    file = rjs_native_object_get_data(rt, thiz);
+    if (!file->fp) {
+        r = rjs_throw_type_error(rt, _("the file is closed"));
+        goto end;
+    }
+
+    if ((r = rjs_to_int32(rt, chr, &i)) == RJS_ERR)
+        goto end;
+
+    r = fputc(i, file->fp);
+    if (r == EOF) {
+        r = rjs_throw_type_error(rt, _("futc failed: %s"), strerror(errno));
+        goto end;
+    }
+    
+    r = RJS_OK;
+end:
+    return r;
+}
+
+/*File.prototype.getString*/
+static RJS_NF(File_prototype_getString)
+{
+    RJS_Value     *enc  = rjs_argument_get(rt, args, argc, 0);
+    size_t         top  = rjs_value_stack_save(rt);
+    RJS_Value     *estr = rjs_value_stack_push(rt);
+    const char    *ecstr;
+    RJS_File      *file;
+    RJS_Result     r;
+    int            c;
+    RJS_CharBuffer cb;
+
+    rjs_char_buffer_init(rt, &cb);
+
+    if (rjs_native_object_get_tag(rt, thiz) != file_tag) {
+        r = rjs_throw_type_error(rt, _("the object is not a file"));
+        goto end;
+    }
+
+    file = rjs_native_object_get_data(rt, thiz);
+    if (!file->fp) {
+        r = rjs_throw_type_error(rt, _("the file is closed"));
+        goto end;
+    }
+
+    if (argc > 0) {
+        if ((r = rjs_to_string(rt, enc, estr)) == RJS_ERR)
+            goto end;
+
+        ecstr = rjs_string_to_enc_chars(rt, estr, NULL, NULL);
+    } else {
+        ecstr = NULL;
+    }
+
+    while (1) {
+        c = fgetc(file->fp);
+        if (c == EOF)
+            break;
+
+        rjs_char_buffer_append_char(rt, &cb, c);
+
+        if (c == '\n')
+            break;
+    }
+
+    r = rjs_string_from_enc_chars(rt, rv, cb.items, cb.item_num, ecstr);
+end:
+    rjs_char_buffer_deinit(rt, &cb);
+    rjs_value_stack_restore(rt, top);
+    return r;
+}
+
+/*File.prototype.putString*/
+static RJS_NF(File_prototype_putString)
+{
+    RJS_Value     *pv   = rjs_argument_get(rt, args, argc, 0);
+    RJS_Value     *enc  = rjs_argument_get(rt, args, argc, 1);
+    size_t         top  = rjs_value_stack_save(rt);
+    RJS_Value     *pstr = rjs_value_stack_push(rt);
+    RJS_Value     *estr = rjs_value_stack_push(rt);
+    const char    *pcstr, *ecstr;
+    RJS_CharBuffer pcb, ecb;
+    RJS_File      *file;
+    size_t         n;
+    RJS_Result     r;
+
+    rjs_char_buffer_init(rt, &pcb);
+    rjs_char_buffer_init(rt, &ecb);
+
+    if (rjs_native_object_get_tag(rt, thiz) != file_tag) {
+        r = rjs_throw_type_error(rt, _("the object is not a file"));
+        goto end;
+    }
+
+    file = rjs_native_object_get_data(rt, thiz);
+    if (!file->fp) {
+        r = rjs_throw_type_error(rt, _("the file is closed"));
+        goto end;
+    }
+
+    if ((r = rjs_to_string(rt, pv, pstr)) == RJS_ERR)
+        goto end;
+
+    if (argc > 1) {
+        if ((r = rjs_to_string(rt, enc, estr)) == RJS_ERR)
+            goto end;
+
+        ecstr = rjs_string_to_enc_chars(rt, estr, &ecb, NULL);
+    } else {
+        ecstr = NULL;
+    }
+
+    pcstr = rjs_string_to_enc_chars(rt, pstr, &pcb, ecstr);
+
+    n = fwrite(pcstr, 1, pcb.item_num, file->fp);
+    if (n != pcb.item_num) {
+        r = rjs_throw_type_error(rt, _("fwrite failed: %s"), strerror(errno));
+        goto end;
+    }
+
+    r = RJS_OK;
+end:
+    rjs_char_buffer_deinit(rt, &pcb);
+    rjs_char_buffer_deinit(rt, &ecb);
+    rjs_value_stack_restore(rt, top);
+    return r;
+}
+
 static const RJS_BuiltinFuncDesc
 file_prototype_function_descs[] = {
 #if ENABLE_ARRAY_BUFFER
@@ -875,6 +1106,26 @@ file_prototype_function_descs[] = {
         "close",
         0,
         File_prototype_close
+    },
+    {
+        "getChar",
+        0,
+        File_prototype_getChar
+    },
+    {
+        "putChar",
+        1,
+        File_prototype_putChar
+    },
+    {
+        "getString",
+        0,
+        File_prototype_getString
+    },
+    {
+        "putString",
+        1,
+        File_prototype_putString
     },
     {NULL}
 };
