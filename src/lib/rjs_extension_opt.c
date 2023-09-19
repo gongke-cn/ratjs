@@ -342,6 +342,24 @@ end:
     return r;
 }
 
+/*Get current work directory.*/
+static RJS_NF(ext_getcwd)
+{
+    char        buf[PATH_MAX];
+    const char *cstr;
+    RJS_Result  r;
+
+    cstr = getcwd(buf, sizeof(buf));
+    if (!cstr) {
+        r = rjs_throw_type_error(rt, _("getcwd failed: %s"), strerror(errno));
+        goto end;
+    }
+
+    r = rjs_string_from_enc_chars(rt, rv, cstr, -1, NULL);
+end:
+    return r;
+}
+
 /*Extension functions description.*/
 static const RJS_BuiltinFuncDesc
 ext_function_descs[] = {
@@ -404,6 +422,11 @@ ext_function_descs[] = {
         "system",
         1,
         ext_system
+    },
+    {
+        "getcwd",
+        0,
+        ext_getcwd
     },
     {NULL}
 };
