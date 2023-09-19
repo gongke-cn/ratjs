@@ -323,7 +323,8 @@ rjs_dump_error_stack (RJS_Runtime *rt, FILE *fp)
             if (sc->script_func) {
                 int line;
 
-                line = rjs_function_get_line(rt, sc->script, sc->script_func, sc->ip);
+                line = rjs_function_get_line(rt, sc->script, sc->script_func,
+                        sc->ip - sc->script_func->byte_code_start);
 
                 fprintf(fp, "line %d", line);
             }
