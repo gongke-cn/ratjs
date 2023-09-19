@@ -548,7 +548,7 @@ demo-clean:
 
 install: uninstall
 	$(info INSTALL)
-	$(Q)install -m 644 -s $(LIBRATJS_SLIB) $(INSTALL_PREFIX)/lib
+	$(Q)install -m 644 $(LIBRATJS_SLIB) $(INSTALL_PREFIX)/lib
 	$(Q)O=$(O) SO_MAJOR_VERSION=$(SO_MAJOR_VERSION) SO_MINOR_VERSION=$(SO_MINOR_VERSION) SO_MICRO_VERSION=$(SO_MICRO_VERSION) INSTALL_PREFIX=$(INSTALL_PREFIX) ./build/install_dlib_$(ARCH).sh
 	$(Q)install -m 755 -s $(RATJS) $(INSTALL_PREFIX)/bin
 	$(Q)install -m 644 include/ratjs.h $(INSTALL_PREFIX)/include
