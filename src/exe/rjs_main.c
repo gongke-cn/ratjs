@@ -141,14 +141,56 @@ is_rel_name (const char *name)
     return RJS_FALSE;
 }
 
+/*Check if the module exist.*/
+static RJS_Result
+module_exist (char *path, size_t size)
+{
+    struct stat sb;
+    int         r;
+    size_t      len, space;
+
+    if ((r = stat(path, &sb)) != -1)
+        return RJS_OK;
+
+    len = strlen(path);
+    if ((len >= 3) && !strcasecmp(path + len - 3, ".js"))
+        return RJS_FALSE;
+    if ((len >= 4) && !strcasecmp(path + len - 4, ".njs"))
+        return RJS_FALSE;
+    if ((len >= 5) && !strcasecmp(path + len - 5, ".json"))
+        return RJS_FALSE;
+
+    space = size - len;
+
+    if (space > 4) {
+        snprintf(path + len, size - len, ".njs");
+
+        if ((r = stat(path, &sb)) != -1)
+            return RJS_OK;
+    }
+
+    if (space > 3) {
+        snprintf(path + len, size - len, ".js");
+
+        if ((r = stat(path, &sb)) != -1)
+            return RJS_OK;
+    }
+    
+    if (space > 5) {
+        snprintf(path + len, size - len, ".json");
+
+        if ((r = stat(path, &sb)) != -1)
+            return RJS_OK;
+    }
+
+    return RJS_FALSE;
+}
+
 /*Module pathname lookup function.*/
 static RJS_Result
 module_path_func (RJS_Runtime *rt, const char *base, const char *name,
         char *path, size_t size)
 {
-    struct stat sb;
-    int         r;
-
     if (base && is_rel_name(name)) {
         char  bpbuf[PATH_MAX];
         char *bpath;
@@ -158,7 +200,7 @@ module_path_func (RJS_Runtime *rt, const char *base, const char *name,
 
         snprintf(path, size, "%s/%s", bpath, name);
 
-        if ((r = stat(path, &sb)) != -1)
+        if (module_exist(path, size) == RJS_OK)
             return RJS_OK;
     } else {
         ModuleDirectory *md;
@@ -166,7 +208,7 @@ module_path_func (RJS_Runtime *rt, const char *base, const char *name,
         rjs_list_foreach_c(&module_dir_list, md, ModuleDirectory, ln) {
             snprintf(path, size, "%s/%s", md->dir, name);
 
-            if ((r = stat(path, &sb)) != -1)
+            if (module_exist(path, size) == RJS_OK)
                 return RJS_OK;
         }
     }
