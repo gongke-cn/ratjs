@@ -38,7 +38,7 @@ RATJS是一个用C语言实现的小型javascript/ecmascript解释器。你可�
 ## 依赖
 
 * [icu4c](http://icu-project.org/download/latest_milestone.html): 当配置选项设置 ENC_CONV=icu 后需要此库
-* [gmp](http://gmplib.org): 当配置选项设置 ENABLE_BIG_INT=1 后需要此库
+* [gmp](http://gmplib.org): 当配置选项设置 ENABLE_BIG_INT=gmp 后需要此库
 
 ## 构建
 

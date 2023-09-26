@@ -38,7 +38,7 @@ RATJS is a small javascript/ecmascript interpreter written in C. You can use it 
 ## Dependence
 
 * [icu4c](http://icu-project.org/download/latest_milestone.html): Required if configured with ENC_CONV=icu
-* [gmp](http://gmplib.org): Required if configured with ENABLE_BIG_INT=1
+* [gmp](http://gmplib.org): Required if configured with ENABLE_BIG_INT=gmp
 
 ## Build
 
