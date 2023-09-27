@@ -52,12 +52,14 @@ end:
 /*Print to stdout.*/
 static RJS_NF(ext_print)
 {
+    rjs_value_set_undefined(rt, rv);
     return print_to_file(rt, args, argc, stdout);
 }
 
 /*Print to stderr.*/
 static RJS_NF(ext_prerr)
 {
+    rjs_value_set_undefined(rt, rv);
     return print_to_file(rt, args, argc, stderr);
 }
 
@@ -170,6 +172,7 @@ static RJS_NF(ext_rename)
         goto end;
     }
 
+    rjs_value_set_undefined(rt, rv);
     r = RJS_OK;
 end:
     rjs_char_buffer_deinit(rt, &ocb);
@@ -197,6 +200,7 @@ static RJS_NF(ext_unlink)
         goto end;
     }
 
+    rjs_value_set_undefined(rt, rv);
     r = RJS_OK;
 end:
     rjs_value_stack_restore(rt, top);
@@ -222,6 +226,7 @@ static RJS_NF(ext_rmdir)
         goto end;
     }
 
+    rjs_value_set_undefined(rt, rv);
     r = RJS_OK;
 end:
     rjs_value_stack_restore(rt, top);
@@ -256,6 +261,7 @@ static RJS_NF(ext_mkdir)
         goto end;
     }
 
+    rjs_value_set_undefined(rt, rv);
     r = RJS_OK;
 end:
     rjs_value_stack_restore(rt, top);
@@ -286,6 +292,7 @@ static RJS_NF(ext_chmod)
         goto end;
     }
 
+    rjs_value_set_undefined(rt, rv);
     r = RJS_OK;
 end:
     rjs_value_stack_restore(rt, top);
@@ -987,7 +994,8 @@ static RJS_NF(File_prototype_putChar)
         r = rjs_throw_type_error(rt, _("futc failed: %s"), strerror(errno));
         goto end;
     }
-    
+
+    rjs_value_copy(rt, rv, thiz);
     r = RJS_OK;
 end:
     return r;
@@ -1093,6 +1101,7 @@ static RJS_NF(File_prototype_putString)
         goto end;
     }
 
+    rjs_value_copy(rt, rv, thiz);
     r = RJS_OK;
 end:
     rjs_char_buffer_deinit(rt, &pcb);
@@ -1221,7 +1230,8 @@ static RJS_NF(File_loadString)
         ecstr = NULL;
     }
 
-    r = rjs_string_from_file(rt, rv, ncstr, ecstr);
+    if ((r = rjs_string_from_file(rt, rv, ncstr, ecstr)) == RJS_ERR)
+        r = rjs_throw_type_error(rt, _("load file \"%s\" failed"), ncstr);
 end:
     rjs_char_buffer_deinit(rt, &ncb);
     rjs_char_buffer_deinit(rt, &ecb);
@@ -1278,6 +1288,7 @@ file_save_string (RJS_Runtime *rt, RJS_Value *args, size_t argc, RJS_Value *rv, 
         goto end;
     }
 
+    rjs_value_set_undefined(rt, rv);
     r = RJS_OK;
 end:
     if (fp)
@@ -1358,7 +1369,7 @@ file_save_data (RJS_Runtime *rt, RJS_Value *args, size_t argc, RJS_Value *rv, co
     RJS_Value     *name = rjs_argument_get(rt, args, argc, 0);
     RJS_Value     *abuf = rjs_argument_get(rt, args, argc, 1);
     RJS_Value     *pos  = rjs_argument_get(rt, args, argc, 2);
-    RJS_Value     *cnt  = rjs_argument_get(rt, args, argc, 4);
+    RJS_Value     *cnt  = rjs_argument_get(rt, args, argc, 3);
     size_t         top  = rjs_value_stack_save(rt);
     RJS_Value     *nstr = rjs_value_stack_push(rt);
     FILE          *fp   = NULL;
@@ -1414,6 +1425,7 @@ file_save_data (RJS_Runtime *rt, RJS_Value *args, size_t argc, RJS_Value *rv, co
         goto end;
     }
 
+    rjs_value_set_undefined(rt, rv);
     r = RJS_OK;
 end:
     if (fp)
