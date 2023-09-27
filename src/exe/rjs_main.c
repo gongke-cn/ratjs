@@ -97,7 +97,7 @@ show_help (char *cmd)
 #endif /*ENABLE_SCRIPT && ENABLE_MODULE*/
 #if ENABLE_MODULE
             "  -m DIR           add module lookup directory\n"
-            "  -l MODULE        load a module ans add its exports to global object\n"
+            "  -l MODULE        load a module and add its exports to global object\n"
 #endif /*ENABLE_MODULE*/
 #if ENABLE_SCRIPT
             "  -i FILE          include a script file\n"
