@@ -120,7 +120,7 @@ $ make dist-clean
 ```
 $ ratjs -s your_script.js arguments...
 ```
-"ratjs"会家在并运行脚本"your_script.js"。如果脚本中定义了函数"main"，"main"函数将被调用且"arguments"将作为函数的参数被传入。
+"ratjs"会加载并运行脚本"your_script.js"。如果脚本中定义了函数"main"，"main"函数将被调用且"arguments"将作为函数的参数被传入。
 
 将"js"脚本作为ECMA262模块运行：
 ```
