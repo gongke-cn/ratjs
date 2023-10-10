@@ -543,7 +543,7 @@ parse_space (RJS_Runtime *rt, RJS_Input *input)
 
 /*Parse the number.*/
 static int
-parse_number (RJS_Runtime *rt, RJS_Input *input, int len)
+parse_date_number (RJS_Runtime *rt, RJS_Input *input, int len)
 {
     int c;
     int v    = 0;
@@ -590,7 +590,7 @@ parse_year (RJS_Runtime *rt, RJS_Input *input, int *py)
 
     rjs_input_unget_uc(rt, input, c);
 
-    if ((y = parse_number(rt, input, -1)) < 0)
+    if ((y = parse_date_number(rt, input, -1)) < 0)
         return RJS_ERR;
 
     if (sign == -1) {
@@ -666,22 +666,22 @@ parse_hour (RJS_Runtime *rt, RJS_Input *input, int *ph, int *pm, int *ps, int *p
     int c;
     int hour = 0, min = 0, sec = 0, ms = 0;
 
-    if ((hour = parse_number(rt, input, 2)) < 0)
+    if ((hour = parse_date_number(rt, input, 2)) < 0)
         return RJS_ERR;
 
     c = rjs_input_get_uc(rt, input);
     if (c == ':') {
-        if ((min = parse_number(rt, input, 2)) < 0)
+        if ((min = parse_date_number(rt, input, 2)) < 0)
             return RJS_ERR;
 
         c = rjs_input_get_uc(rt, input);
         if (c == ':') {
-            if ((sec = parse_number(rt, input, 2)) < 0)
+            if ((sec = parse_date_number(rt, input, 2)) < 0)
                 return RJS_ERR;
 
             c = rjs_input_get_uc(rt, input);
             if (c == '.') {
-                if ((ms = parse_number(rt, input, 3)) < 0)
+                if ((ms = parse_date_number(rt, input, 3)) < 0)
                     return RJS_ERR;
 
                 c = rjs_input_get_uc(rt, input);
@@ -762,7 +762,7 @@ date_parse (RJS_Runtime *rt, RJS_Value *v, RJS_Number *t)
             c = eatup_space(rt, &input);
             rjs_input_unget_uc(rt, &input, c);
 
-            if ((day = parse_number(rt, &input, 2)) < 0)
+            if ((day = parse_date_number(rt, &input, 2)) < 0)
                 goto end;
 
             if (parse_space(rt, &input) == RJS_ERR)
@@ -812,7 +812,7 @@ date_parse (RJS_Runtime *rt, RJS_Value *v, RJS_Number *t)
             if (parse_space(rt, &input) == RJS_ERR)
                 goto end;
 
-            if ((day = parse_number(rt, &input, 2)) < 0)
+            if ((day = parse_date_number(rt, &input, 2)) < 0)
                 goto end;
 
             if (parse_space(rt, &input) == RJS_ERR)
@@ -854,10 +854,10 @@ date_parse (RJS_Runtime *rt, RJS_Value *v, RJS_Number *t)
                 else
                     off_sign = -1;
 
-                if ((off_hour = parse_number(rt, &input, 2)) < 0)
+                if ((off_hour = parse_date_number(rt, &input, 2)) < 0)
                     goto end;
 
-                if ((off_min = parse_number(rt, &input, 2)) < 0)
+                if ((off_min = parse_date_number(rt, &input, 2)) < 0)
                     goto end;
 
                 c = rjs_input_get_uc(rt, &input);
@@ -882,12 +882,12 @@ date_parse (RJS_Runtime *rt, RJS_Value *v, RJS_Number *t)
 
         c = rjs_input_get_uc(rt, &input);
         if (c == '-') {
-            if ((mon = parse_number(rt, &input, 2)) < 0)
+            if ((mon = parse_date_number(rt, &input, 2)) < 0)
                 goto end;
 
             c = rjs_input_get_uc(rt, &input);
             if (c == '-') {
-                if ((day = parse_number(rt, &input, 2)) < 0)
+                if ((day = parse_date_number(rt, &input, 2)) < 0)
                     goto end;
 
                 c = rjs_input_get_uc(rt, &input);
@@ -910,14 +910,14 @@ date_parse (RJS_Runtime *rt, RJS_Value *v, RJS_Number *t)
             else
                 off_sign = -1;
 
-            if ((off_hour = parse_number(rt, &input, 2)) < 0)
+            if ((off_hour = parse_date_number(rt, &input, 2)) < 0)
                 goto end;
 
             c = rjs_input_get_uc(rt, &input);
             if (c != ':')
                 goto end;
 
-            if ((off_min = parse_number(rt, &input, 2)) < 0)
+            if ((off_min = parse_date_number(rt, &input, 2)) < 0)
                 goto end;
         } else {
             rjs_input_unget_uc(rt, &input, c);

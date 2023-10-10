@@ -744,18 +744,6 @@ async_generator_validate (RJS_Runtime *rt, RJS_Value *gv, RJS_Value *brand)
     return RJS_OK;
 }
 
-/*Invoke reject if arupt.*/
-static RJS_Result
-if_abrupt_reject_promise (RJS_Runtime *rt, RJS_Result r, RJS_PromiseCapability *pc, RJS_Value *rv)
-{
-    if (r == RJS_ERR) {
-        rjs_call(rt, pc->reject, rjs_v_undefined(rt), &rt->error, 1, NULL);
-        rjs_value_copy(rt, rv, pc->promise);
-    }
-
-    return r;
-}
-
 /*Resume the generator.*/
 static RJS_Result
 async_generator_resume (RJS_Runtime *rt, RJS_Value *gv, RJS_Value *v)

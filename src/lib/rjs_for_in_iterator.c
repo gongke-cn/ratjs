@@ -25,12 +25,6 @@
 
 #include "ratjs_internal.h"
 
-/**String property entry.*/
-typedef struct {
-    RJS_HashEntry he;    /**< Hash table entry.*/
-    RJS_Value     value; /**< Value.*/
-} RJS_StringPropEntry;
-
 /*Calculate the string property's hash code.*/
 static size_t
 hash_op_string_prop_key (void *data, void *key)

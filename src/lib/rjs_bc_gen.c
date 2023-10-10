@@ -97,7 +97,7 @@ bc_error (RJS_Runtime *rt, const char *fmt, ...)
 
 /*Get the AST from the value.*/
 static void*
-ast_get (RJS_Runtime *rt, RJS_Value *v)
+bc_ast_get (RJS_Runtime *rt, RJS_Value *v)
 {
     if (rjs_value_is_undefined(rt, v))
         return NULL;
@@ -279,7 +279,7 @@ bc_gen_void_expr (RJS_Runtime *rt, RJS_BcGen *bg, RJS_AstUnaryExpr *expr, int ri
     RJS_Ast *ast;
 
     t_rid = bc_reg_add(rt, bg);
-    ast   = ast_get(rt, &expr->operand);
+    ast   = bc_ast_get(rt, &expr->operand);
 
     bc_gen_expr(rt, bg, ast, t_rid);
 
@@ -296,7 +296,7 @@ bc_gen_unary_expr (RJS_Runtime *rt, RJS_BcGen *bg, RJS_AstUnaryExpr *expr, int r
     RJS_Ast       *ast;
 
     t_rid = bc_reg_add(rt, bg);
-    ast   = ast_get(rt, &expr->operand);
+    ast   = bc_ast_get(rt, &expr->operand);
 
     bc_gen_expr(rt, bg, ast, t_rid);
 
@@ -320,7 +320,7 @@ bc_gen_yield_expr (RJS_Runtime *rt, RJS_BcGen *bg, RJS_AstUnaryExpr *expr, int r
     RJS_Ast       *ast;
 
     t_rid = bc_reg_add(rt, bg);
-    ast   = ast_get(rt, &expr->operand);
+    ast   = bc_ast_get(rt, &expr->operand);
 
     if (ast) {
         bc_gen_expr(rt, bg, ast, t_rid);
@@ -351,7 +351,7 @@ bc_gen_yield_star_expr (RJS_Runtime *rt, RJS_BcGen *bg, RJS_AstUnaryExpr *expr, 
     RJS_Ast       *ast;
 
     t_rid = bc_reg_add(rt, bg);
-    ast   = ast_get(rt, &expr->operand);
+    ast   = bc_ast_get(rt, &expr->operand);
 
     bc_gen_expr(rt, bg, ast, t_rid);
 
@@ -380,7 +380,7 @@ bc_gen_await_expr (RJS_Runtime *rt, RJS_BcGen *bg, RJS_AstUnaryExpr *expr, int r
     RJS_Ast       *ast;
 
     t_rid = bc_reg_add(rt, bg);
-    ast   = ast_get(rt, &expr->operand);
+    ast   = bc_ast_get(rt, &expr->operand);
 
     bc_gen_expr(rt, bg, ast, t_rid);
 
@@ -473,10 +473,10 @@ bc_gen_ref (RJS_Runtime *rt, RJS_BcGen *bg, RJS_Ast *expr, int rid, RJS_BcRef *r
         ref->ref_name_prop = NULL;
         ref->ref_name_rid  = -1;
 
-        ast = ast_get(rt, &be->operand1);
+        ast = bc_ast_get(rt, &be->operand1);
         bc_gen_expr(rt, bg, ast, ref->base_rid);
 
-        ast  = ast_get(rt, &be->operand2);
+        ast  = bc_ast_get(rt, &be->operand2);
         line = ast->location.first_line;
 
         if (ast->type == RJS_AST_PropRef) {
@@ -520,7 +520,7 @@ bc_gen_ref (RJS_Runtime *rt, RJS_BcGen *bg, RJS_Ast *expr, int rid, RJS_BcRef *r
         cmd = bc_cmd_get(bg, cid);
         cmd->load.dest = ref->base_rid;
 
-        ast = ast_get(rt, &be->operand2);
+        ast = bc_ast_get(rt, &be->operand2);
         if (ast->type == RJS_AST_PropRef) {
             RJS_AstPropRef *pr = (RJS_AstPropRef*)ast;
 
@@ -552,24 +552,24 @@ bc_gen_ref (RJS_Runtime *rt, RJS_BcGen *bg, RJS_Ast *expr, int rid, RJS_BcRef *r
         ref->ref_name_prop = NULL;
         ref->ref_name_rid  = -1;
 
-        ast = ast_get(rt, &be->operand1);
+        ast = bc_ast_get(rt, &be->operand1);
         bc_gen_expr(rt, bg, ast, ref->base_rid);
 
-        pir = ast_get(rt, &be->operand2);
-        ref->ref_name_prop = ast_get(rt, &pir->prop_ref);
+        pir = bc_ast_get(rt, &be->operand2);
+        ref->ref_name_prop = bc_ast_get(rt, &pir->prop_ref);
         break;
     }
 #endif /*ENABLE_PRIV_NAME*/
     case RJS_AST_ParenthesesExpr: {
         RJS_AstUnaryExpr *ue  = (RJS_AstUnaryExpr*)expr;
-        RJS_Ast          *ast = ast_get(rt, &ue->operand);
+        RJS_Ast          *ast = bc_ast_get(rt, &ue->operand);
 
         bc_gen_ref(rt, bg, ast, rid, ref);
         break;
     }
     case RJS_AST_OptionalBase: {
         RJS_AstUnaryExpr *ue  = (RJS_AstUnaryExpr*)expr;
-        RJS_Ast          *ast = ast_get(rt, &ue->operand);
+        RJS_Ast          *ast = bc_ast_get(rt, &ue->operand);
 
         bc_gen_ref(rt, bg, ast, rid, ref);
 
@@ -578,7 +578,7 @@ bc_gen_ref (RJS_Runtime *rt, RJS_BcGen *bg, RJS_Ast *expr, int rid, RJS_BcRef *r
     }
     case RJS_AST_OptionalExpr: {
         RJS_AstUnaryExpr *ue  = (RJS_AstUnaryExpr*)expr;
-        RJS_Ast          *ast = ast_get(rt, &ue->operand);
+        RJS_Ast          *ast = bc_ast_get(rt, &ue->operand);
 
         ref->old_opt_label = bg->opt_end_label;
         ref->old_opt_reg   = bg->opt_res_reg;
@@ -815,7 +815,7 @@ bc_gen_typeof_expr (RJS_Runtime *rt, RJS_BcGen *bg, RJS_AstUnaryExpr *expr, int 
     RJS_Ast       *ast;
 
     t_rid = bc_reg_add(rt, bg);
-    ast   = ast_get(rt, &expr->operand);
+    ast   = bc_ast_get(rt, &expr->operand);
 
     bc_gen_ref(rt, bg, ast, t_rid, &ref);
 
@@ -865,17 +865,17 @@ bc_gen_array_assi (RJS_Runtime *rt, RJS_BcGen *bg, RJS_AstList *l, int rid)
             int                 tr  = bc_reg_add(rt, bg);
             RJS_BcRef           ref;
 
-            ast = ast_get(rt, &be->binding);
+            ast = bc_ast_get(rt, &be->binding);
             bc_gen_assi_ref(rt, bg, ast, &ref);
 
             cid = bc_cmd_add(rt, bg, RJS_BC_get_array_item, line);
             cmd = bc_cmd_get(bg, cid);
             cmd->load.dest = tr;
 
-            ast = ast_get(rt, &be->init);
+            ast = bc_ast_get(rt, &be->init);
             bc_gen_default_init(rt, bg, ast, tr);
 
-            ast = ast_get(rt, &be->binding);
+            ast = bc_ast_get(rt, &be->binding);
             bc_gen_assi(rt, bg, ast, tr, &ref);
             break;
         }
@@ -884,14 +884,14 @@ bc_gen_array_assi (RJS_Runtime *rt, RJS_BcGen *bg, RJS_AstList *l, int rid)
             int          tr   = bc_reg_add(rt, bg);
             RJS_BcRef    ref;
 
-            ast = ast_get(rt, &rest->binding);
+            ast = bc_ast_get(rt, &rest->binding);
             bc_gen_assi_ref(rt, bg, ast, &ref);
 
             cid = bc_cmd_add(rt, bg, RJS_BC_rest_array_items, line);
             cmd = bc_cmd_get(bg, cid);
             cmd->load.dest = tr;
 
-            ast = ast_get(rt, &rest->binding);
+            ast = bc_ast_get(rt, &rest->binding);
             bc_gen_assi(rt, bg, ast, tr, &ref);
             break;
         }
@@ -931,7 +931,7 @@ bc_gen_object_assi (RJS_Runtime *rt, RJS_BcGen *bg, RJS_AstList *l, int rid)
             RJS_Bool            str_prop = RJS_FALSE;
             RJS_BcRef           ref;
 
-            ast  = ast_get(rt, &bp->name);
+            ast  = bc_ast_get(rt, &bp->name);
             line = ast->location.first_line;
             if (ast->type == RJS_AST_ValueExpr) {
                 RJS_AstValueExpr *ve = (RJS_AstValueExpr*)ast;
@@ -953,10 +953,10 @@ bc_gen_object_assi (RJS_Runtime *rt, RJS_BcGen *bg, RJS_AstList *l, int rid)
                 cmd->unary.result  = kr;
             }
 
-            ast = ast_get(rt, &bp->binding);
+            ast = bc_ast_get(rt, &bp->binding);
             bc_gen_assi_ref(rt, bg, ast, &ref);
 
-            ast  = ast_get(rt, &bp->name);
+            ast  = bc_ast_get(rt, &bp->name);
             line = ast->location.first_line;
             if (str_prop) {
                 RJS_AstValueExpr *ve;
@@ -975,10 +975,10 @@ bc_gen_object_assi (RJS_Runtime *rt, RJS_BcGen *bg, RJS_AstList *l, int rid)
                 cmd->unary.result  = tr;
             }
 
-            ast = ast_get(rt, &bp->init);
+            ast = bc_ast_get(rt, &bp->init);
             bc_gen_default_init(rt, bg, ast, tr);
 
-            ast = ast_get(rt, &bp->binding);
+            ast = bc_ast_get(rt, &bp->binding);
             bc_gen_assi(rt, bg, ast, tr, &ref);
             break;
         }
@@ -987,14 +987,14 @@ bc_gen_object_assi (RJS_Runtime *rt, RJS_BcGen *bg, RJS_AstList *l, int rid)
             int          tr   = bc_reg_add(rt, bg);
             RJS_BcRef    ref;
 
-            ast = ast_get(rt, &rest->binding);
+            ast = bc_ast_get(rt, &rest->binding);
             bc_gen_assi_ref(rt, bg, ast, &ref);
 
             cid = bc_cmd_add(rt, bg, RJS_BC_rest_object_props, line);
             cmd = bc_cmd_get(bg, cid);
             cmd->load.dest = tr;
 
-            ast = ast_get(rt, &rest->binding);
+            ast = bc_ast_get(rt, &rest->binding);
             bc_gen_assi(rt, bg, ast, tr, &ref);
             break;
         }
@@ -1047,12 +1047,12 @@ bc_gen_assi_expr (RJS_Runtime *rt, RJS_BcGen *bg, RJS_AstBinaryExpr *expr, int r
     RJS_Ast   *ast;
     RJS_BcRef  ref;
 
-    ast = ast_get(rt, &expr->operand1);
+    ast = bc_ast_get(rt, &expr->operand1);
     
     if ((ast->type == RJS_AST_ArrayBinding) || (ast->type == RJS_AST_ObjectBinding)) {
         RJS_Ast *r_ast;
 
-        r_ast = ast_get(rt, &expr->operand2);
+        r_ast = bc_ast_get(rt, &expr->operand2);
         bc_gen_expr(rt, bg, r_ast, rid);
 
         if (ast->type == RJS_AST_ArrayBinding)
@@ -1062,7 +1062,7 @@ bc_gen_assi_expr (RJS_Runtime *rt, RJS_BcGen *bg, RJS_AstBinaryExpr *expr, int r
     } else {
         bc_gen_ref(rt, bg, ast, -1, &ref);
 
-        ast = ast_get(rt, &expr->operand2);
+        ast = bc_ast_get(rt, &expr->operand2);
         bc_gen_expr(rt, bg, ast, rid);
 
         line = expr->ast.location.first_line;
@@ -1085,7 +1085,7 @@ bc_gen_delete_expr (RJS_Runtime *rt, RJS_BcGen *bg, RJS_AstUnaryExpr *expr, int 
 
     t_rid = bc_reg_add(rt, bg);
 
-    ast = ast_get(rt, &expr->operand);
+    ast = bc_ast_get(rt, &expr->operand);
     bc_gen_ref(rt, bg, ast, t_rid, &ref);
 
     line = expr->ast.location.first_line;
@@ -1139,7 +1139,7 @@ bc_gen_pre_inc_dec_expr (RJS_Runtime *rt, RJS_BcGen *bg, RJS_AstUnaryExpr *expr,
     RJS_Ast       *ast;
     RJS_BcRef      ref;
 
-    ast = ast_get(rt, &expr->operand);
+    ast = bc_ast_get(rt, &expr->operand);
     bc_gen_ref(rt, bg, ast, -1, &ref);
 
     line = expr->ast.location.first_line;
@@ -1176,7 +1176,7 @@ bc_gen_post_inc_dec_expr (RJS_Runtime *rt, RJS_BcGen *bg, RJS_AstUnaryExpr *expr
     RJS_Ast       *ast;
     RJS_BcRef      ref;
 
-    ast = ast_get(rt, &expr->operand);
+    ast = bc_ast_get(rt, &expr->operand);
     bc_gen_ref(rt, bg, ast, -1, &ref);
 
     line = expr->ast.location.first_line;
@@ -1229,10 +1229,10 @@ bc_gen_binary_expr (RJS_Runtime *rt, RJS_BcGen *bg, RJS_AstBinaryExpr *expr, int
     r1 = bc_reg_add(rt, bg);
     r2 = bc_reg_add(rt, bg);
 
-    ast = ast_get(rt, &expr->operand1);
+    ast = bc_ast_get(rt, &expr->operand1);
     bc_gen_expr(rt, bg, ast, r1);
 
-    ast = ast_get(rt, &expr->operand2);
+    ast = bc_ast_get(rt, &expr->operand2);
     bc_gen_expr(rt, bg, ast, r2);
 
     line = expr->ast.location.first_line;
@@ -1262,12 +1262,12 @@ bc_gen_in_expr (RJS_Runtime *rt, RJS_BcGen *bg, RJS_AstBinaryExpr *expr, int rid
 
     line = expr->ast.location.first_line;
 
-    ast = ast_get(rt, &expr->operand1);
+    ast = bc_ast_get(rt, &expr->operand1);
 
 #if ENABLE_PRIV_NAME
     if (ast->type == RJS_AST_PrivIdRef) {
         RJS_AstPrivIdRef *pir = (RJS_AstPrivIdRef*)ast;
-        RJS_AstPropRef   *pr  = ast_get(rt, &pir->prop_ref);
+        RJS_AstPropRef   *pr  = bc_ast_get(rt, &pir->prop_ref);
 
         cid = bc_cmd_add(rt, bg, RJS_BC_load_value, line);
         cmd = bc_cmd_get(bg, cid);
@@ -1290,7 +1290,7 @@ bc_gen_in_expr (RJS_Runtime *rt, RJS_BcGen *bg, RJS_AstBinaryExpr *expr, int rid
         bc_type = RJS_BC_has_prop;
     }
 
-    ast = ast_get(rt, &expr->operand2);
+    ast = bc_ast_get(rt, &expr->operand2);
     bc_gen_expr(rt, bg, ast, r2);
 
     cid = bc_cmd_add(rt, bg, bc_type, line);
@@ -1315,7 +1315,7 @@ bc_gen_logic_expr (RJS_Runtime *rt, RJS_BcGen *bg, RJS_AstBinaryExpr *expr, int 
 
     lid = bc_label_add(rt, bg);
 
-    ast = ast_get(rt, &expr->operand1);
+    ast = bc_ast_get(rt, &expr->operand1);
     bc_gen_expr(rt, bg, ast, rid);
 
     line = expr->ast.location.first_line;
@@ -1348,7 +1348,7 @@ bc_gen_logic_expr (RJS_Runtime *rt, RJS_BcGen *bg, RJS_AstBinaryExpr *expr, int 
         break;
     }
 
-    ast = ast_get(rt, &expr->operand2);
+    ast = bc_ast_get(rt, &expr->operand2);
     bc_gen_expr(rt, bg, ast, rid);
 
     cid = bc_cmd_add(rt, bg, RJS_BC_stub, line);
@@ -1373,7 +1373,7 @@ bc_gen_cond_expr (RJS_Runtime *rt, RJS_BcGen *bg, RJS_AstCondExpr *expr, int rid
     l1 = bc_label_add(rt, bg);
     l2 = bc_label_add(rt, bg);
 
-    ast = ast_get(rt, &expr->cond);
+    ast = bc_ast_get(rt, &expr->cond);
     bc_gen_expr(rt, bg, ast, cr);
 
     line = expr->ast.location.first_line;
@@ -1383,7 +1383,7 @@ bc_gen_cond_expr (RJS_Runtime *rt, RJS_BcGen *bg, RJS_AstCondExpr *expr, int rid
     cmd->jump_cond.value = cr;
     cmd->jump_cond.label = l1;
 
-    ast = ast_get(rt, &expr->true_value);
+    ast = bc_ast_get(rt, &expr->true_value);
     bc_gen_expr(rt, bg, ast, rid);
 
     cid = bc_cmd_add(rt, bg, RJS_BC_jump, line);
@@ -1394,7 +1394,7 @@ bc_gen_cond_expr (RJS_Runtime *rt, RJS_BcGen *bg, RJS_AstCondExpr *expr, int rid
     cmd = bc_cmd_get(bg, cid);
     cmd->stub.label = l1;
 
-    ast = ast_get(rt, &expr->false_value);
+    ast = bc_ast_get(rt, &expr->false_value);
     bc_gen_expr(rt, bg, ast, rid);
 
     cid = bc_cmd_add(rt, bg, RJS_BC_stub, line);
@@ -1427,7 +1427,7 @@ bc_gen_args (RJS_Runtime *rt, RJS_BcGen *bg, int line, RJS_List *args)
             RJS_AstUnaryExpr *ue = (RJS_AstUnaryExpr*)a_ast;
             RJS_Ast          *e;
 
-            e = ast_get(rt, &ue->operand);
+            e = bc_ast_get(rt, &ue->operand);
             bc_gen_expr(rt, bg, e, rid);
 
             cid = bc_cmd_add(rt, bg, RJS_BC_spread_args_add, line);
@@ -1460,7 +1460,7 @@ bc_gen_call_expr (RJS_Runtime *rt, RJS_BcGen *bg, RJS_AstCall *expr, int rid, RJ
 
     fr = bc_reg_add(rt, bg);
 
-    ast = ast_get(rt, &expr->func);
+    ast = bc_ast_get(rt, &expr->func);
     bc_gen_ref(rt, bg, ast, fr, &ref);
 
     line = expr->ast.location.first_line;
@@ -1531,7 +1531,7 @@ bc_gen_new_expr (RJS_Runtime *rt, RJS_BcGen *bg, RJS_AstCall *expr, int rid)
 
     fr = bc_reg_add(rt, bg);
 
-    ast = ast_get(rt, &expr->func);
+    ast = bc_ast_get(rt, &expr->func);
     bc_gen_expr(rt, bg, ast, fr);
 
     line = expr->ast.location.first_line;
@@ -1562,14 +1562,14 @@ bc_gen_templ_expr (RJS_Runtime *rt, RJS_BcGen *bg, RJS_AstTemplate *expr, int ri
 
     line = expr->ast.location.first_line;
 
-    ast = ast_get(rt, &expr->func);
+    ast = bc_ast_get(rt, &expr->func);
 
     if (ast) {
         RJS_BcRef ref;
 
         fr = bc_reg_add(rt, bg);
 
-        ast = ast_get(rt, &expr->func);
+        ast = bc_ast_get(rt, &expr->func);
 
         bc_gen_ref(rt, bg, ast, fr, &ref);
 
@@ -1654,7 +1654,7 @@ bc_gen_func_expr (RJS_Runtime *rt, RJS_BcGen *bg, RJS_AstFuncRef *expr, int rid)
 
         cid = bc_cmd_add(rt, bg, RJS_BC_binding_table_init, line);
         cmd = bc_cmd_get(bg, cid);
-        cmd->binding_table.table = ast_get(rt, &expr->lex_table);
+        cmd->binding_table.table = bc_ast_get(rt, &expr->lex_table);
     }
 
     cid = bc_cmd_add(rt, bg, RJS_BC_func_create, line);
@@ -1687,13 +1687,13 @@ bc_gen_op_assi_expr (RJS_Runtime *rt, RJS_BcGen *bg, RJS_AstBinaryExpr *expr, in
     lr = bc_reg_add(rt, bg);
     rr = bc_reg_add(rt, bg);
 
-    ast = ast_get(rt, &expr->operand1);
+    ast = bc_ast_get(rt, &expr->operand1);
 
     bc_gen_ref(rt, bg, ast, lr, &ref);
 
     bc_ref_get_value(rt, bg, line, lr, &ref);
 
-    ast = ast_get(rt, &expr->operand2);
+    ast = bc_ast_get(rt, &expr->operand2);
     bc_gen_expr(rt, bg, ast, rr);
 
     switch (expr->ast.type) {
@@ -1762,7 +1762,7 @@ bc_gen_opt_assi_expr (RJS_Runtime *rt, RJS_BcGen *bg, RJS_AstBinaryExpr *expr, i
     line = expr->ast.location.first_line;
     lid  = bc_label_add(rt, bg);
 
-    ast = ast_get(rt, &expr->operand1);
+    ast = bc_ast_get(rt, &expr->operand1);
     bc_gen_ref(rt, bg, ast, rid, &ref);
 
     bc_ref_get_value(rt, bg, line, rid, &ref);
@@ -1797,7 +1797,7 @@ bc_gen_opt_assi_expr (RJS_Runtime *rt, RJS_BcGen *bg, RJS_AstBinaryExpr *expr, i
         break;
     }
 
-    ast = ast_get(rt, &expr->operand2);
+    ast = bc_ast_get(rt, &expr->operand2);
     bc_gen_expr(rt, bg, ast, rid);
 
     bc_ref_set_value(rt, bg, line, rid, &ref);
@@ -1838,7 +1838,7 @@ bc_gen_array (RJS_Runtime *rt, RJS_BcGen *bg, RJS_AstList *a, int rid)
             RJS_AstUnaryExpr *ue = (RJS_AstUnaryExpr*)i_ast;
 
             tr  = bc_reg_add(rt, bg);
-            ast = ast_get(rt, &ue->operand);
+            ast = bc_ast_get(rt, &ue->operand);
             bc_gen_expr(rt, bg, ast, tr);
 
             cid = bc_cmd_add(rt, bg, RJS_BC_array_spread_items, line);
@@ -1868,7 +1868,7 @@ bc_gen_array (RJS_Runtime *rt, RJS_BcGen *bg, RJS_AstList *a, int rid)
 static RJS_Bool
 is_anonymous_function (RJS_Runtime *rt, RJS_Value *v)
 {
-    RJS_Ast *ast = ast_get(rt, v);
+    RJS_Ast *ast = bc_ast_get(rt, v);
 
     if (ast->type == RJS_AST_FuncExpr) {
         RJS_AstFuncRef *fe = (RJS_AstFuncRef*)ast;
@@ -1917,16 +1917,16 @@ bc_gen_object (RJS_Runtime *rt, RJS_BcGen *bg, RJS_AstList *o, int rid)
             nr = bc_reg_add(rt, bg);
             tr = bc_reg_add(rt, bg);
 
-            ast = ast_get(rt, &prop->name);
+            ast = bc_ast_get(rt, &prop->name);
             bc_gen_prop_name(rt, bg, ast, nr);
 
-            ast = ast_get(rt, &prop->value);
+            ast = bc_ast_get(rt, &prop->value);
             if (ast) {
                 is_af = is_anonymous_function(rt, &prop->value);
 
                 bc_gen_expr(rt, bg, ast, tr);
             } else {
-                RJS_AstValueExpr  *ve = ast_get(rt, &prop->name);
+                RJS_AstValueExpr  *ve = bc_ast_get(rt, &prop->name);
                 int                er = bc_reg_add(rt, bg);
                 RJS_AstBindingRef *br;
 
@@ -1963,7 +1963,7 @@ bc_gen_object (RJS_Runtime *rt, RJS_BcGen *bg, RJS_AstList *o, int rid)
             RJS_AstUnaryExpr *ue = (RJS_AstUnaryExpr*)p_ast;
 
             tr  = bc_reg_add(rt, bg);
-            ast = ast_get(rt, &ue->operand);
+            ast = bc_ast_get(rt, &ue->operand);
             bc_gen_expr(rt, bg, ast, tr);
 
             cid = bc_cmd_add(rt, bg, RJS_BC_object_spread_props, line);
@@ -1975,7 +1975,7 @@ bc_gen_object (RJS_Runtime *rt, RJS_BcGen *bg, RJS_AstList *o, int rid)
             RJS_AstClassElem *ce = (RJS_AstClassElem*)p_ast;
 
             nr  = bc_reg_add(rt, bg);
-            ast = ast_get(rt, &ce->name);
+            ast = bc_ast_get(rt, &ce->name);
             bc_gen_prop_name(rt, bg, ast, nr);
 
             switch (ce->type) {
@@ -2019,7 +2019,7 @@ static RJS_Result
 bc_gen_optional_base (RJS_Runtime *rt, RJS_BcGen *bg, RJS_AstUnaryExpr *ue, int rid)
 {
     int            line = ue->ast.location.first_line;
-    RJS_Ast       *ast  = ast_get(rt, &ue->operand);
+    RJS_Ast       *ast  = bc_ast_get(rt, &ue->operand);
     int            lop;
     int            cid;
     int            cr;
@@ -2063,7 +2063,7 @@ bc_gen_optional_expr (RJS_Runtime *rt, RJS_BcGen *bg, RJS_AstUnaryExpr *ue, int 
 {
     int            old_label = bg->opt_end_label;
     int            old_reg   = bg->opt_res_reg;
-    RJS_Ast       *ast       = ast_get(rt, &ue->operand);
+    RJS_Ast       *ast       = bc_ast_get(rt, &ue->operand);
     int            line      = ue->ast.location.first_line;
     int            cid;
     RJS_BcCommand *cmd;
@@ -2181,7 +2181,7 @@ bc_gen_expr (RJS_Runtime *rt, RJS_BcGen *bg, RJS_Ast *expr, int rid)
         break;
     case RJS_AST_ParenthesesExpr: {
         RJS_AstUnaryExpr *ue  = (RJS_AstUnaryExpr*)expr;
-        RJS_Ast          *ast = ast_get(rt, &ue->operand);
+        RJS_Ast          *ast = bc_ast_get(rt, &ue->operand);
 
         bc_gen_expr(rt, bg, ast, rid);
         break;
@@ -2329,7 +2329,7 @@ bc_gen_expr_stmt (RJS_Runtime *rt, RJS_BcGen *bg, RJS_AstExprStmt *stmt)
     else
         rid = bc_reg_add(rt, bg);
 
-    expr = ast_get(rt, &stmt->expr);
+    expr = bc_ast_get(rt, &stmt->expr);
 
     return bc_gen_expr(rt, bg, expr, rid);
 }
@@ -2355,16 +2355,16 @@ bc_gen_block (RJS_Runtime *rt, RJS_BcGen *bg, RJS_AstBlock *block)
     if (block->decl)
         rjs_code_gen_binding_init_table(rt, &block->lex_table, block->decl);
 
-    if (ast_get(rt, &block->lex_table)) {
+    if (bc_ast_get(rt, &block->lex_table)) {
         cid = bc_cmd_add(rt, bg, RJS_BC_binding_table_init, line);
         cmd = bc_cmd_get(bg, cid);
-        cmd->binding_table.table = ast_get(rt, &block->lex_table);
+        cmd->binding_table.table = bc_ast_get(rt, &block->lex_table);
     }
 
-    if (ast_get(rt, &block->func_table)) {
+    if (bc_ast_get(rt, &block->func_table)) {
         cid = bc_cmd_add(rt, bg, RJS_BC_func_table_init, line);
         cmd = bc_cmd_get(bg, cid);
-        cmd->func_table.table = ast_get(rt, &block->func_table);
+        cmd->func_table.table = bc_ast_get(rt, &block->func_table);
     }
 
     le = bc_label_add(rt, bg);
@@ -2408,7 +2408,7 @@ bc_gen_if_stmt (RJS_Runtime *rt, RJS_BcGen *bg, RJS_AstIfStmt *ifs)
     rid = bc_reg_add(rt, bg);
     l1  = bc_label_add(rt, bg);
     l2  = bc_label_add(rt, bg);
-    ast = ast_get(rt, &ifs->cond);
+    ast = bc_ast_get(rt, &ifs->cond);
 
     ifs->break_js.label  = l2;
     ifs->break_js.rv_reg = bg->rv_reg;
@@ -2422,7 +2422,7 @@ bc_gen_if_stmt (RJS_Runtime *rt, RJS_BcGen *bg, RJS_AstIfStmt *ifs)
 
     line = ifs->ast.location.last_line;
 
-    ast = ast_get(rt, &ifs->if_stmt);
+    ast = bc_ast_get(rt, &ifs->if_stmt);
     if (ast) {
         bc_gen_stmt(rt, bg, ast);
 
@@ -2437,7 +2437,7 @@ bc_gen_if_stmt (RJS_Runtime *rt, RJS_BcGen *bg, RJS_AstIfStmt *ifs)
     cmd = bc_cmd_get(bg, cid);
     cmd->stub.label = l1;
 
-    ast = ast_get(rt, &ifs->else_stmt);
+    ast = bc_ast_get(rt, &ifs->else_stmt);
     if (ast) {
         bc_gen_stmt(rt, bg, ast);
 
@@ -2484,7 +2484,7 @@ bc_gen_do_while_stmt (RJS_Runtime *rt, RJS_BcGen *bg, RJS_AstLoopStmt *ls)
     cmd = bc_cmd_get(bg, cid);
     cmd->stub.label = lb;
 
-    ast = ast_get(rt, &ls->loop_stmt);
+    ast = bc_ast_get(rt, &ls->loop_stmt);
     if (ast)
         bc_gen_stmt(rt, bg, ast);
 
@@ -2492,7 +2492,7 @@ bc_gen_do_while_stmt (RJS_Runtime *rt, RJS_BcGen *bg, RJS_AstLoopStmt *ls)
     cmd = bc_cmd_get(bg, cid);
     cmd->stub.label = lc;
 
-    ast = ast_get(rt, &ls->cond);
+    ast = bc_ast_get(rt, &ls->cond);
     bc_gen_expr(rt, bg, ast, rid);
 
     line = ast->location.last_line;
@@ -2536,7 +2536,7 @@ bc_gen_while_stmt (RJS_Runtime *rt, RJS_BcGen *bg, RJS_AstLoopStmt *ls)
     cmd = bc_cmd_get(bg, cid);
     cmd->stub.label = l1;
 
-    ast = ast_get(rt, &ls->cond);
+    ast = bc_ast_get(rt, &ls->cond);
     bc_gen_expr(rt, bg, ast, rid);
 
     line = ast->location.last_line;
@@ -2551,7 +2551,7 @@ bc_gen_while_stmt (RJS_Runtime *rt, RJS_BcGen *bg, RJS_AstLoopStmt *ls)
     ls->break_js.label     = l2;
     ls->break_js.rv_reg    = bg->rv_reg;
 
-    ast = ast_get(rt, &ls->loop_stmt);
+    ast = bc_ast_get(rt, &ls->loop_stmt);
     if (ast)
         bc_gen_stmt(rt, bg, ast);
 
@@ -2593,7 +2593,7 @@ bc_gen_throw_stmt (RJS_Runtime *rt, RJS_BcGen *bg, RJS_AstExprStmt *ts)
 
     rid = bc_reg_add(rt, bg);
 
-    ast = ast_get(rt, &ts->expr);
+    ast = bc_ast_get(rt, &ts->expr);
     bc_gen_expr(rt, bg, ast, rid);
 
     line = ts->ast.location.first_line;
@@ -2619,7 +2619,7 @@ bc_gen_return_stmt (RJS_Runtime *rt, RJS_BcGen *bg, RJS_AstExprStmt *ts)
 
     line = ts->ast.location.first_line;
 
-    ast = ast_get(rt, &ts->expr);
+    ast = bc_ast_get(rt, &ts->expr);
     if (ast) {
         if (ast->type == RJS_AST_CommaExpr) {
             RJS_AstList *list = (RJS_AstList*)ast;
@@ -2775,17 +2775,17 @@ bc_gen_binding_elem_init (RJS_Runtime *rt, RJS_BcGen *bg, RJS_Ast *e, RJS_Bool i
         RJS_BcRef           ref;
         RJS_Ast            *b, *init;
 
-        b = ast_get(rt, &be->binding);
+        b = bc_ast_get(rt, &be->binding);
         bc_gen_binding_assi_ref(rt, bg, b, &ref);
 
         cid = bc_cmd_add(rt, bg, RJS_BC_get_array_item, line);
         cmd = bc_cmd_get(bg, cid);
         cmd->load.dest = rid;
 
-        init = ast_get(rt, &be->init);
+        init = bc_ast_get(rt, &be->init);
         bc_gen_default_init(rt, bg, init, rid);
 
-        b = ast_get(rt, &be->binding);
+        b = bc_ast_get(rt, &be->binding);
         bc_gen_binding_assi(rt, bg, b, rid, is_lex, &ref);
         break;
     }
@@ -2795,14 +2795,14 @@ bc_gen_binding_elem_init (RJS_Runtime *rt, RJS_BcGen *bg, RJS_Ast *e, RJS_Bool i
         RJS_BcRef     ref;
         RJS_Ast      *b;
 
-        b = ast_get(rt, &rest->binding);
+        b = bc_ast_get(rt, &rest->binding);
         bc_gen_binding_assi_ref(rt, bg, b, &ref);
 
         cid = bc_cmd_add(rt, bg, RJS_BC_rest_array_items, line);
         cmd = bc_cmd_get(bg, cid);
         cmd->load.dest = rid;
 
-        b = ast_get(rt, &rest->binding);
+        b = bc_ast_get(rt, &rest->binding);
         bc_gen_binding_assi(rt, bg, b, rid, is_lex, &ref);
         break;
     }
@@ -2834,10 +2834,10 @@ bc_gen_binding_prop_init (RJS_Runtime *rt, RJS_BcGen *bg, RJS_Ast *e, RJS_Bool i
         RJS_Ast            *nast;
         RJS_Ast            *b, *init;
 
-        nast = ast_get(rt, &bp->name);
+        nast = bc_ast_get(rt, &bp->name);
         bc_gen_expr(rt, bg, nast, tid);
 
-        b = ast_get(rt, &bp->binding);
+        b = bc_ast_get(rt, &bp->binding);
         bc_gen_binding_assi_ref(rt, bg, b, &ref);
 
         cid = bc_cmd_add(rt, bg, RJS_BC_to_prop, line);
@@ -2850,10 +2850,10 @@ bc_gen_binding_prop_init (RJS_Runtime *rt, RJS_BcGen *bg, RJS_Ast *e, RJS_Bool i
         cmd->unary.operand = pid;
         cmd->unary.result  = rid;
 
-        init = ast_get(rt, &bp->init);
+        init = bc_ast_get(rt, &bp->init);
         bc_gen_default_init(rt, bg, init, rid);
 
-        b = ast_get(rt, &bp->binding);
+        b = bc_ast_get(rt, &bp->binding);
         bc_gen_binding_assi(rt, bg, b, rid, is_lex, &ref);
         break;
     }
@@ -2863,7 +2863,7 @@ bc_gen_binding_prop_init (RJS_Runtime *rt, RJS_BcGen *bg, RJS_Ast *e, RJS_Bool i
         RJS_BcRef     ref;
         RJS_Ast      *b;
 
-        b = ast_get(rt, &rest->binding);
+        b = bc_ast_get(rt, &rest->binding);
         bc_gen_binding_assi_ref(rt, bg, b, &ref);
 
         cid = bc_cmd_add(rt, bg, RJS_BC_rest_object_props, line);
@@ -2990,10 +2990,10 @@ bc_gen_params_init (RJS_Runtime *rt, RJS_BcGen *bg, RJS_AstFunc *func)
 
         if (p_ast->type == RJS_AST_Rest) {
             RJS_AstRest *rest = (RJS_AstRest*)p_ast;
-            b = ast_get(rt, &rest->binding);
+            b = bc_ast_get(rt, &rest->binding);
         } else {
             RJS_AstBindingElem *be = (RJS_AstBindingElem*)p_ast;
-            b = ast_get(rt, &be->binding);
+            b = bc_ast_get(rt, &be->binding);
         }
 
         bc_gen_binding_assi_ref(rt, bg, b, &ref);
@@ -3008,7 +3008,7 @@ bc_gen_params_init (RJS_Runtime *rt, RJS_BcGen *bg, RJS_AstFunc *func)
             cmd->load_rest_args.id   = id;
             cmd->load_rest_args.dest = rid;
 
-            b = ast_get(rt, &rest->binding);
+            b = bc_ast_get(rt, &rest->binding);
         } else {
             RJS_AstBindingElem *be = (RJS_AstBindingElem*)p_ast;
             RJS_Ast            *init;
@@ -3018,10 +3018,10 @@ bc_gen_params_init (RJS_Runtime *rt, RJS_BcGen *bg, RJS_AstFunc *func)
             cmd->load_arg.id   = id;
             cmd->load_arg.dest = rid;
 
-            init = ast_get(rt, &be->init);
+            init = bc_ast_get(rt, &be->init);
             bc_gen_default_init(rt, bg, init, rid);
 
-            b = ast_get(rt, &be->binding);
+            b = bc_ast_get(rt, &be->binding);
         }
 
         bc_gen_binding_assi(rt, bg, b, rid, is_lex, &ref);
@@ -3045,9 +3045,9 @@ bc_gen_decl_stmt (RJS_Runtime *rt, RJS_BcGen *bg, RJS_AstList *list)
         RJS_Ast  *init;
         RJS_BcRef ref;
 
-        init = ast_get(rt, &be->init);
+        init = bc_ast_get(rt, &be->init);
         if (init) {
-            ast = ast_get(rt, &be->binding);
+            ast = bc_ast_get(rt, &be->binding);
             bc_gen_binding_assi_ref(rt, bg, ast, &ref);
 
             rid = bc_reg_add(rt, bg);
@@ -3062,7 +3062,7 @@ bc_gen_decl_stmt (RJS_Runtime *rt, RJS_BcGen *bg, RJS_AstList *list)
 
             line = be->ast.location.first_line;
 
-            ast = ast_get(rt, &be->binding);
+            ast = bc_ast_get(rt, &be->binding);
             bc_gen_binding_assi_ref(rt, bg, ast, &ref);
 
             rid = bc_reg_add(rt, bg);
@@ -3071,7 +3071,7 @@ bc_gen_decl_stmt (RJS_Runtime *rt, RJS_BcGen *bg, RJS_AstList *list)
             cmd = bc_cmd_get(bg, cid);
             cmd->load.dest = rid;
 
-            ast = ast_get(rt, &be->binding);
+            ast = bc_ast_get(rt, &be->binding);
             bc_gen_binding_assi(rt, bg, ast, rid, is_lex, &ref);
         }
     }
@@ -3100,16 +3100,16 @@ bc_gen_for_stmt (RJS_Runtime *rt, RJS_BcGen *bg, RJS_AstForStmt *fs)
         cmd = bc_cmd_get(bg, cid);
         cmd->decl.decl = fs->decl;
 
-        if (ast_get(rt, &fs->lex_table)) {
+        if (bc_ast_get(rt, &fs->lex_table)) {
             cid = bc_cmd_add(rt, bg, RJS_BC_binding_table_init, line);
             cmd = bc_cmd_get(bg, cid);
-            cmd->binding_table.table = ast_get(rt, &fs->lex_table);
+            cmd->binding_table.table = bc_ast_get(rt, &fs->lex_table);
         }
 
         rjs_code_gen_push_decl(rt, fs->decl);
     }
 
-    ast = ast_get(rt, &fs->init);
+    ast = bc_ast_get(rt, &fs->init);
     if (ast) {
         /*Do not update eval return register in initialize statement.*/
         int rv_reg = bg->rv_reg;
@@ -3137,7 +3137,7 @@ bc_gen_for_stmt (RJS_Runtime *rt, RJS_BcGen *bg, RJS_AstForStmt *fs)
     if (fs->decl) {
         cid = bc_cmd_add(rt, bg, RJS_BC_next_lex_env, line);
         cmd = bc_cmd_get(bg, cid);
-        cmd->binding_table.table = ast_get(rt, &fs->lex_table);
+        cmd->binding_table.table = bc_ast_get(rt, &fs->lex_table);
     }
 
     /*Check loop condition.*/
@@ -3145,7 +3145,7 @@ bc_gen_for_stmt (RJS_Runtime *rt, RJS_BcGen *bg, RJS_AstForStmt *fs)
     cmd = bc_cmd_get(bg, cid);
     cmd->stub.label = ls;
 
-    ast = ast_get(rt, &fs->cond);
+    ast = bc_ast_get(rt, &fs->cond);
     if (ast) {
         rid = bc_reg_add(rt, bg);
 
@@ -3158,7 +3158,7 @@ bc_gen_for_stmt (RJS_Runtime *rt, RJS_BcGen *bg, RJS_AstForStmt *fs)
     }
 
     /*Run loop statement.*/
-    ast = ast_get(rt, &fs->loop_stmt);
+    ast = bc_ast_get(rt, &fs->loop_stmt);
     bc_gen_stmt(rt, bg, ast);
 
     line = fs->ast.location.last_line;
@@ -3171,10 +3171,10 @@ bc_gen_for_stmt (RJS_Runtime *rt, RJS_BcGen *bg, RJS_AstForStmt *fs)
     if (fs->decl) {
         cid = bc_cmd_add(rt, bg, RJS_BC_next_lex_env, line);
         cmd = bc_cmd_get(bg, cid);
-        cmd->binding_table.table = ast_get(rt, &fs->lex_table);
+        cmd->binding_table.table = bc_ast_get(rt, &fs->lex_table);
     }
 
-    ast = ast_get(rt, &fs->step);
+    ast = bc_ast_get(rt, &fs->step);
     if (ast) {
         rid  = bc_reg_add(rt, bg);
 
@@ -3221,16 +3221,16 @@ bc_gen_for_in_of_stmt (RJS_Runtime *rt, RJS_BcGen *bg, RJS_AstForStmt *fs)
         cmd = bc_cmd_get(bg, cid);
         cmd->decl.decl = fs->decl;
 
-        if (ast_get(rt, &fs->lex_table)) {
+        if (bc_ast_get(rt, &fs->lex_table)) {
             cid = bc_cmd_add(rt, bg, RJS_BC_binding_table_init, line);
             cmd = bc_cmd_get(bg, cid);
-            cmd->binding_table.table = ast_get(rt, &fs->lex_table);
+            cmd->binding_table.table = bc_ast_get(rt, &fs->lex_table);
         }
 
         rjs_code_gen_push_decl(rt, fs->decl);
     }
 
-    ast = ast_get(rt, &fs->cond);
+    ast = bc_ast_get(rt, &fs->cond);
     rid = bc_reg_add(rt, bg);
     bc_gen_expr(rt, bg, ast, rid);
 
@@ -3311,16 +3311,16 @@ bc_gen_for_in_of_stmt (RJS_Runtime *rt, RJS_BcGen *bg, RJS_AstForStmt *fs)
         cmd = bc_cmd_get(bg, cid);
         cmd->decl.decl = fs->decl;
 
-        if (ast_get(rt, &fs->lex_table)) {
+        if (bc_ast_get(rt, &fs->lex_table)) {
             cid = bc_cmd_add(rt, bg, RJS_BC_binding_table_init, line);
             cmd = bc_cmd_get(bg, cid);
-            cmd->binding_table.table = ast_get(rt, &fs->lex_table);
+            cmd->binding_table.table = bc_ast_get(rt, &fs->lex_table);
         }
 
         rjs_code_gen_push_decl(rt, fs->decl);
     }
 
-    ast = ast_get(rt, &fs->init);
+    ast = bc_ast_get(rt, &fs->init);
     switch (ast->type) {
     case RJS_AST_VarDecl:
     case RJS_AST_LetDecl:
@@ -3333,7 +3333,7 @@ bc_gen_for_in_of_stmt (RJS_Runtime *rt, RJS_BcGen *bg, RJS_AstForStmt *fs)
 
         l      = (RJS_AstList*)ast;
         be     = RJS_CONTAINER_OF(l->list.next, RJS_AstBindingElem, ast.ln);
-        b      = ast_get(rt, &be->binding);
+        b      = bc_ast_get(rt, &be->binding);
         is_lex = (ast->type != RJS_AST_VarDecl);
 
         bc_gen_binding_assi_ref(rt, bg, b, &ref);
@@ -3342,7 +3342,7 @@ bc_gen_for_in_of_stmt (RJS_Runtime *rt, RJS_BcGen *bg, RJS_AstForStmt *fs)
     }
     case RJS_AST_ExprStmt: {
         RJS_AstExprStmt *es = (RJS_AstExprStmt*)ast;
-        RJS_Ast         *lh = ast_get(rt, &es->expr);
+        RJS_Ast         *lh = bc_ast_get(rt, &es->expr);
         RJS_BcRef        ref;
 
         bc_gen_assi_ref(rt, bg, lh, &ref);
@@ -3357,7 +3357,7 @@ bc_gen_for_in_of_stmt (RJS_Runtime *rt, RJS_BcGen *bg, RJS_AstForStmt *fs)
         bg->tco = RJS_FALSE;
 
     /*Run loop statement.*/
-    ast = ast_get(rt, &fs->loop_stmt);
+    ast = bc_ast_get(rt, &fs->loop_stmt);
     bc_gen_stmt(rt, bg, ast);
 
     /*Next.*/
@@ -3397,7 +3397,7 @@ bc_gen_switch_stmt (RJS_Runtime *rt, RJS_BcGen *bg, RJS_AstSwitchStmt *ss)
     RJS_AstCase   *cc;
 
     rid = bc_reg_add(rt, bg);
-    ast = ast_get(rt, &ss->cond);
+    ast = bc_ast_get(rt, &ss->cond);
     bc_gen_expr(rt, bg, ast, rid);
 
     line = ss->ast.location.first_line;
@@ -3415,16 +3415,16 @@ bc_gen_switch_stmt (RJS_Runtime *rt, RJS_BcGen *bg, RJS_AstSwitchStmt *ss)
         cmd = bc_cmd_get(bg, cid);
         cmd->decl.decl = ss->decl;
 
-        if (ast_get(rt, &ss->lex_table)) {
+        if (bc_ast_get(rt, &ss->lex_table)) {
             cid = bc_cmd_add(rt, bg, RJS_BC_binding_table_init, line);
             cmd = bc_cmd_get(bg, cid);
-            cmd->binding_table.table = ast_get(rt, &ss->lex_table);
+            cmd->binding_table.table = bc_ast_get(rt, &ss->lex_table);
         }
 
-        if (ast_get(rt, &ss->func_table)) {
+        if (bc_ast_get(rt, &ss->func_table)) {
             cid = bc_cmd_add(rt, bg, RJS_BC_func_table_init, line);
             cmd = bc_cmd_get(bg, cid);
-            cmd->func_table.table = ast_get(rt, &ss->func_table);
+            cmd->func_table.table = bc_ast_get(rt, &ss->func_table);
         }
 
         rjs_code_gen_push_decl(rt, ss->decl);
@@ -3437,7 +3437,7 @@ bc_gen_switch_stmt (RJS_Runtime *rt, RJS_BcGen *bg, RJS_AstSwitchStmt *ss)
 
     /*Solve case conditions.*/
     rjs_list_foreach_c(&ss->case_list, cc, RJS_AstCase, ast.ln) {
-        ast = ast_get(rt, &cc->cond);
+        ast = bc_ast_get(rt, &cc->cond);
 
         if (ast) {
             int cr  = bc_reg_add(rt, bg);
@@ -3543,7 +3543,7 @@ bc_gen_try_stmt (RJS_Runtime *rt, RJS_BcGen *bg, RJS_AstTryStmt *ts)
 
     bg->tco = RJS_FALSE;
 
-    ast = ast_get(rt, &ts->try_block);
+    ast = bc_ast_get(rt, &ts->try_block);
     bc_gen_block(rt, bg, (RJS_AstBlock*)ast);
 
     cid = bc_cmd_add(rt, bg, RJS_BC_jump, line);
@@ -3555,10 +3555,10 @@ bc_gen_try_stmt (RJS_Runtime *rt, RJS_BcGen *bg, RJS_AstTryStmt *ts)
     cmd = bc_cmd_get(bg, cid);
     cmd->stub.label = lc;
 
-    if (!ast_get(rt, &ts->final_block))
+    if (!bc_ast_get(rt, &ts->final_block))
         bg->tco = old_tco;
 
-    ast = ast_get(rt, &ts->catch_block);
+    ast = bc_ast_get(rt, &ts->catch_block);
     if (ast) {
         int rid;
 
@@ -3572,7 +3572,7 @@ bc_gen_try_stmt (RJS_Runtime *rt, RJS_BcGen *bg, RJS_AstTryStmt *ts)
         if (ts->catch_decl) {
             RJS_Ast *binding;
 
-            binding = ast_get(rt, &ts->catch_binding);
+            binding = bc_ast_get(rt, &ts->catch_binding);
 
             if (binding) {
                 RJS_BcRef ref;
@@ -3583,10 +3583,10 @@ bc_gen_try_stmt (RJS_Runtime *rt, RJS_BcGen *bg, RJS_AstTryStmt *ts)
                 cmd = bc_cmd_get(bg, cid);
                 cmd->decl.decl = ts->catch_decl;
 
-                if (ast_get(rt, &ts->catch_table)) {
+                if (bc_ast_get(rt, &ts->catch_table)) {
                     cid = bc_cmd_add(rt, bg, RJS_BC_binding_table_init, line);
                     cmd = bc_cmd_get(bg, cid);
-                    cmd->binding_table.table = ast_get(rt, &ts->catch_table);
+                    cmd->binding_table.table = bc_ast_get(rt, &ts->catch_table);
                 }
 
                 rjs_code_gen_push_decl(rt, ts->catch_decl);
@@ -3616,7 +3616,7 @@ bc_gen_try_stmt (RJS_Runtime *rt, RJS_BcGen *bg, RJS_AstTryStmt *ts)
     cmd = bc_cmd_get(bg, cid);
     cmd->stub.label = lb;
 
-    ast = ast_get(rt, &ts->final_block);
+    ast = bc_ast_get(rt, &ts->final_block);
     if (ast) {
         /*
          * Add a new register to store the return value.
@@ -3667,7 +3667,7 @@ bc_gen_with_stmt (RJS_Runtime *rt, RJS_BcGen *bg, RJS_AstWithStmt *ws)
 
     rid = bc_reg_add(rt, bg);
 
-    ast = ast_get(rt, &ws->with_expr);
+    ast = bc_ast_get(rt, &ws->with_expr);
     bc_gen_expr(rt, bg, ast, rid);
 
     line = ws->ast.location.first_line;
@@ -3689,7 +3689,7 @@ bc_gen_with_stmt (RJS_Runtime *rt, RJS_BcGen *bg, RJS_AstWithStmt *ws)
 
     rjs_code_gen_push_decl(rt, ws->decl);
 
-    ast = ast_get(rt, &ws->with_stmt);
+    ast = bc_ast_get(rt, &ws->with_stmt);
     bc_gen_stmt(rt, bg, ast);
 
     rjs_code_gen_pop_decl(rt);
@@ -3762,7 +3762,7 @@ bc_gen_class (RJS_Runtime *rt, RJS_BcGen *bg, RJS_AstClassRef *cr, int rr)
     cp_rid = bc_reg_add(rt, bg);
 
     /*Extends.*/
-    ast = ast_get(rt, &c->extends);
+    ast = bc_ast_get(rt, &c->extends);
     if (ast) {
         rjs_code_gen_push_decl(rt, c->decl);
 
@@ -3770,10 +3770,10 @@ bc_gen_class (RJS_Runtime *rt, RJS_BcGen *bg, RJS_AstClassRef *cr, int rr)
         cmd = bc_cmd_get(bg, cid);
         cmd->decl.decl = c->decl;
 
-        if (ast_get(rt, &c->name_table)) {
+        if (bc_ast_get(rt, &c->name_table)) {
             cid = bc_cmd_add(rt, bg, RJS_BC_binding_table_init, line);
             cmd = bc_cmd_get(bg, cid);
-            cmd->binding_table.table = ast_get(rt, &c->name_table);
+            cmd->binding_table.table = bc_ast_get(rt, &c->name_table);
         }
 
         bc_gen_expr(rt, bg, ast, cp_rid);
@@ -3828,10 +3828,10 @@ bc_gen_class (RJS_Runtime *rt, RJS_BcGen *bg, RJS_AstClassRef *cr, int rr)
         cmd = bc_cmd_get(bg, cid);
         cmd->decl.decl = c->decl;
 
-        if (ast_get(rt, &c->name_table)) {
+        if (bc_ast_get(rt, &c->name_table)) {
             cid = bc_cmd_add(rt, bg, RJS_BC_binding_table_init, line);
             cmd = bc_cmd_get(bg, cid);
-            cmd->binding_table.table = ast_get(rt, &c->name_table);
+            cmd->binding_table.table = bc_ast_get(rt, &c->name_table);
         }
     }
 
@@ -3843,7 +3843,7 @@ bc_gen_class (RJS_Runtime *rt, RJS_BcGen *bg, RJS_AstClassRef *cr, int rr)
         cmd->constr_create.func          = c->constructor->func;
         cmd->constr_create.obj           = c_rid;
     } else {
-        if (ast_get(rt, &c->extends))
+        if (bc_ast_get(rt, &c->extends))
             cid = bc_cmd_add(rt, bg, RJS_BC_derived_default_constr, line);
         else
             cid = bc_cmd_add(rt, bg, RJS_BC_default_constr, line);
@@ -3867,7 +3867,7 @@ bc_gen_class (RJS_Runtime *rt, RJS_BcGen *bg, RJS_AstClassRef *cr, int rr)
             continue;
 
         if (ce->type != RJS_AST_CLASS_ELEM_BLOCK) {
-            RJS_Ast *ast = ast_get(rt, &ce->name);
+            RJS_Ast *ast = bc_ast_get(rt, &ce->name);
 
 #if ENABLE_PRIV_NAME
             if (ast->type == RJS_AST_PrivId) {
@@ -3963,7 +3963,7 @@ bc_gen_class (RJS_Runtime *rt, RJS_BcGen *bg, RJS_AstClassRef *cr, int rr)
     line = c->ast.location.last_line;
 
     /*Initialize the class binding.*/
-    if (ast_get(rt, &c->name_table)) {
+    if (bc_ast_get(rt, &c->name_table)) {
         RJS_AstBindingRef *br;
 
         br = rjs_code_gen_binding_ref(rt, &c->ast.location, &c->name->value);
@@ -3999,7 +3999,7 @@ bc_gen_default_expr_stmt (RJS_Runtime *rt, RJS_BcGen *bg, RJS_AstExprStmt *es)
     RJS_AstBindingRef *br;
 
     rid  = bc_reg_add(rt, bg);
-    expr = ast_get(rt, &es->expr);
+    expr = bc_ast_get(rt, &es->expr);
 
     bc_gen_expr(rt, bg, expr, rid);
 
@@ -4092,7 +4092,7 @@ bc_gen_stmt (RJS_Runtime *rt, RJS_BcGen *bg, RJS_Ast *stmt)
     }
     case RJS_AST_LabelStmt: {
         RJS_AstLabelStmt *ls  = (RJS_AstLabelStmt*)stmt;
-        RJS_Ast          *ast = ast_get(rt, &ls->stmt);
+        RJS_Ast          *ast = bc_ast_get(rt, &ls->stmt);
 
         bc_gen_stmt(rt, bg, ast);
         break;
@@ -4435,18 +4435,18 @@ rjs_bc_gen_func (RJS_Runtime *rt, RJS_BcGen *bg, RJS_AstFunc *func)
             cid = bc_cmd_add(rt, bg, RJS_BC_script_init, 1);
             cmd = bc_cmd_get(bg, cid);
             cmd->init.decl       = func->var_decl;
-            cmd->init.var_table  = ast_get(rt, &func->var_table);
-            cmd->init.lex_table  = ast_get(rt, &func->lex_table);
-            cmd->init.func_table = ast_get(rt, &func->func_table);
+            cmd->init.var_table  = bc_ast_get(rt, &func->var_table);
+            cmd->init.lex_table  = bc_ast_get(rt, &func->lex_table);
+            cmd->init.func_table = bc_ast_get(rt, &func->func_table);
         }
     } else
 #endif /*ENABLE_SCRIPT*/
 #if ENABLE_MODULE
     if (func->flags & RJS_AST_FUNC_FL_MODULE) {
         bg->mod_decl       = func->var_decl;
-        bg->mod_var_table  = ast_get(rt, &func->var_table);
-        bg->mod_lex_table  = ast_get(rt, &func->lex_table);
-        bg->mod_func_table = ast_get(rt, &func->func_table);
+        bg->mod_var_table  = bc_ast_get(rt, &func->var_table);
+        bg->mod_lex_table  = bc_ast_get(rt, &func->lex_table);
+        bg->mod_func_table = bc_ast_get(rt, &func->func_table);
     } else
 #endif /*ENABLE_MODULE*/
 #if ENABLE_EVAL
@@ -4460,9 +4460,9 @@ rjs_bc_gen_func (RJS_Runtime *rt, RJS_BcGen *bg, RJS_AstFunc *func)
         cid = bc_cmd_add(rt, bg, RJS_BC_eval_init, 1);
         cmd = bc_cmd_get(bg, cid);
         cmd->init.decl       = func->var_decl;
-        cmd->init.var_table  = ast_get(rt, &func->var_table);
-        cmd->init.lex_table  = ast_get(rt, &func->lex_table);
-        cmd->init.func_table = ast_get(rt, &func->func_table);
+        cmd->init.var_table  = bc_ast_get(rt, &func->var_table);
+        cmd->init.lex_table  = bc_ast_get(rt, &func->lex_table);
+        cmd->init.func_table = bc_ast_get(rt, &func->func_table);
     } else
 #endif /*ENABLE_EVAL*/
     {
@@ -4483,10 +4483,10 @@ rjs_bc_gen_func (RJS_Runtime *rt, RJS_BcGen *bg, RJS_AstFunc *func)
         rjs_code_gen_push_decl(rt, func->param_decl);
 
         /*Parameters binding table initialized.*/
-        if (ast_get(rt, &func->param_table)) {
+        if (bc_ast_get(rt, &func->param_table)) {
             cid = bc_cmd_add(rt, bg, RJS_BC_binding_table_init, line);
             cmd = bc_cmd_get(bg, cid);
-            cmd->binding_table.table = ast_get(rt, &func->param_table);
+            cmd->binding_table.table = bc_ast_get(rt, &func->param_table);
         }
 
         /*Arguments object.*/
@@ -4496,7 +4496,7 @@ rjs_bc_gen_func (RJS_Runtime *rt, RJS_BcGen *bg, RJS_AstFunc *func)
             } else {
                 cid = bc_cmd_add(rt, bg, RJS_BC_mapped_args, line);
                 cmd = bc_cmd_get(bg, cid);
-                cmd->binding_table.table = ast_get(rt, &func->param_table);
+                cmd->binding_table.table = bc_ast_get(rt, &func->param_table);
             }
         }
 
@@ -4510,10 +4510,10 @@ rjs_bc_gen_func (RJS_Runtime *rt, RJS_BcGen *bg, RJS_AstFunc *func)
             cmd->decl.decl = func->var_decl;
         }
 
-        if (ast_get(rt, &func->var_table)) {
+        if (bc_ast_get(rt, &func->var_table)) {
             cid = bc_cmd_add(rt, bg, RJS_BC_binding_table_init, line);
             cmd = bc_cmd_get(bg, cid);
-            cmd->binding_table.table = ast_get(rt, &func->var_table);
+            cmd->binding_table.table = bc_ast_get(rt, &func->var_table);
         }
 
         /*Lexically declaraions.*/
@@ -4523,17 +4523,17 @@ rjs_bc_gen_func (RJS_Runtime *rt, RJS_BcGen *bg, RJS_AstFunc *func)
             cmd->decl.decl = func->lex_decl;
         }
 
-        if (ast_get(rt, &func->lex_table)) {
+        if (bc_ast_get(rt, &func->lex_table)) {
             cid = bc_cmd_add(rt, bg, RJS_BC_binding_table_init, line);
             cmd = bc_cmd_get(bg, cid);
-            cmd->binding_table.table = ast_get(rt, &func->lex_table);
+            cmd->binding_table.table = bc_ast_get(rt, &func->lex_table);
         }
 
         /*Functions.*/
-        if (ast_get(rt, &func->func_table)) {
+        if (bc_ast_get(rt, &func->func_table)) {
             cid = bc_cmd_add(rt, bg, RJS_BC_top_func_table_init, line);
             cmd = bc_cmd_get(bg, cid);
-            cmd->func_table.table = ast_get(rt, &func->func_table);
+            cmd->func_table.table = bc_ast_get(rt, &func->func_table);
         }
 
 #if ENABLE_GENERATOR

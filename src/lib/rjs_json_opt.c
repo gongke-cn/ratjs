@@ -71,7 +71,7 @@ serialize_json_property (RJS_Runtime *rt, RJS_JsonState *js, RJS_PropertyName *p
 
 /*Get a token from the parser.*/
 static RJS_Token*
-get_token (RJS_Runtime *rt, RJS_JsonParser *jp)
+get_json_token (RJS_Runtime *rt, RJS_JsonParser *jp)
 {
     RJS_Result r;
 
@@ -88,7 +88,7 @@ get_token (RJS_Runtime *rt, RJS_JsonParser *jp)
 
 /*Push back a token to the input.*/
 static void
-unget_token (RJS_Runtime *rt, RJS_JsonParser *jp)
+unget_json_token (RJS_Runtime *rt, RJS_JsonParser *jp)
 {
     assert(!jp->cached);
 
@@ -97,7 +97,7 @@ unget_token (RJS_Runtime *rt, RJS_JsonParser *jp)
 
 /*Initialize the JSON parser.*/
 static void
-parser_init (RJS_Runtime *rt, RJS_JsonParser *jp, RJS_Input *input)
+json_parser_init (RJS_Runtime *rt, RJS_JsonParser *jp, RJS_Input *input)
 {
     jp->error  = RJS_FALSE;
     jp->cached = RJS_FALSE;
@@ -110,7 +110,7 @@ parser_init (RJS_Runtime *rt, RJS_JsonParser *jp, RJS_Input *input)
 
 /*Release the JSON parser.*/
 static void
-parser_deinit (RJS_Runtime *rt, RJS_JsonParser *jp)
+json_parser_deinit (RJS_Runtime *rt, RJS_JsonParser *jp)
 {
     rjs_char_buffer_deinit(rt, &jp->cb);
     rjs_uchar_buffer_deinit(rt, &jp->ucb);
@@ -119,7 +119,7 @@ parser_deinit (RJS_Runtime *rt, RJS_JsonParser *jp)
 
 /*Output error message.*/
 static void
-parse_error (RJS_Runtime *rt, RJS_JsonParser *jp, RJS_Location *loc, const char *fmt, ...)
+json_parse_error (RJS_Runtime *rt, RJS_JsonParser *jp, RJS_Location *loc, const char *fmt, ...)
 {
     RJS_Location curr_loc;
     va_list      ap;
@@ -149,7 +149,7 @@ parse_array (RJS_Runtime *rt, RJS_JsonParser *jp, RJS_Value *v)
     rjs_array_new(rt, v, 0, NULL);
 
     while (1) {
-        if (!(tok = get_token(rt, jp))) {
+        if (!(tok = get_json_token(rt, jp))) {
             r = RJS_ERR;
             goto end;
         }
@@ -158,7 +158,7 @@ parse_array (RJS_Runtime *rt, RJS_JsonParser *jp, RJS_Value *v)
             break;
 
 
-        unget_token(rt, jp);
+        unget_json_token(rt, jp);
 
         if ((r = parse_value(rt, jp, item)) == RJS_ERR)
             goto end;
@@ -167,7 +167,7 @@ parse_array (RJS_Runtime *rt, RJS_JsonParser *jp, RJS_Value *v)
 
         idx ++;
 
-        if (!(tok = get_token(rt, jp))) {
+        if (!(tok = get_json_token(rt, jp))) {
             r = RJS_ERR;
             goto end;
         }
@@ -176,7 +176,7 @@ parse_array (RJS_Runtime *rt, RJS_JsonParser *jp, RJS_Value *v)
             break;
 
         if (tok->type != RJS_TOKEN_comma) {
-            parse_error(rt, jp, &tok->location, _("expect `,\' here"));
+            json_parse_error(rt, jp, &tok->location, _("expect `,\' here"));
             r = RJS_ERR;
             goto end;
         }
@@ -202,7 +202,7 @@ parse_object (RJS_Runtime *rt, RJS_JsonParser *jp, RJS_Value *v)
     rjs_object_new(rt, v, NULL);
 
     while (1) {
-        if (!(tok = get_token(rt, jp))) {
+        if (!(tok = get_json_token(rt, jp))) {
             r = RJS_ERR;
             goto end;
         }
@@ -213,18 +213,18 @@ parse_object (RJS_Runtime *rt, RJS_JsonParser *jp, RJS_Value *v)
         if ((tok->type == RJS_TOKEN_STRING) || (tok->type == RJS_TOKEN_IDENTIFIER)) {
             rjs_value_copy(rt, key, tok->value);
         } else {
-            parse_error(rt, jp, &tok->location, _("expect a string here"));
+            json_parse_error(rt, jp, &tok->location, _("expect a string here"));
             r = RJS_ERR;
             goto end;
         }
 
-        if (!(tok = get_token(rt, jp))) {
+        if (!(tok = get_json_token(rt, jp))) {
             r = RJS_ERR;
             goto end;
         }
 
         if (tok->type != RJS_TOKEN_colon) {
-            parse_error(rt, jp, &tok->location, _("expect `:\' here"));
+            json_parse_error(rt, jp, &tok->location, _("expect `:\' here"));
             r = RJS_ERR;
             goto end;
         }
@@ -236,7 +236,7 @@ parse_object (RJS_Runtime *rt, RJS_JsonParser *jp, RJS_Value *v)
         rjs_create_data_property_or_throw(rt, v, &pn, kv);
         rjs_property_name_deinit(rt, &pn);
 
-        if (!(tok = get_token(rt, jp))) {
+        if (!(tok = get_json_token(rt, jp))) {
             r = RJS_ERR;
             goto end;
         }
@@ -245,7 +245,7 @@ parse_object (RJS_Runtime *rt, RJS_JsonParser *jp, RJS_Value *v)
             break;
 
         if (tok->type != RJS_TOKEN_comma) {
-            parse_error(rt, jp, &tok->location, _("expect `,\' or `}\' here"));
+            json_parse_error(rt, jp, &tok->location, _("expect `,\' or `}\' here"));
             r = RJS_ERR;
             goto end;
         }
@@ -259,12 +259,12 @@ end:
 
 /*Parse the number.*/
 static RJS_Result
-parse_number (RJS_Runtime *rt, RJS_JsonParser *jp, RJS_Value *v)
+parse_json_number (RJS_Runtime *rt, RJS_JsonParser *jp, RJS_Value *v)
 {
     RJS_Result r;
     RJS_Token *tok;
 
-    if (!(tok = get_token(rt, jp)))
+    if (!(tok = get_json_token(rt, jp)))
         return RJS_ERR;
 
     switch (tok->type) {
@@ -280,12 +280,12 @@ parse_number (RJS_Runtime *rt, RJS_JsonParser *jp, RJS_Value *v)
             rjs_value_set_number(rt, v, NAN);
             r = RJS_OK;
         } else {
-            parse_error(rt, jp, &tok->location, _("illegal token"));
+            json_parse_error(rt, jp, &tok->location, _("illegal token"));
             r = RJS_ERR;
         }
         break;
     default:
-        parse_error(rt, jp, &tok->location, _("illegal token"));
+        json_parse_error(rt, jp, &tok->location, _("illegal token"));
         r = RJS_ERR;
         break;
     }
@@ -300,7 +300,7 @@ parse_value (RJS_Runtime *rt, RJS_JsonParser *jp, RJS_Value *v)
     RJS_Result r;
     RJS_Token *tok;
 
-    if (!(tok = get_token(rt, jp)))
+    if (!(tok = get_json_token(rt, jp)))
         return RJS_ERR;
 
     switch (tok->type) {
@@ -316,10 +316,10 @@ parse_value (RJS_Runtime *rt, RJS_JsonParser *jp, RJS_Value *v)
         r = RJS_OK;
         break;
     case RJS_TOKEN_plus:
-        r = parse_number(rt, jp, v);
+        r = parse_json_number(rt, jp, v);
         break;
     case RJS_TOKEN_minus:
-        if ((r = parse_number(rt, jp, v)) == RJS_OK) {
+        if ((r = parse_json_number(rt, jp, v)) == RJS_OK) {
             RJS_Number n;
 
             n = rjs_value_get_number(rt, v);
@@ -343,12 +343,12 @@ parse_value (RJS_Runtime *rt, RJS_JsonParser *jp, RJS_Value *v)
             rjs_value_set_number(rt, v, NAN);
             r = RJS_OK;
         } else {
-            parse_error(rt, jp, &tok->location, _("illegal token"));
+            json_parse_error(rt, jp, &tok->location, _("illegal token"));
             r = RJS_ERR;
         }
         break;
     default:
-        parse_error(rt, jp, &tok->location, _("illegal token"));
+        json_parse_error(rt, jp, &tok->location, _("illegal token"));
         r = RJS_ERR;
         break;
     }
@@ -366,11 +366,11 @@ parse_json (RJS_Runtime *rt, RJS_JsonParser *jp, RJS_Value *v)
     if ((r = parse_value(rt, jp, v)) == RJS_ERR)
         return r;
 
-    if (!(tok = get_token(rt, jp)))
+    if (!(tok = get_json_token(rt, jp)))
         return RJS_ERR;
 
     if (tok->type != RJS_TOKEN_END) {
-        parse_error(rt, jp, &tok->location, _("expect EOF here"));
+        json_parse_error(rt, jp, &tok->location, _("expect EOF here"));
         return RJS_ERR;
     }
 
@@ -387,11 +387,11 @@ json_from_input (RJS_Runtime *rt, RJS_Input *input, RJS_Value *res)
 
     input->flags |= RJS_INPUT_FL_CRLF_TO_LF;
 
-    parser_init(rt, &jp, input);
+    json_parser_init(rt, &jp, input);
 
     r = parse_json(rt, &jp, res);
 
-    parser_deinit(rt, &jp);
+    json_parser_deinit(rt, &jp);
 
     rjs_value_stack_restore(rt, top);
     return r;

@@ -96,6 +96,17 @@ extern RJS_Result
 rjs_perform_proimise_then (RJS_Runtime *rt, RJS_Value *promise, RJS_Value *fulfill, RJS_Value *reject,
         RJS_PromiseCapability *result_pc, RJS_Value *rpromise);
 
+/**
+ * Invoke reject if arupt.
+ * \param rt The current runtime.
+ * \param r The result.
+ * \param pc The promise capability.
+ * \param rv The return value.
+ * \return Return r.
+ */
+extern RJS_Result
+if_abrupt_reject_promise (RJS_Runtime *rt, RJS_Result r, RJS_PromiseCapability *pc, RJS_Value *rv);
+
 #ifdef __cplusplus
 }
 #endif

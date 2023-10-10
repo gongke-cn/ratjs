@@ -55,8 +55,15 @@ get_promise_resolve (RJS_Runtime *rt, RJS_Value *c, RJS_Value *resolve)
     return RJS_OK;
 }
 
-/*Invoke reject if arupt.*/
-static RJS_Result
+/**
+ * Invoke reject if arupt.
+ * \param rt The current runtime.
+ * \param r The result.
+ * \param pc The promise capability.
+ * \param rv The return value.
+ * \return Return r.
+ */
+RJS_Result
 if_abrupt_reject_promise (RJS_Runtime *rt, RJS_Result r, RJS_PromiseCapability *pc, RJS_Value *rv)
 {
     if (r == RJS_ERR) {

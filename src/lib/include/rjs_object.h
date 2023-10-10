@@ -89,6 +89,12 @@ struct RJS_Object_s {
     uint32_t     array_item_cap; /**< The capacity of the array vector.*/
 };
 
+/**String property entry.*/
+typedef struct {
+    RJS_HashEntry he;    /**< Hash table entry.*/
+    RJS_Value     value; /**< Value.*/
+} RJS_StringPropEntry;
+
 /**
  * Convert the value to property key.
  * \param rt The current runtime.

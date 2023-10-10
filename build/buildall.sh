@@ -15,7 +15,8 @@ function build
 
     make dist-clean O=$O || exit 1
     make config O=$O $@ || exit 1
-    make O=$O -j64 || exit 1
+
+    make O=$O $@ -j64 || exit 1
 }
 
 if [ "x$1" = "xclean" ]; then
@@ -55,7 +56,8 @@ if [ "x$1" = "xclean" ]; then
     clean out_m32
     clean out_mingw_32
     clean out_mingw_64
-    clean out_min
+    clean out_osize
+    clean out_static_only
 else
     build out
     build out_conv_iconv ENC_CONV=iconv
@@ -93,6 +95,7 @@ else
     build out_m32 M=32
     build out_mingw_32 ARCH=win CROSS_COMPILE=i686-w64-mingw32-
     build out_mingw_64 ARCH=win CROSS_COMPILE=x86_64-w64-mingw32-
-    build out_min ENC_CONV=internal ENABLE_MODULE=0 ENABLE_BIG_INT=0 ENABLE_PRIV_NAME=0 ENABLE_GENERATOR=0 ENABLE_ASYNC=0 ENABLE_ARROW_FUNC=0 ENABLE_BOUND_FUNC=0 ENABLE_PROXY=0 ENABLE_EVAL=0 ENABLE_MATH=0 ENABLE_DATE=0 ENABLE_URI=0 ENABLE_INT_INDEXED_OBJECT=0 ENABLE_ARRAY_BUFFER=0 ENABLE_SHARED_ARRAY_BUFFER=0 ENABLE_DATA_VIEW=0 ENABLE_ATOMICS=0 ENABLE_MAP=0 ENABLE_SET=0 ENABLE_WEAK_MAP=0 ENABLE_WEAK_SET=0 ENABLE_WEAK_REF=0 ENABLE_JSON=0 ENABLE_FUNC_SOURCE=0
+    build out_osize OSIZE=1
+    build out_static_only STATIC_ONLY=1
 fi
 

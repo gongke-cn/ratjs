@@ -793,6 +793,7 @@ main (int argc, char **argv)
     add_skip("import-assertions");
     add_skip("decorators");
     add_skip("align-detached-buffer-semantics-with-web-reality");
+    add_skip("iterator-helpers");
 
     while (1) {
         int opt = getopt(argc, argv, "ds:");

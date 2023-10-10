@@ -25,12 +25,6 @@
 
 #include "ratjs_internal.h"
 
-/**String property entry.*/
-typedef struct {
-    RJS_HashEntry he;    /**< Hash table entry.*/
-    RJS_Value     value; /**< Value.*/
-} RJS_StringPropEntry;
-
 /*Push a new state to the stack.*/
 static RJS_State*
 state_push (RJS_Runtime *rt, RJS_StateType type)

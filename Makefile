@@ -35,9 +35,19 @@ AR := $(CROSS_COMPILE)ar
 RANLIB := $(CROSS_COMPILE)ranlib
 
 # Compiling flags
-CFLAGS += -Wall -O2 -fPIC -Iinclude -I$(O)/include -I$(O)/src/lib
+CFLAGS += -Wall -Iinclude -I$(O)/include -I$(O)/src/lib
 # Linked libraries and flags
 LIBS += -lm
+
+ifneq ($(OSIZE),1)
+	CFLAGS += -O2
+else
+	CFLAGS += -Os
+endif
+
+ifneq ($(STATIC_ONLY),1)
+	CFLAGS += -fPIC
+endif
 
 ifeq ($(ARCH),win)
 	# Suffix of static library
@@ -189,6 +199,8 @@ $(eval $(call bool_config,ENABLE_CALLER,1,enable Function.caller))
 $(eval $(call bool_config,ENABLE_COLOR_CONSOLE,1,enable color terminal output))
 $(eval $(call bool_config,ENABLE_FUNC_SOURCE,1,enable function source))
 $(eval $(call bool_config,ENABLE_EXTENSION,1,enable extension functions,src/lib/rjs_extension_opt.c))
+$(eval $(call bool_config,STATIC_ONLY,0,do not generate the dynamic library))
+$(eval $(call bool_config,OSIZE,0,optimize to reduce size))
 
 # Host C
 HOST_CC := cc
@@ -258,7 +270,10 @@ LIBRATJS_SLIB := $(O)/libratjs$(SLIB_SUFFIX)
 # Dynamic library target: libratjs
 LIBRATJS_DLIB := $(O)/libratjs$(DLIB_SUFFIX)
 # Libraries targets: libratjs
-LIBRATJS := $(LIBRATJS_SLIB) $(LIBRATJS_DLIB)
+LIBRATJS := $(LIBRATJS_SLIB)
+ifneq ($(STATIC_ONLY),1)
+LIBRATJS += $(LIBRATJS_DLIB)
+endif
 # Source files of libratjs
 LIBRATJS_SRCS += $(filter-out $(wildcard src/lib/*_inc.c src/lib/*_opt.c),$(wildcard src/lib/*.c))
 
@@ -326,6 +341,7 @@ $(O)/$(1)$(SLIB_SUFFIX): $$(patsubst %.c,$(O)/%.o,$(2))
 endef
 
 # Link dynamic library
+ifneq ($(STATIC_ONLY),1)
 ifeq ($(ARCH),win)
 define build_dlib =
 $(O)/$(1)$(DLIB_SUFFIX): $$(patsubst %.c,$(O)/%.o,$(2))
@@ -340,13 +356,30 @@ $(O)/$(1)$(DLIB_SUFFIX): $$(patsubst %.c,$(O)/%.o,$(2))
 	$(Q)$(CC) -o $$@ $$^ -shared $(LIBS) -Wl,-soname,$(1)$(DLIB_SUFFIX).$(SO_MAJOR_VERSION)
 endef
 endif
+else
+build_dlib =
+endif
 
 # Build library
+ifneq ($(OSIZE),1)
 define build_lib =
 $(eval $(call compile_srcs,$(2)))
 $(eval $(call build_slib,$(1),$(2)))
 $(eval $(call build_dlib,$(1),$(2)))
 endef
+else
+define build_lib =
+src/lib/$(1)_opt.c: $(2)
+	$(Q)cat $(2) > src/lib/$(1)_opt.c
+.PHONY: src/lib/$(1)_opt.c
+$(O)/$(1).o: src/lib/$(1)_opt.c
+	$$(info CC $$^ -> $$@)
+	$(Q)$(CC) -c -o $$@ src/lib/$(1)_opt.c $(CFLAGS) -MMD -MF $(O)/$(1).d
+DEPS += $(O)/$(1).d
+$(eval $(call build_slib,$(1),$(1).c))
+$(eval $(call build_dlib,$(1),$(1).c))
+endef
+endif
 
 # Build executable program
 define build_exe =

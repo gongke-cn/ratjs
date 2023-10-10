@@ -375,7 +375,7 @@ pattern_deinit (RJS_Runtime *rt, RJS_RegExpPattern *pat)
 
 /*Initialize the parser.*/
 static void
-parser_init (RJS_Runtime *rt, RJS_RegExpParser *p, RJS_Value *src, int flags)
+regexp_parser_init (RJS_Runtime *rt, RJS_RegExpParser *p, RJS_Value *src, int flags)
 {
     p->stack_top = rjs_value_stack_save(rt);
 
@@ -401,7 +401,7 @@ parser_init (RJS_Runtime *rt, RJS_RegExpParser *p, RJS_Value *src, int flags)
 
 /*Release the parser.*/
 static void
-parser_deinit (RJS_Runtime *rt, RJS_RegExpParser *p)
+regexp_parser_deinit (RJS_Runtime *rt, RJS_RegExpParser *p)
 {
     RJS_RegExpNameEntry *n, *nn;
 
@@ -444,7 +444,7 @@ unget_uc (RJS_Runtime *rt, RJS_RegExpParser *p, int uc)
 
 /*Output parse error message.*/
 static void
-parse_error (RJS_Runtime *rt, RJS_RegExpParser *p, const char *fmt, ...)
+regexp_parse_error (RJS_Runtime *rt, RJS_RegExpParser *p, const char *fmt, ...)
 {
     RJS_Parser  *parser = rt->parser;
     RJS_Input   *input;
@@ -477,7 +477,7 @@ parse_uc_escape (RJS_Runtime *rt, RJS_RegExpParser *p)
     for (i = 0; i < 4; i ++) {
         c = get_uc(rt, p);
         if (!rjs_uchar_is_xdigit(c)) {
-            parse_error(rt, p, _("expect a hexadecimal character here"));
+            regexp_parse_error(rt, p, _("expect a hexadecimal character here"));
             return RJS_ERR;
         }
 
@@ -505,14 +505,14 @@ parse_uc_escape_seq (RJS_Runtime *rt, RJS_RegExpParser *p, int flags)
 
                 if (c == '}') {
                     if (!has_xdigit) {
-                        parse_error(rt, p, _("expect a hexadecimal character here"));
+                        regexp_parse_error(rt, p, _("expect a hexadecimal character here"));
                         return RJS_ERR;
                     }
                     break;
                 }
 
                 if (!rjs_uchar_is_xdigit(c)) {
-                    parse_error(rt, p, _("expect a hexadecimal character here"));
+                    regexp_parse_error(rt, p, _("expect a hexadecimal character here"));
                     return RJS_ERR;
                 }
 
@@ -520,7 +520,7 @@ parse_uc_escape_seq (RJS_Runtime *rt, RJS_RegExpParser *p, int flags)
                 v |= rjs_hex_char_to_number(c);
 
                 if (v > 0x10ffff) {
-                    parse_error(rt, p, _("illegal unicode"));
+                    regexp_parse_error(rt, p, _("illegal unicode"));
                     return RJS_ERR;
                 }
 
@@ -588,7 +588,7 @@ parse_uc (RJS_Runtime *rt, RJS_RegExpParser *p, int flags)
     if (c == '\\') {
         c = get_uc(rt, p);
         if (c != 'u') {
-            parse_error(rt, p, _("expect `u' here"));
+            regexp_parse_error(rt, p, _("expect `u' here"));
             return RJS_ERR;
         }
         if ((c = parse_uc_escape_seq(rt, p, flags)) == RJS_ERR)
@@ -621,7 +621,7 @@ identity_escape (RJS_Runtime *rt, RJS_RegExpParser *p, int c)
             case '/':
                 break;
             default:
-                parse_error(rt, p, _("illegal identity escape character"));
+                regexp_parse_error(rt, p, _("illegal identity escape character"));
                 return RJS_ERR;
         }
     }
@@ -646,7 +646,7 @@ parse_prop (RJS_Runtime *rt, RJS_RegExpParser *p, RJS_RegExpChar *mc)
         c = get_uc(rt, p);
 
         if (c == RJS_INPUT_END) {
-            parse_error(rt, p, _("expect `}\' at end of unicode property"));
+            regexp_parse_error(rt, p, _("expect `}\' at end of unicode property"));
             return RJS_ERR;
         }
 
@@ -654,7 +654,7 @@ parse_prop (RJS_Runtime *rt, RJS_RegExpParser *p, RJS_RegExpChar *mc)
             break;
 
         if (!isalpha(c) && (c != '_')) {
-            parse_error(rt, p, _("illegcal unicode property name character"));
+            regexp_parse_error(rt, p, _("illegcal unicode property name character"));
             return RJS_ERR;
         }
 
@@ -666,7 +666,7 @@ parse_prop (RJS_Runtime *rt, RJS_RegExpParser *p, RJS_RegExpChar *mc)
             c = get_uc(rt, p);
 
             if (c == RJS_INPUT_END) {
-                parse_error(rt, p, _("expect `}\' at end of unicode property"));
+                regexp_parse_error(rt, p, _("expect `}\' at end of unicode property"));
                 return RJS_ERR;
             }
 
@@ -674,7 +674,7 @@ parse_prop (RJS_Runtime *rt, RJS_RegExpParser *p, RJS_RegExpChar *mc)
                 break;
 
             if (!isalnum(c) && (c != '_')) {
-                parse_error(rt, p, _("illegcal unicode property value character"));
+                regexp_parse_error(rt, p, _("illegcal unicode property value character"));
                 return RJS_ERR;
             }
 
@@ -686,7 +686,7 @@ parse_prop (RJS_Runtime *rt, RJS_RegExpParser *p, RJS_RegExpChar *mc)
     pv = rjs_char_buffer_to_c_string(rt, &p->pv_cb);
 
     if (unicode_property_lookup(pn, pv, &mc->c.p.prop, &mc->c.p.value) == RJS_ERR) {
-        parse_error(rt, p, _("illegal unicode property"));
+        regexp_parse_error(rt, p, _("illegal unicode property"));
         return RJS_ERR;
     }
 
@@ -806,12 +806,12 @@ parse_escape (RJS_Runtime *rt, RJS_RegExpParser *p, int c, RJS_RegExpChar *mc)
                     if (c == '}')
                         break;
                     if (c == RJS_INPUT_END) {
-                        parse_error(rt, p, _("expect `}\' here"));
+                        regexp_parse_error(rt, p, _("expect `}\' here"));
                         return RJS_ERR;
                     }
                 }
 
-                parse_error(rt, p, _("do not support unicode property expression"));
+                regexp_parse_error(rt, p, _("do not support unicode property expression"));
                 return RJS_ERR;
 #endif /*ENABLE_UNICODE_PROPERTY*/
             } else {
@@ -844,7 +844,7 @@ parse_group_name (RJS_Runtime *rt, RJS_RegExpParser *p)
 
     c = get_uc(rt, p);
     if (c != '<') {
-        parse_error(rt, p, _("expect `<\' here"));
+        regexp_parse_error(rt, p, _("expect `<\' here"));
         return NULL;
     }
 
@@ -854,7 +854,7 @@ parse_group_name (RJS_Runtime *rt, RJS_RegExpParser *p)
         goto end;
 
     if (!rjs_uchar_is_id_start(c)) {
-        parse_error(rt, p, _("expect identifier start character here"));
+        regexp_parse_error(rt, p, _("expect identifier start character here"));
         goto end;
     }
 
@@ -866,7 +866,7 @@ parse_group_name (RJS_Runtime *rt, RJS_RegExpParser *p)
             break;
 
         if (c == RJS_INPUT_END) {
-            parse_error(rt, p, _("expect `>\' here"));
+            regexp_parse_error(rt, p, _("expect `>\' here"));
             goto end;
         }
 
@@ -876,7 +876,7 @@ parse_group_name (RJS_Runtime *rt, RJS_RegExpParser *p)
             goto end;
 
         if (!rjs_uchar_is_id_continue(c)) {
-            parse_error(rt, p, _("expect identifier continue character here"));
+            regexp_parse_error(rt, p, _("expect identifier continue character here"));
             goto end;
         }
 
@@ -961,7 +961,7 @@ parse_class (RJS_Runtime *rt, RJS_RegExpParser *p, RJS_RegExpTerm *term)
         if (c == ']')
             break;
         if (c == RJS_INPUT_END) {
-            parse_error(rt, p, _("expect `]\' here"));
+            regexp_parse_error(rt, p, _("expect `]\' here"));
             return RJS_ERR;
         }
 
@@ -972,7 +972,7 @@ parse_class (RJS_Runtime *rt, RJS_RegExpParser *p, RJS_RegExpTerm *term)
         c = get_uc(rt, p);
         if (c == '-') {
             if (mc.type != RJS_REGEXP_CHAR_NORMAL) {
-                parse_error(rt, p, _("only normal character can be used in range"));
+                regexp_parse_error(rt, p, _("only normal character can be used in range"));
                 return RJS_ERR;
             }
 
@@ -992,19 +992,19 @@ parse_class (RJS_Runtime *rt, RJS_RegExpParser *p, RJS_RegExpTerm *term)
                     return r;
 
                 if (mc.type != RJS_REGEXP_CHAR_NORMAL) {
-                    parse_error(rt, p, _("only normal character can be used in range"));
+                    regexp_parse_error(rt, p, _("only normal character can be used in range"));
                     return RJS_ERR;
                 }
 
                 max = mc.c.c;
 
                 if ((min < 0) || (max < 0)) {
-                    parse_error(rt, p, _("character class cannot be used in range"));
+                    regexp_parse_error(rt, p, _("character class cannot be used in range"));
                     return RJS_ERR;
                 }
 
                 if (min > max) {
-                    parse_error(rt, p, _("minimum character code must <= maximum character code"));
+                    regexp_parse_error(rt, p, _("minimum character code must <= maximum character code"));
                     return RJS_ERR;
                 }
 
@@ -1037,7 +1037,7 @@ parse_sub_pattern (RJS_Runtime *rt, RJS_RegExpParser *p, RJS_RegExpPattern *pat,
 
     c = get_uc(rt, p);
     if (c != ')') {
-        parse_error(rt, p, _("expect `)\' here"));
+        regexp_parse_error(rt, p, _("expect `)\' here"));
         return RJS_ERR;
     }
 
@@ -1046,14 +1046,14 @@ parse_sub_pattern (RJS_Runtime *rt, RJS_RegExpParser *p, RJS_RegExpPattern *pat,
 
 /*Parse a number.*/
 static RJS_Result
-parse_number (RJS_Runtime *rt, RJS_RegExpParser *p, int64_t *pv)
+parse_regexp_number (RJS_Runtime *rt, RJS_RegExpParser *p, int64_t *pv)
 {
     int     c;
     int64_t v = 0;
 
     c = get_uc(rt, p);
     if (!rjs_uchar_is_digit(c)) {
-        parse_error(rt, p, _("expect a digit character"));
+        regexp_parse_error(rt, p, _("expect a digit character"));
         return RJS_ERR;
     }
 
@@ -1230,7 +1230,7 @@ parse_term (RJS_Runtime *rt, RJS_RegExpParser *p, RJS_RegExpAlter *alter)
                     rjs_list_foreach_c(&p->group_list, old, RJS_RegExpTerm, t.group.ln) {
                         if (old->t.group.name_index == ne->index) {
                             if (terms_both_participate(rt, old, term)) {
-                                parse_error(rt, p, _("group name \"%s\" is already used"),
+                                regexp_parse_error(rt, p, _("group name \"%s\" is already used"),
                                         rjs_string_to_enc_chars(rt, ne->name, NULL, NULL));
                                 return RJS_ERR;
                             }
@@ -1244,7 +1244,7 @@ parse_term (RJS_Runtime *rt, RJS_RegExpParser *p, RJS_RegExpAlter *alter)
                 }
                 break;
             default:
-                parse_error(rt, p, _("expect `:\', `=\', `!\' or `<\' here"));
+                regexp_parse_error(rt, p, _("expect `:\', `=\', `!\' or `<\' here"));
                 return RJS_ERR;
             }
         } else {
@@ -1313,7 +1313,7 @@ parse_term (RJS_Runtime *rt, RJS_RegExpParser *p, RJS_RegExpAlter *alter)
     default:
         if ((c == '?') || (c == '*') || (c == '+') || (c == '|') || (c == '{')
                 || (c == ')') || (c == ']') || (c == '}')) {
-            parse_error(rt, p, _("illegal character"));
+            regexp_parse_error(rt, p, _("illegal character"));
             return RJS_ERR;
         }
 
@@ -1340,7 +1340,7 @@ parse_term (RJS_Runtime *rt, RJS_RegExpParser *p, RJS_RegExpAlter *alter)
             term->max = -1;
             break;
         case '{':
-            if ((r = parse_number(rt, p, &term->min)) == RJS_ERR)
+            if ((r = parse_regexp_number(rt, p, &term->min)) == RJS_ERR)
                 return r;
             
             c = get_uc(rt, p);
@@ -1348,17 +1348,17 @@ parse_term (RJS_Runtime *rt, RJS_RegExpParser *p, RJS_RegExpAlter *alter)
                 c = get_uc(rt, p);
                 if (c != '}') {
                     unget_uc(rt, p, c);
-                    if ((r = parse_number(rt, p, &term->max)) == RJS_ERR)
+                    if ((r = parse_regexp_number(rt, p, &term->max)) == RJS_ERR)
                         return r;
 
                     if (term->min > term->max) {
-                        parse_error(rt, p, _("minimum value must <= maximum value"));
+                        regexp_parse_error(rt, p, _("minimum value must <= maximum value"));
                         return RJS_ERR;
                     }
 
                     c = get_uc(rt, p);
                     if (c != '}') {
-                        parse_error(rt, p, _("expect `}\' here"));
+                        regexp_parse_error(rt, p, _("expect `}\' here"));
                         return RJS_ERR;
                     }
                 } else {
@@ -1367,7 +1367,7 @@ parse_term (RJS_Runtime *rt, RJS_RegExpParser *p, RJS_RegExpAlter *alter)
             } else if (c == '}') {
                 term->max = term->min;
             } else {
-                parse_error(rt, p, _("expect `,\' or `}\' here"));
+                regexp_parse_error(rt, p, _("expect `,\' or `}\' here"));
                 return RJS_ERR;
             }
             break;
@@ -1461,14 +1461,14 @@ parse_regexp (RJS_Runtime *rt, RJS_RegExpParser *p)
 
     c = get_uc(rt, p);
     if (c != RJS_INPUT_END) {
-        parse_error(rt, p, _("expect EOF here"));
+        regexp_parse_error(rt, p, _("expect EOF here"));
         return RJS_ERR;
     }
 
     /*Check the back reference.*/
     rjs_list_foreach_c(&p->br_list, term, RJS_RegExpTerm, t.br.ln) {
         if (term->t.br.index >= p->group_num) {
-            parse_error(rt, p, _("back reference index must <= number of left-capturing parentheses"));
+            regexp_parse_error(rt, p, _("back reference index must <= number of left-capturing parentheses"));
             return RJS_ERR;
         }
     }
@@ -1476,7 +1476,7 @@ parse_regexp (RJS_Runtime *rt, RJS_RegExpParser *p)
     /*Check the group name back reference.*/
     rjs_list_foreach_c(&p->name_list, ne, RJS_RegExpNameEntry, ln) {
         if (ne->group_index == -1) {
-            parse_error(rt, p, _("group name \"%s\" is not defined"),
+            regexp_parse_error(rt, p, _("group name \"%s\" is not defined"),
                     rjs_string_to_enc_chars(rt, ne->name, NULL, NULL));
             return RJS_ERR;
         }
@@ -1694,13 +1694,13 @@ rjs_regexp_initialize (RJS_Runtime *rt, RJS_Value *re, RJS_Value *p, RJS_Value *
             fv = RJS_REGEXP_FL_Y;
             break;
         default:
-            parse_error(rt, NULL, _("illegal regular expression flag"));
+            regexp_parse_error(rt, NULL, _("illegal regular expression flag"));
             r = RJS_ERR;
             goto end;
         }
 
         if (flagsv & fv) {
-            parse_error(rt, NULL, _("regular expression cannot has duplicated flags"));
+            regexp_parse_error(rt, NULL, _("regular expression cannot has duplicated flags"));
             r = RJS_ERR;
             goto end;
         }
@@ -1711,15 +1711,15 @@ rjs_regexp_initialize (RJS_Runtime *rt, RJS_Value *re, RJS_Value *p, RJS_Value *
         flen --;
     }
 
-    parser_init(rt, &parser, src, flagsv);
+    regexp_parser_init(rt, &parser, src, flagsv);
     need_deinit = RJS_TRUE;
 
     if ((r = parse_regexp(rt, &parser)) == RJS_ERR)
         goto end;
 
     if (!(flagsv & RJS_REGEXP_FL_N) && !rjs_list_is_empty(&parser.name_list)) {
-        parser_deinit(rt, &parser);
-        parser_init(rt, &parser, src, flagsv|RJS_REGEXP_FL_N);
+        regexp_parser_deinit(rt, &parser);
+        regexp_parser_init(rt, &parser, src, flagsv|RJS_REGEXP_FL_N);
 
         if ((r = parse_regexp(rt, &parser)) == RJS_ERR)
             goto end;
@@ -1737,7 +1737,7 @@ end:
         rjs_throw_syntax_error(rt, _("regular expression initialize failed"));
 
     if (need_deinit)
-        parser_deinit(rt, &parser);
+        regexp_parser_deinit(rt, &parser);
 
     rjs_value_stack_restore(rt, top);
     return r;
@@ -1938,7 +1938,7 @@ read_char (RJS_Runtime *rt, RJS_RegExpCtxt *ctxt)
 
 /*Get the next last index.*/
 static size_t
-adv_str_index (RJS_Runtime *rt, RJS_RegExpCtxt *ctxt, size_t index, RJS_Bool full_uc)
+regexp_adv_str_index (RJS_Runtime *rt, RJS_RegExpCtxt *ctxt, size_t index, RJS_Bool full_uc)
 {
     int c;
 
@@ -2734,7 +2734,7 @@ match_pattern (RJS_Runtime *rt, RJS_RegExpCtxt *ctxt, RJS_RegExpPattern *pat)
 
 /*Match the regular expression.*/
 static RJS_Bool
-match (RJS_Runtime *rt, RJS_RegExpCtxt *ctxt, size_t pos)
+match_regexp (RJS_Runtime *rt, RJS_RegExpCtxt *ctxt, size_t pos)
 {
 
     RJS_RegExpJob    *job;
@@ -2856,7 +2856,7 @@ rjs_regexp_builtin_exec (RJS_Runtime *rt, RJS_Value *v, RJS_Value *str, RJS_Valu
             goto end;
         }
 
-        r = match(rt, &ctxt, last_idx);
+        r = match_regexp(rt, &ctxt, last_idx);
 
         if (!r) {
             if (ctxt.flags & RJS_REGEXP_FL_Y) {
@@ -2868,7 +2868,7 @@ rjs_regexp_builtin_exec (RJS_Runtime *rt, RJS_Value *v, RJS_Value *str, RJS_Valu
                 goto end;
             }
 
-            last_idx = adv_str_index(rt, &ctxt, last_idx, ctxt.flags & RJS_REGEXP_FL_U);
+            last_idx = regexp_adv_str_index(rt, &ctxt, last_idx, ctxt.flags & RJS_REGEXP_FL_U);
         } else {
             break;
         }
