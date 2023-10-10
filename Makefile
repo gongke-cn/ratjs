@@ -118,7 +118,11 @@ ifeq ($(ENC_CONV),internal)
 else
 	ENC_CONV_C_VALUE := $(ENC_CONV_ICU)
 	LIBRATJS_SRCS += src/lib/rjs_conv_icu_opt.c src/lib/rjs_uchar_icu_opt.c
-	LIBS += -licuuc
+ifeq ($(ARCH),win)
+	LIBS += -licuuc -licudt -lstdc++
+else
+	LIBS += -licuuc -licudata -lstdc++
+endif
 endif
 endif
 
