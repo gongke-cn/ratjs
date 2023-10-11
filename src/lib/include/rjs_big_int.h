@@ -70,7 +70,7 @@ extern "C" {
  * \retval RJS_OK On success.
  * \retval RJS_ERR On errpr.
  */
-extern RJS_Result
+RJS_INTERNAL RJS_Result
 rjs_number_to_big_int (RJS_Runtime *rt, RJS_Number n, RJS_Value *v);
 
 /**
@@ -82,7 +82,7 @@ rjs_number_to_big_int (RJS_Runtime *rt, RJS_Number n, RJS_Value *v);
  * \retval RJS_OK On success.
  * \retval RJS_ERR On errpr.
  */
-extern RJS_Result
+RJS_INTERNAL RJS_Result
 rjs_big_int_from_chars (RJS_Runtime *rt, RJS_Value *v, const char *chars, int base);
 
 /**
@@ -93,7 +93,7 @@ rjs_big_int_from_chars (RJS_Runtime *rt, RJS_Value *v, const char *chars, int ba
  * \retval RJS_OK On success.
  * \retval RJS_ERR On error.
  */
-extern RJS_Result
+RJS_INTERNAL RJS_Result
 rjs_big_int_from_int (RJS_Runtime *rt, RJS_Value *bi, int i);
 
 /**
@@ -104,7 +104,7 @@ rjs_big_int_from_int (RJS_Runtime *rt, RJS_Value *bi, int i);
  * \retval RJS_OK On success.
  * \retval RJS_ERR On error.
  */
-extern RJS_Result
+RJS_INTERNAL RJS_Result
 rjs_big_int_from_int64 (RJS_Runtime *rt, RJS_Value *bi, int64_t i);
 
 /**
@@ -115,7 +115,7 @@ rjs_big_int_from_int64 (RJS_Runtime *rt, RJS_Value *bi, int64_t i);
  * \retval RJS_OK On success.
  * \retval RJS_ERR On error.
  */
-extern RJS_Result
+RJS_INTERNAL RJS_Result
 rjs_big_int_from_uint64 (RJS_Runtime *rt, RJS_Value *bi, uint64_t i);
 
 /**
@@ -127,7 +127,7 @@ rjs_big_int_from_uint64 (RJS_Runtime *rt, RJS_Value *bi, uint64_t i);
  * \retval RJS_OK On success.
  * \retval RJS_ERR On error.
  */
-extern RJS_Result
+RJS_INTERNAL RJS_Result
 rjs_big_int_to_string (RJS_Runtime *rt, RJS_Value *v, int radix, RJS_Value *s);
 
 /**
@@ -138,7 +138,7 @@ rjs_big_int_to_string (RJS_Runtime *rt, RJS_Value *v, int radix, RJS_Value *s);
  * \retval RJS_OK On success.
  * \retval RJS_ERR On error.
  */
-extern RJS_Result
+RJS_INTERNAL RJS_Result
 rjs_big_int_unary_minus (RJS_Runtime *rt, RJS_Value *v, RJS_Value *rv);
 
 /**
@@ -149,7 +149,7 @@ rjs_big_int_unary_minus (RJS_Runtime *rt, RJS_Value *v, RJS_Value *rv);
  * \retval RJS_OK On success.
  * \retval RJS_ERR On error.
  */
-extern RJS_Result
+RJS_INTERNAL RJS_Result
 rjs_big_int_bitwise_not (RJS_Runtime *rt, RJS_Value *v, RJS_Value *rv);
 
 /**
@@ -160,7 +160,7 @@ rjs_big_int_bitwise_not (RJS_Runtime *rt, RJS_Value *v, RJS_Value *rv);
  * \retval RJS_OK On success.
  * \retval RJS_ERR On error.
  */
-extern RJS_Result
+RJS_INTERNAL RJS_Result
 rjs_big_int_inc (RJS_Runtime *rt, RJS_Value *v, RJS_Value *rv);
 
 /**
@@ -171,7 +171,7 @@ rjs_big_int_inc (RJS_Runtime *rt, RJS_Value *v, RJS_Value *rv);
  * \retval RJS_OK On success.
  * \retval RJS_ERR On error.
  */
-extern RJS_Result
+RJS_INTERNAL RJS_Result
 rjs_big_int_dec (RJS_Runtime *rt, RJS_Value *v, RJS_Value *rv);
 
 /**
@@ -183,7 +183,7 @@ rjs_big_int_dec (RJS_Runtime *rt, RJS_Value *v, RJS_Value *rv);
  * \retval RJS_OK On success.
  * \retval RJS_ERR On error.
  */
-extern RJS_Result
+RJS_INTERNAL RJS_Result
 rjs_big_int_add (RJS_Runtime *rt, RJS_Value *v1, RJS_Value *v2, RJS_Value *rv);
 
 /**
@@ -195,7 +195,7 @@ rjs_big_int_add (RJS_Runtime *rt, RJS_Value *v1, RJS_Value *v2, RJS_Value *rv);
  * \retval RJS_OK On success.
  * \retval RJS_ERR On error.
  */
-extern RJS_Result
+RJS_INTERNAL RJS_Result
 rjs_big_int_subtract (RJS_Runtime *rt, RJS_Value *v1, RJS_Value *v2, RJS_Value *rv);
 
 /**
@@ -207,7 +207,7 @@ rjs_big_int_subtract (RJS_Runtime *rt, RJS_Value *v1, RJS_Value *v2, RJS_Value *
  * \retval RJS_OK On success.
  * \retval RJS_ERR On error.
  */
-extern RJS_Result
+RJS_INTERNAL RJS_Result
 rjs_big_int_multiply (RJS_Runtime *rt, RJS_Value *v1, RJS_Value *v2, RJS_Value *rv);
 
 /**
@@ -219,7 +219,7 @@ rjs_big_int_multiply (RJS_Runtime *rt, RJS_Value *v1, RJS_Value *v2, RJS_Value *
  * \retval RJS_OK On success.
  * \retval RJS_ERR On error.
  */
-extern RJS_Result
+RJS_INTERNAL RJS_Result
 rjs_big_int_divide (RJS_Runtime *rt, RJS_Value *v1, RJS_Value *v2, RJS_Value *rv);
 
 /**
@@ -231,7 +231,7 @@ rjs_big_int_divide (RJS_Runtime *rt, RJS_Value *v1, RJS_Value *v2, RJS_Value *rv
  * \retval RJS_OK On success.
  * \retval RJS_ERR On error.
  */
-extern RJS_Result
+RJS_INTERNAL RJS_Result
 rjs_big_int_remainder (RJS_Runtime *rt, RJS_Value *v1, RJS_Value *v2, RJS_Value *rv);
 
 /**
@@ -243,7 +243,7 @@ rjs_big_int_remainder (RJS_Runtime *rt, RJS_Value *v1, RJS_Value *v2, RJS_Value 
  * \retval RJS_OK On success.
  * \retval RJS_ERR On error.
  */
-extern RJS_Result
+RJS_INTERNAL RJS_Result
 rjs_big_int_exponentiate (RJS_Runtime *rt, RJS_Value *v1, RJS_Value *v2, RJS_Value *rv);
 
 /**
@@ -255,7 +255,7 @@ rjs_big_int_exponentiate (RJS_Runtime *rt, RJS_Value *v1, RJS_Value *v2, RJS_Val
  * \retval RJS_OK On success.
  * \retval RJS_ERR On error.
  */
-extern RJS_Result
+RJS_INTERNAL RJS_Result
 rjs_big_int_left_shift (RJS_Runtime *rt, RJS_Value *v1, RJS_Value *v2, RJS_Value *rv);
 
 /**
@@ -267,7 +267,7 @@ rjs_big_int_left_shift (RJS_Runtime *rt, RJS_Value *v1, RJS_Value *v2, RJS_Value
  * \retval RJS_OK On success.
  * \retval RJS_ERR On error.
  */
-extern RJS_Result
+RJS_INTERNAL RJS_Result
 rjs_big_int_signed_right_shift (RJS_Runtime *rt, RJS_Value *v1, RJS_Value *v2, RJS_Value *rv);
 
 /**
@@ -279,7 +279,7 @@ rjs_big_int_signed_right_shift (RJS_Runtime *rt, RJS_Value *v1, RJS_Value *v2, R
  * \retval RJS_OK On success.
  * \retval RJS_ERR On error.
  */
-extern RJS_Result
+RJS_INTERNAL RJS_Result
 rjs_big_int_unsigned_right_shift (RJS_Runtime *rt, RJS_Value *v1, RJS_Value *v2, RJS_Value *rv);
 
 /**
@@ -291,7 +291,7 @@ rjs_big_int_unsigned_right_shift (RJS_Runtime *rt, RJS_Value *v1, RJS_Value *v2,
  * \retval RJS_OK On success.
  * \retval RJS_ERR On error.
  */
-extern RJS_Result
+RJS_INTERNAL RJS_Result
 rjs_big_int_bitwise_and (RJS_Runtime *rt, RJS_Value *v1, RJS_Value *v2, RJS_Value *rv);
 
 /**
@@ -303,7 +303,7 @@ rjs_big_int_bitwise_and (RJS_Runtime *rt, RJS_Value *v1, RJS_Value *v2, RJS_Valu
  * \retval RJS_OK On success.
  * \retval RJS_ERR On error.
  */
-extern RJS_Result
+RJS_INTERNAL RJS_Result
 rjs_big_int_bitwise_xor (RJS_Runtime *rt, RJS_Value *v1, RJS_Value *v2, RJS_Value *rv);
 
 /**
@@ -315,7 +315,7 @@ rjs_big_int_bitwise_xor (RJS_Runtime *rt, RJS_Value *v1, RJS_Value *v2, RJS_Valu
  * \retval RJS_OK On success.
  * \retval RJS_ERR On error.
  */
-extern RJS_Result
+RJS_INTERNAL RJS_Result
 rjs_big_int_bitwise_or (RJS_Runtime *rt, RJS_Value *v1, RJS_Value *v2, RJS_Value *rv);
 
 /**
@@ -327,7 +327,7 @@ rjs_big_int_bitwise_or (RJS_Runtime *rt, RJS_Value *v1, RJS_Value *v2, RJS_Value
  * \retval RJS_COMPARE_GREATER v1 > v2.
  * \retval RJS_COMPARE_EQUAL v1 == v2.
  */
-extern RJS_Result
+RJS_INTERNAL RJS_Result
 rjs_big_int_compare (RJS_Runtime *rt, RJS_Value *v1, RJS_Value *v2);
 
 /**
@@ -340,7 +340,7 @@ rjs_big_int_compare (RJS_Runtime *rt, RJS_Value *v1, RJS_Value *v2);
  * \retval RJS_COMPARE_EQUAL v == n.
  * \retval RJS_COMPARE_UNDEFINED n is NAN.
  */
-extern RJS_Result
+RJS_INTERNAL RJS_Result
 rjs_big_int_compare_number (RJS_Runtime *rt, RJS_Value *v, RJS_Number n);
 
 /**
@@ -352,7 +352,7 @@ rjs_big_int_compare_number (RJS_Runtime *rt, RJS_Value *v, RJS_Number n);
  * \retval RJS_OK On success.
  * \retval RJS_ERR On error.
  */
-extern RJS_Result
+RJS_INTERNAL RJS_Result
 rjs_big_int_as_int_n (RJS_Runtime *rt, int64_t bits, RJS_Value *v, RJS_Value *rv);
 
 /**
@@ -364,7 +364,7 @@ rjs_big_int_as_int_n (RJS_Runtime *rt, int64_t bits, RJS_Value *v, RJS_Value *rv
  * \retval RJS_OK On success.
  * \retval RJS_ERR On error.
  */
-extern RJS_Result
+RJS_INTERNAL RJS_Result
 rjs_big_int_as_uint_n (RJS_Runtime *rt, int64_t bits, RJS_Value *v, RJS_Value *rv);
 
 #ifdef __cplusplus

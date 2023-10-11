@@ -86,7 +86,7 @@ rjs_rbt_link (RJS_Rbt *n, RJS_Rbt *p, RJS_Rbt **pos)
  * \param root The root of the tree.
  * \return The first node in the tree.
  */
-extern RJS_Rbt*
+RJS_INTERNAL RJS_Rbt*
 rjs_rbt_first (RJS_Rbt **root);
 
 /**
@@ -94,7 +94,7 @@ rjs_rbt_first (RJS_Rbt **root);
  * \param root The root of the tree.
  * \return The last node in the tree.
  */
-extern RJS_Rbt*
+RJS_INTERNAL RJS_Rbt*
 rjs_rbt_last (RJS_Rbt **root);
 
 /**
@@ -102,7 +102,7 @@ rjs_rbt_last (RJS_Rbt **root);
  * \param n The current node.
  * \return The previous node.
  */
-extern RJS_Rbt*
+RJS_INTERNAL RJS_Rbt*
 rjs_rbt_prev (RJS_Rbt *n);
 
 /**
@@ -110,7 +110,7 @@ rjs_rbt_prev (RJS_Rbt *n);
  * \param n The current node.
  * \return The next node.
  */
-extern RJS_Rbt*
+RJS_INTERNAL RJS_Rbt*
 rjs_rbt_next (RJS_Rbt *n);
 
 /**
@@ -118,7 +118,7 @@ rjs_rbt_next (RJS_Rbt *n);
  * \param root The root of the tree.
  * \param n The node to be added.
  */
-extern void
+RJS_INTERNAL void
 rjs_rbt_insert (RJS_Rbt **root, RJS_Rbt *n);
 
 /**
@@ -126,7 +126,7 @@ rjs_rbt_insert (RJS_Rbt **root, RJS_Rbt *n);
  * \param root The root of the tree.
  * \param n The node to be removed.
  */
-extern void
+RJS_INTERNAL void
 rjs_rbt_remove (RJS_Rbt **root, RJS_Rbt *n);
 
 #ifdef __cplusplus

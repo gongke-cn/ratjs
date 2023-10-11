@@ -38,13 +38,13 @@ extern "C" {
 /**
  * Initialize the GC resource in the rt.
  */
-extern void
+RJS_INTERNAL void
 rjs_runtime_gc_init (RJS_Runtime *rt);
 
 /**
  * Release the GC resource in the rt.
  */
-extern void
+RJS_INTERNAL void
 rjs_runtime_gc_deinit (RJS_Runtime *rt);
 
 #ifdef __cplusplus

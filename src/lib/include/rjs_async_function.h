@@ -55,7 +55,7 @@ typedef struct {
  * \retval RJS_OK On success.
  * \retval RJS_ERR On error.
  */
-extern RJS_Result
+RJS_INTERNAL RJS_Result
 rjs_async_function_new (RJS_Runtime *rt, RJS_Value *f, RJS_Value *proto,
         RJS_Script *script, RJS_ScriptFunc *sf, RJS_Environment *env,
         RJS_PrivateEnv *priv_env);
@@ -71,7 +71,7 @@ rjs_async_function_new (RJS_Runtime *rt, RJS_Value *f, RJS_Value *proto,
  * \retval RJS_ERR On error.
  * \retval RJS_SUSPEND Async wait a promise.
  */
-extern RJS_Result
+RJS_INTERNAL RJS_Result
 rjs_async_iterator_close (RJS_Runtime *rt, RJS_Iterator *iter, RJS_AsyncOpFunc op, size_t ip, RJS_Value *vp);
 
 /**
@@ -83,7 +83,7 @@ rjs_async_iterator_close (RJS_Runtime *rt, RJS_Iterator *iter, RJS_AsyncOpFunc o
  * \retval RJS_OK On success.
  * \retval RJS_ERR On error.
  */
-extern RJS_Result
+RJS_INTERNAL RJS_Result
 rjs_await_async_iterator_close (RJS_Runtime *rt, RJS_ScriptCallType type, RJS_Value *iv, RJS_Value *rv);
 
 #ifdef __cplusplus

@@ -89,7 +89,7 @@ typedef enum {
  * \retval RJS_OK On success.
  * \retval RJS_ERR On error.
  */
-extern RJS_Result
+RJS_INTERNAL RJS_Result
 rjs_string_input_init (RJS_Runtime *rt, RJS_Input *si, RJS_Value *s);
 
 /**
@@ -101,7 +101,7 @@ rjs_string_input_init (RJS_Runtime *rt, RJS_Input *si, RJS_Value *s);
  * \retval RJS_OK On success.
  * \retval RJS_ERR On error.
  */
-extern RJS_Result
+RJS_INTERNAL RJS_Result
 rjs_file_input_init (RJS_Runtime *rt, RJS_Input *fi, const char *filename,
         const char *enc);
 
@@ -110,7 +110,7 @@ rjs_file_input_init (RJS_Runtime *rt, RJS_Input *fi, const char *filename,
  * \param rt The current runtime.
  * \param input The input to be released.
  */
-extern void
+RJS_INTERNAL void
 rjs_input_deinit (RJS_Runtime *rt, RJS_Input *input);
 
 /**
@@ -132,7 +132,7 @@ rjs_input_error (RJS_Input *input)
  * \return The next unicode.
  * \retval RJS_INPUT_END The input is end.
  */
-extern int
+RJS_INTERNAL int
 rjs_input_get_uc (RJS_Runtime *rt, RJS_Input *input);
 
 /**
@@ -141,7 +141,7 @@ rjs_input_get_uc (RJS_Runtime *rt, RJS_Input *input);
  * \param input The input.
  * \param c The unicode to be pushed back.
  */
-extern void
+RJS_INTERNAL void
 rjs_input_unget_uc (RJS_Runtime *rt, RJS_Input *input, int c);
 
 /**
@@ -180,7 +180,7 @@ rjs_input_get_location (RJS_Input *input, RJS_Location *loc)
  * \param type The message type.
  * \param loc The location where generate the message.
  */
-extern void
+RJS_INTERNAL void
 rjs_message_head (RJS_Runtime *rt, RJS_Input *input,
         RJS_MessageType type, RJS_Location *loc);
 
@@ -193,7 +193,7 @@ rjs_message_head (RJS_Runtime *rt, RJS_Input *input,
  * \param fmt The output format pattern.
  * \param ... Arguments.
  */
-extern void
+RJS_INTERNAL void
 rjs_message (RJS_Runtime *rt, RJS_Input *input, RJS_MessageType type,
         RJS_Location *loc, const char *fmt, ...);
 
@@ -206,7 +206,7 @@ rjs_message (RJS_Runtime *rt, RJS_Input *input, RJS_MessageType type,
  * \param fmt The output format pattern.
  * \param ap The variable argument list.
  */
-extern void
+RJS_INTERNAL void
 rjs_message_v (RJS_Runtime *rt, RJS_Input *input, RJS_MessageType type,
         RJS_Location *loc, const char *fmt, va_list ap);
 
@@ -218,7 +218,7 @@ rjs_message_v (RJS_Runtime *rt, RJS_Input *input, RJS_MessageType type,
  * \param fmt The output format pattern.
  * \param ... Arguments.
  */
-extern void
+RJS_INTERNAL void
 rjs_note (RJS_Runtime *rt, RJS_Input *input, RJS_Location *loc,
         const char *fmt, ...);
 
@@ -230,7 +230,7 @@ rjs_note (RJS_Runtime *rt, RJS_Input *input, RJS_Location *loc,
  * \param fmt The output format pattern.
  * \param ... Arguments.
  */
-extern void
+RJS_INTERNAL void
 rjs_warning (RJS_Runtime *rt, RJS_Input *input, RJS_Location *loc,
         const char *fmt, ...);
 
@@ -242,7 +242,7 @@ rjs_warning (RJS_Runtime *rt, RJS_Input *input, RJS_Location *loc,
  * \param fmt The output format pattern.
  * \param ... Arguments.
  */
-extern void
+RJS_INTERNAL void
 rjs_error (RJS_Runtime *rt, RJS_Input *input, RJS_Location *loc,
         const char *fmt, ...);
 

@@ -254,7 +254,7 @@ struct RJS_Parser_s {
  * \retval RJS_OK On success.
  * \retval RJS_ERR On error.
  */
-extern RJS_Result
+RJS_INTERNAL RJS_Result
 rjs_parse_eval (RJS_Runtime *rt, RJS_Input *input, RJS_Realm *realm, int flags, RJS_PrivateEnv *priv_env, RJS_Value *rv);
 #endif /*ENABLE_EVAL*/
 
@@ -267,7 +267,7 @@ rjs_parse_eval (RJS_Runtime *rt, RJS_Input *input, RJS_Realm *realm, int flags, 
  * \retval RJS_OK On success.
  * \retval RJS_ERR On error.
  */
-extern RJS_Result
+RJS_INTERNAL RJS_Result
 rjs_parse_function (RJS_Runtime *rt, RJS_Input *input, RJS_Realm *realm, RJS_Value *rv);
 
 #if ENABLE_SCRIPT
@@ -281,7 +281,7 @@ rjs_parse_function (RJS_Runtime *rt, RJS_Input *input, RJS_Realm *realm, RJS_Val
  * \retval RJS_OK On success.
  * \retval RJS_ERR On error.
  */
-extern RJS_Result
+RJS_INTERNAL RJS_Result
 rjs_parse_script (RJS_Runtime *rt, RJS_Input *input, RJS_Realm *realm, int flags, RJS_Value *rv);
 #endif /*ENABLE_SCRIPT*/
 
@@ -295,7 +295,7 @@ rjs_parse_script (RJS_Runtime *rt, RJS_Input *input, RJS_Realm *realm, int flags
  * \retval RJS_OK On success.
  * \retval RJS_ERR On error.
  */
-extern RJS_Result
+RJS_INTERNAL RJS_Result
 rjs_parse_module (RJS_Runtime *rt, RJS_Input *input, RJS_Realm *realm, RJS_Value *rv);
 #endif /*ENABLE_MODULE*/
 
@@ -309,7 +309,7 @@ rjs_parse_module (RJS_Runtime *rt, RJS_Input *input, RJS_Realm *realm, RJS_Value
  * \retval RJS_OK On success.
  * \retval RJS_ERR On error.
  */
-extern RJS_Result
+RJS_INTERNAL RJS_Result
 rjs_template_entry_new (RJS_Runtime *rt, RJS_Location *loc,
         RJS_Value *str, RJS_Value *raw, RJS_Token *tok);
 
@@ -320,7 +320,7 @@ rjs_template_entry_new (RJS_Runtime *rt, RJS_Location *loc,
  * \param fmt Output format.
  * \param ... Arguments.
  */
-extern void
+RJS_INTERNAL void
 rjs_parse_error (RJS_Runtime *rt, RJS_Location *loc, const char *fmt, ...);
 
 /**
@@ -330,7 +330,7 @@ rjs_parse_error (RJS_Runtime *rt, RJS_Location *loc, const char *fmt, ...);
  * \param fmt Output format.
  * \param ... Arguments.
  */
-extern void
+RJS_INTERNAL void
 rjs_parse_warning (RJS_Runtime *rt, RJS_Location *loc, const char *fmt, ...);
 
 /**
@@ -340,7 +340,7 @@ rjs_parse_warning (RJS_Runtime *rt, RJS_Location *loc, const char *fmt, ...);
  * \param fmt Output format.
  * \param ... Arguments.
  */
-extern void
+RJS_INTERNAL void
 rjs_parse_note (RJS_Runtime *rt, RJS_Location *loc, const char *fmt, ...);
 
 /**
@@ -348,14 +348,14 @@ rjs_parse_note (RJS_Runtime *rt, RJS_Location *loc, const char *fmt, ...);
  * \param rt The current runtime.
  * \param decl The declaration to be pushed.
  */
-extern void
+RJS_INTERNAL void
 rjs_code_gen_push_decl (RJS_Runtime *rt, RJS_AstDecl *decl);
 
 /**
  * Popup the top declaration from the stack.
  * \param rt The current runtime.
  */
-extern void
+RJS_INTERNAL void
 rjs_code_gen_pop_decl (RJS_Runtime *rt);
 
 /**
@@ -366,7 +366,7 @@ rjs_code_gen_pop_decl (RJS_Runtime *rt);
  * \retval RJS_OK On success.
  * \retval RJS_ERR On error. 
  */
-extern RJS_Result
+RJS_INTERNAL RJS_Result
 rjs_code_gen_binding_init_table (RJS_Runtime *rt, RJS_Value *tab, RJS_AstDecl *decl);
 
 /**
@@ -376,7 +376,7 @@ rjs_code_gen_binding_init_table (RJS_Runtime *rt, RJS_Value *tab, RJS_AstDecl *d
  * \param id The identifier.
  * \return The binding reference.
  */
-extern RJS_AstValueEntry*
+RJS_INTERNAL RJS_AstValueEntry*
 rjs_code_gen_value_entry (RJS_Runtime *rt, RJS_Location *loc, RJS_Value *v);
 
 /**
@@ -386,7 +386,7 @@ rjs_code_gen_value_entry (RJS_Runtime *rt, RJS_Location *loc, RJS_Value *v);
  * \param id The identifier.
  * \return The binding reference.
  */
-extern RJS_AstBindingRef*
+RJS_INTERNAL RJS_AstBindingRef*
 rjs_code_gen_binding_ref (RJS_Runtime *rt, RJS_Location *loc, RJS_Value *id);
 
 /**
@@ -398,7 +398,7 @@ rjs_code_gen_binding_ref (RJS_Runtime *rt, RJS_Location *loc, RJS_Value *id);
  * \param id The identifier.
  * \return The binding reference.
  */
-extern RJS_AstPropRef*
+RJS_INTERNAL RJS_AstPropRef*
 rjs_code_gen_prop_ref (RJS_Runtime *rt, RJS_Value *v, RJS_Location *loc, RJS_AstFunc *func, RJS_Value *id);
 
 /**
@@ -548,7 +548,7 @@ rjs_code_gen_binding_ref_idx (RJS_Runtime *rt, RJS_AstBindingRef *br)
  * \param bt The binding table.
  * \return The binding table's index.
  */
-extern int
+RJS_INTERNAL int
 rjs_code_gen_binding_table_idx (RJS_Runtime *rt, RJS_AstBindingTable *bt);
 
 /**
@@ -557,7 +557,7 @@ rjs_code_gen_binding_table_idx (RJS_Runtime *rt, RJS_AstBindingTable *bt);
  * \param ft The function table.
  * \return The function table's index.
  */
-extern int
+RJS_INTERNAL int
 rjs_code_gen_func_table_idx (RJS_Runtime *rt, RJS_AstFuncTable *ft);
 
 #if ENABLE_PRIV_NAME
@@ -568,7 +568,7 @@ rjs_code_gen_func_table_idx (RJS_Runtime *rt, RJS_AstFuncTable *ft);
  * \param pe The private environment AST node.
  * \return The private environment's index.
  */
-extern int
+RJS_INTERNAL int
 rjs_code_gen_priv_env_idx (RJS_Runtime *rt, RJS_AstPrivEnv *pe);
 
 #endif /*ENABLE_PRIV_NAME*/
@@ -578,7 +578,7 @@ rjs_code_gen_priv_env_idx (RJS_Runtime *rt, RJS_AstPrivEnv *pe);
  * \param rt The current runtime.
  * \param parser The parser to be scanned.
  */
-extern void
+RJS_INTERNAL void
 rjs_gc_scan_parser (RJS_Runtime *rt, RJS_Parser *parser);
 
 #ifdef __cplusplus

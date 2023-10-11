@@ -410,7 +410,7 @@ Exactly one of IEEE_8087, IEEE_MC68k, VAX, or IBM should be defined.
 #ifdef SET_INEXACT
 #define dtoa_divmax 27
 #else
-int dtoa_divmax = 2;	/* Permit experimenting: on some systems, 64-bit integer */
+static int dtoa_divmax = 2;	/* Permit experimenting: on some systems, 64-bit integer */
 			/* division is slow enough that we may sometimes want to */
 			/* avoid using it.   We assume (but do not check) that   */
 			/* dtoa_divmax <= 27.*/
@@ -4989,7 +4989,7 @@ rjs_freedtoa(char *s)
  *	   calculation.
  */
 
- char *
+static char *
 dtoa_r(double dd, int mode, int ndigits, int *decpt, int *sign, char **rve, char *buf, size_t blen)
 {
  /*	Arguments ndigits, decpt, sign are similar to those

@@ -53,7 +53,7 @@ typedef struct {
  * \retval RJS_OK On success.
  * \retval RJS_ERR On error.
  */
-extern RJS_Result
+RJS_INTERNAL RJS_Result
 rjs_object_env_new (RJS_Runtime *rt, RJS_Environment **pe, RJS_Value *o, RJS_Bool is_with,
         RJS_ScriptDecl *decl, RJS_Environment *outer);
 

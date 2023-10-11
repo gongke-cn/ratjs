@@ -198,6 +198,7 @@ $(eval $(call bool_config,ENABLE_LEGACY_OPTIONAL,1,enable legacy optional functi
 $(eval $(call bool_config,ENABLE_CALLER,1,enable Function.caller))
 $(eval $(call bool_config,ENABLE_COLOR_CONSOLE,1,enable color terminal output))
 $(eval $(call bool_config,ENABLE_FUNC_SOURCE,1,enable function source))
+$(eval $(call bool_config,ENABLE_NATIVE_MODULE,1,enable native module))
 $(eval $(call bool_config,ENABLE_EXTENSION,1,enable extension functions,src/lib/rjs_extension_opt.c))
 $(eval $(call bool_config,STATIC_ONLY,0,do not generate the dynamic library))
 $(eval $(call bool_config,OSIZE,0,optimize to reduce size))
@@ -282,16 +283,12 @@ RATJS := $(O)/ratjs$(EXE_SUFFIX)
 # Source files of ratjs
 RATJS_SRCS := $(wildcard src/exe/*.c)
 
-# Unit test
-UNIT_TEST := $(O)/unit-test$(EXE_SUFFIX)
-UNIT_TEST_SRCS := $(wildcard test/unit-test/*.c)
-
 # Test 262
 TEST262 := $(O)/test262$(EXE_SUFFIX)
 TEST262_SRCS := $(wildcard test/test262/*.c)
 
 # Targets
-TARGETS := $(LIBRATJS) $(RATJS) $(UNIT_TEST)
+TARGETS := $(LIBRATJS) $(RATJS)
 
 ifeq ($(ENABLE_SCRIPT),1)
 	TARGETS += $(TEST262)
@@ -560,10 +557,6 @@ $(eval $(call build_lib,libratjs,$(LIBRATJS_SRCS)))
 $(RATJS): $(LIBRATJS)
 
 $(eval $(call build_exe,ratjs,$(RATJS_SRCS),-L$(O) -lratjs))
-
-# Program: unit-test
-$(UNIT_TEST): $(LIBRATJS)
-$(eval $(call build_exe,unit-test,$(UNIT_TEST_SRCS),-L$(O) -lratjs))
 
 # Program: test262
 $(TEST262): $(LIBRATJS)

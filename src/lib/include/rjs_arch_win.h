@@ -55,7 +55,7 @@ typedef HANDLE pthread_cond_t;
  * \param dev The once control device.
  * \param func The function.
  */
-extern void
+RJS_INTERNAL void
 pthread_once (PINIT_ONCE dev, void (*func) (void));
 
 /**
@@ -63,28 +63,28 @@ pthread_once (PINIT_ONCE dev, void (*func) (void));
  * \param lock The mutex to be initialized.
  * \param attr Attributes.
  */
-extern void
+RJS_INTERNAL void
 pthread_mutex_init (pthread_mutex_t *lock, void *attr);
 
 /**
  * Destroy the mutex.
  * \param lock The mutex to be freed.
  */
-extern void
+RJS_INTERNAL void
 pthread_mutex_destroy (pthread_mutex_t *lock);
 
 /**
  * Lock the mutex.
  * \param lock The mutex to be locked.
  */
-extern void
+RJS_INTERNAL void
 pthread_mutex_lock (pthread_mutex_t *lock);
 
 /**
  * Unlock the mutex.
  * \param lock The mutex to be unlocked.
  */
-extern void
+RJS_INTERNAL void
 pthread_mutex_unlock (pthread_mutex_t *lock);
 
 /**
@@ -92,21 +92,21 @@ pthread_mutex_unlock (pthread_mutex_t *lock);
  * \param cond The condition variable.
  * \param attr The attributes of the condition variable.
  */
-extern void
+RJS_INTERNAL void
 pthread_cond_init (pthread_cond_t *cond, void *attr);
 
 /**
  * Destroy the condition variable.
  * \param cond The condition variable to be freed.
  */
-extern void
+RJS_INTERNAL void
 pthread_cond_destroy (pthread_cond_t *cond);
 
 /**
  * Notify the condition variable.
  * \param cond The condition variable.
  */
-extern void
+RJS_INTERNAL void
 pthread_cond_signal (pthread_cond_t *cond);
 
 /**
@@ -116,7 +116,7 @@ pthread_cond_signal (pthread_cond_t *cond);
  * \retval 0 On success.
  * \retval -1 On error.
  */
-extern int
+RJS_INTERNAL int
 pthread_cond_wait (pthread_cond_t *cond, pthread_mutex_t *lock);
 
 /**
@@ -128,7 +128,7 @@ pthread_cond_wait (pthread_cond_t *cond, pthread_mutex_t *lock);
  * \retval -1 On error.
  * \retval ETIMEDOUT Timeout.
  */
-extern int
+RJS_INTERNAL int
 pthread_cond_timedwait (pthread_cond_t *cond, pthread_mutex_t *lock, struct timespec *tv);
 
 /**
@@ -138,8 +138,10 @@ pthread_cond_timedwait (pthread_cond_t *cond, pthread_mutex_t *lock, struct time
  * \retval 0 On success.
  * \retval -1 On error.
  */
-extern int
+RJS_INTERNAL int
 clock_gettime(int clk_id, struct timespec *tp);
+
+#if ENABLE_NATIVE_MODULE
 
 /**Perform lazy binding.*/
 #define RTLD_LAZY 0
@@ -151,14 +153,14 @@ clock_gettime(int clk_id, struct timespec *tp);
  * \return The library's handle.
  * \retval NULL On error.
  */
-extern void*
+RJS_INTERNAL void*
 dlopen (const char *filename, int flags);
 
 /**
  * Release a dynamic linked library.
  * \param ptr The library's handle.
  */
-extern int
+RJS_INTERNAL int
 dlclose (void *ptr);
 
 /**
@@ -168,8 +170,10 @@ dlclose (void *ptr);
  * \retval The symbol's pointer.
  * \retval NULL Cannot find the symbol.
  */
-extern void*
+RJS_INTERNAL void*
 dlsym (void *ptr, const char *symbol);
+
+#endif /*ENABLE_NATIVE_MODULE*/
 
 /**
  * Get the absolute path of the file.
@@ -177,7 +181,7 @@ dlsym (void *ptr, const char *symbol);
  * \param resolved_path The output path's buffer.
  * \return The absolute path's pointer.
  */
-extern char*
+RJS_INTERNAL char*
 realpath(const char *path, char *resolved_path);
 
 /**Make a new directory.*/

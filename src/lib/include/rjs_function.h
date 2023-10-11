@@ -98,7 +98,7 @@ rjs_base_func_object_init (RJS_Runtime *rt, RJS_Value *v, RJS_BaseFuncObject *bf
  * \param rt The current runtime.
  * \param bfo The base function object to be released.
  */
-extern void
+RJS_INTERNAL void
 rjs_base_func_object_deinit (RJS_Runtime *rt, RJS_BaseFuncObject *bfo);
 
 /**
@@ -106,7 +106,7 @@ rjs_base_func_object_deinit (RJS_Runtime *rt, RJS_BaseFuncObject *bfo);
  * \param rt The current runtime.
  * \param bfo The base function object.
  */
-extern void
+RJS_INTERNAL void
 rjs_base_func_object_op_gc_scan (RJS_Runtime *rt, RJS_BaseFuncObject *bfo);
 
 /**
@@ -117,7 +117,7 @@ rjs_base_func_object_op_gc_scan (RJS_Runtime *rt, RJS_BaseFuncObject *bfo);
  * \retval RJS_OK On success.
  * \retval RJS_ERR On error.
  */
-extern RJS_Result
+RJS_INTERNAL RJS_Result
 rjs_initialize_instance_elements (RJS_Runtime *rt, RJS_Value *o, RJS_Value *f);
 
 #ifdef __cplusplus

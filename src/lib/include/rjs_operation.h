@@ -67,7 +67,7 @@ typedef enum {
  * \retval RJS_OK On success.
  * \retval RJS_ERR On error.
  */
-extern RJS_Result
+RJS_INTERNAL RJS_Result
 rjs_get_prototype_from_constructor (RJS_Runtime *rt, RJS_Value *constr, int pd_idx, RJS_Value *proto);
 
 /**
@@ -134,7 +134,7 @@ rjs_ordinary_init_from_constructor (RJS_Runtime *rt, RJS_Object *o, RJS_Value *c
  * \retval RJS_OK On success.
  * \retval RJS_ERR On error.
  */
-extern RJS_Result
+RJS_INTERNAL RJS_Result
 rjs_create_constructor (RJS_Runtime *rt, RJS_Value *proto, RJS_Value *parent,
         RJS_Script *script, RJS_ScriptFunc *func, RJS_Value *c);
 
@@ -149,7 +149,7 @@ rjs_create_constructor (RJS_Runtime *rt, RJS_Value *proto, RJS_Value *parent,
  * \retval RJS_OK On success.
  * \retval RJS_ERR On error.
  */
-extern RJS_Result
+RJS_INTERNAL RJS_Result
 rjs_create_default_constructor (RJS_Runtime *rt, RJS_Value *proto, RJS_Value *parent,
         RJS_Value *name, RJS_Bool derived, RJS_Value *c);
 
@@ -165,7 +165,7 @@ rjs_create_default_constructor (RJS_Runtime *rt, RJS_Value *proto, RJS_Value *pa
  * \retval RJS_OK On success.
  * \retval RJS_ERR On error.
  */
-extern RJS_Result
+RJS_INTERNAL RJS_Result
 rjs_create_function (RJS_Runtime *rt, RJS_Script *script, RJS_ScriptFunc *sf,
         RJS_Environment *env, RJS_PrivateEnv *priv_env, RJS_Bool is_constr, RJS_Value *f);
 
@@ -179,7 +179,7 @@ rjs_create_function (RJS_Runtime *rt, RJS_Script *script, RJS_ScriptFunc *sf,
  * \retval RJS_OK On success.
  * \retval RJS_ERR On error.
  */
-extern RJS_Result
+RJS_INTERNAL RJS_Result
 rjs_define_field (RJS_Runtime *rt, RJS_Value *o, RJS_Value *name, RJS_Value *init, RJS_Bool is_af);
 
 /**
@@ -193,7 +193,7 @@ rjs_define_field (RJS_Runtime *rt, RJS_Value *o, RJS_Value *name, RJS_Value *ini
  * \retval RJS_OK On success.
  * \retval RJS_ERR On error.
  */
-extern RJS_Result
+RJS_INTERNAL RJS_Result
 rjs_define_method (RJS_Runtime *rt, RJS_Value *o, RJS_Value *proto, RJS_Script *script,
         RJS_ScriptFunc *func, RJS_Value *f);
 
@@ -207,7 +207,7 @@ rjs_define_method (RJS_Runtime *rt, RJS_Value *o, RJS_Value *proto, RJS_Script *
  * \retval RJS_OK On success.
  * \retval RJS_ERR On error.
  */
-extern RJS_Result
+RJS_INTERNAL RJS_Result
 rjs_define_method_property (RJS_Runtime *rt, RJS_Value *o, RJS_Value *n, RJS_Value *f, RJS_Bool enumerable);
 
 /**
@@ -222,7 +222,7 @@ rjs_define_method_property (RJS_Runtime *rt, RJS_Value *o, RJS_Value *n, RJS_Val
  * \retval RJS_OK On success.
  * \retval RJS_ERR On error.
  */
-extern RJS_Result
+RJS_INTERNAL RJS_Result
 rjs_create_method (RJS_Runtime *rt, RJS_Value *o, RJS_ClassElementType type, RJS_Value *n,
         RJS_Script *script, RJS_ScriptFunc *sf, RJS_Bool enumerable);
 
@@ -238,14 +238,14 @@ rjs_create_method (RJS_Runtime *rt, RJS_Value *o, RJS_ClassElementType type, RJS
  * \retval RJS_SUSPEND On success.
  * \retval RJS_ERR On error.
  */
-extern RJS_Result
+RJS_INTERNAL RJS_Result
 rjs_await (RJS_Runtime *rt, RJS_Value *v, RJS_AsyncOpFunc op, size_t ip, RJS_Value *vp);
 #endif /*ENABLE_ASYNC*/
 
 /**
  * The function return this argument.
  */
-extern RJS_NF(rjs_return_this);
+RJS_INTERNAL RJS_NF(rjs_return_this);
 
 #ifdef __cplusplus
 }

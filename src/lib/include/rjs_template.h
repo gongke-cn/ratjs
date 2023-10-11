@@ -43,7 +43,7 @@ extern "C" {
  * \retval RJS_OK On success.
  * \retval RJS_ERR On error.
  */
-extern RJS_Result
+RJS_INTERNAL RJS_Result
 rjs_template_new (RJS_Runtime *rt, RJS_Value *v, RJS_Value *raw);
 
 #ifdef __cplusplus

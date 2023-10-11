@@ -55,7 +55,7 @@ typedef struct {
  * \retval RJS_OK On success.
  * \retval RJS_ERR On error.
  */
-extern RJS_Result
+RJS_INTERNAL RJS_Result
 rjs_bound_func_object_new (RJS_Runtime *rt, RJS_Value *v, RJS_Value *func,
         RJS_Value *thiz, RJS_Value *args, size_t argc);
 

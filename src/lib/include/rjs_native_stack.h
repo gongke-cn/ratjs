@@ -161,7 +161,7 @@ rjs_state_top_n (RJS_Runtime *rt, size_t n)
  * \retval RJS_ERR On error.
  * \retval RJS_FALSE Async wait a promise.
  */
-extern RJS_Result
+RJS_INTERNAL RJS_Result
 rjs_state_deinit (RJS_Runtime *rt, RJS_State *s, RJS_AsyncOpFunc op, size_t ip, RJS_Value *vp);
 
 /**
@@ -213,7 +213,7 @@ rjs_state_pop (RJS_Runtime *rt)
  * \retval RJS_OK On success.
  * \retval RJS_ERR On error.
  */
-extern RJS_Result
+RJS_INTERNAL RJS_Result
 rjs_lex_env_state_push (RJS_Runtime *rt, RJS_Environment *env);
 
 /**
@@ -223,7 +223,7 @@ rjs_lex_env_state_push (RJS_Runtime *rt, RJS_Environment *env);
  * \retval RJS_OK On success.
  * \retval RJS_ERR On error.
  */
-extern RJS_Result
+RJS_INTERNAL RJS_Result
 rjs_enum_state_push (RJS_Runtime *rt, RJS_Value *v);
 
 /**
@@ -234,7 +234,7 @@ rjs_enum_state_push (RJS_Runtime *rt, RJS_Value *v);
  * \retval RJS_OK On success.
  * \retval RJS_ERR On error.
  */
-extern RJS_Result
+RJS_INTERNAL RJS_Result
 rjs_iter_state_push (RJS_Runtime *rt, RJS_Value *iter, RJS_IteratorType type);
 
 /**
@@ -244,7 +244,7 @@ rjs_iter_state_push (RJS_Runtime *rt, RJS_Value *iter, RJS_IteratorType type);
  * \retval RJS_OK On success.
  * \retval RJS_ERR On error.
  */
-extern RJS_Result
+RJS_INTERNAL RJS_Result
 rjs_array_assi_state_push (RJS_Runtime *rt, RJS_Value *array);
 
 /**
@@ -255,7 +255,7 @@ rjs_array_assi_state_push (RJS_Runtime *rt, RJS_Value *array);
  * \retval RJS_FALSE The iterator is done.
  * \retval RJS_ERR On error.
  */
-extern RJS_Result
+RJS_INTERNAL RJS_Result
 rjs_iter_state_step (RJS_Runtime *rt, RJS_Value *rv);
 
 #if ENABLE_ASYNC
@@ -265,7 +265,7 @@ rjs_iter_state_step (RJS_Runtime *rt, RJS_Value *rv);
  * \retval RJS_FALSE Await a promise.
  * \retval RJS_ERR On error.
  */
-extern RJS_Result
+RJS_INTERNAL RJS_Result
 rjs_iter_state_async_step (RJS_Runtime *rt);
 
 /**
@@ -277,7 +277,7 @@ rjs_iter_state_async_step (RJS_Runtime *rt);
  * \retval RJS_FALSE The iterator is done.
  * \retval RJS_OK On success.
  */
-extern RJS_Result
+RJS_INTERNAL RJS_Result
 rjs_iter_state_async_step_resume (RJS_Runtime *rt, RJS_Value *ir, RJS_Value *rv);
 #endif /*ENABLE_ASYNC*/
 
@@ -287,7 +287,7 @@ rjs_iter_state_async_step_resume (RJS_Runtime *rt, RJS_Value *ir, RJS_Value *rv)
  * \retval RJS_OK On success.
  * \retval RJS_ERR On error.
  */
-extern RJS_Result
+RJS_INTERNAL RJS_Result
 rjs_iter_state_rest (RJS_Runtime *rt, RJS_Value *rv);
 
 /**
@@ -296,7 +296,7 @@ rjs_iter_state_rest (RJS_Runtime *rt, RJS_Value *rv);
  * \retval RJS_OK On success.
  * \retval RJS_ERR On error.
  */
-extern RJS_Result
+RJS_INTERNAL RJS_Result
 rjs_class_state_push (RJS_Runtime *rt);
 
 #if ENABLE_PRIV_NAME
@@ -309,7 +309,7 @@ rjs_class_state_push (RJS_Runtime *rt);
  * \retval RJS_OK On success.
  * \retval RJS_ERR On error.
  */
-extern RJS_Result
+RJS_INTERNAL RJS_Result
 rjs_class_state_set_priv_env (RJS_Runtime *rt, RJS_Script *script, RJS_ScriptPrivEnv *pe);
 
 #endif /*ENABLE_PRIV_NAME*/
@@ -325,7 +325,7 @@ rjs_class_state_set_priv_env (RJS_Runtime *rt, RJS_Script *script, RJS_ScriptPri
  * \retval RJS_OK On success.
  * \retval RJS_ERR On error.
  */
-extern RJS_Result
+RJS_INTERNAL RJS_Result
 rjs_class_state_create_constructor (RJS_Runtime *rt, RJS_Value *cp, RJS_Value *proto,
         RJS_Script *script, RJS_ScriptFunc *sf, RJS_Value *constr);
 
@@ -340,7 +340,7 @@ rjs_class_state_create_constructor (RJS_Runtime *rt, RJS_Value *cp, RJS_Value *p
  * \retval RJS_OK On success.
  * \retval RJS_ERR On error.
  */
-extern RJS_Result
+RJS_INTERNAL RJS_Result
 rjs_class_state_create_default_constructor (RJS_Runtime *rt, RJS_Value *cp, RJS_Value *proto,
         RJS_Value *name, RJS_Bool derived, RJS_Value *constr);
 
@@ -354,7 +354,7 @@ rjs_class_state_create_default_constructor (RJS_Runtime *rt, RJS_Value *cp, RJS_
  * \retval RJS_OK On success.
  * \retval RJS_ERR On error.
  */
-extern RJS_Result
+RJS_INTERNAL RJS_Result
 rjs_class_state_add_element (RJS_Runtime *rt, RJS_ClassElementType type, RJS_Value *name,
         RJS_Script *script, RJS_ScriptFunc *sf);
 
@@ -364,7 +364,7 @@ rjs_class_state_add_element (RJS_Runtime *rt, RJS_ClassElementType type, RJS_Val
  * \retval RJS_OK On success.
  * \retval RJS_ERR On error.
  */
-extern RJS_Result
+RJS_INTERNAL RJS_Result
 rjs_class_state_set_anonymous_function_field (RJS_Runtime *rt);
 
 /**
@@ -373,7 +373,7 @@ rjs_class_state_set_anonymous_function_field (RJS_Runtime *rt);
  * \retval RJS_OK On success.
  * \retval RJS_ERR On error.
  */
-extern RJS_Result
+RJS_INTERNAL RJS_Result
 rjs_class_state_init (RJS_Runtime *rt);
 
 /**
@@ -384,7 +384,7 @@ rjs_class_state_init (RJS_Runtime *rt);
  * \retval RJS_OK On success.
  * \retval RJS_ERR On error.
  */
-extern RJS_Result
+RJS_INTERNAL RJS_Result
 rjs_call_state_push (RJS_Runtime *rt, RJS_Value *func, RJS_Value *thiz);
 
 /**
@@ -393,7 +393,7 @@ rjs_call_state_push (RJS_Runtime *rt, RJS_Value *func, RJS_Value *thiz);
  * \retval RJS_OK On success.
  * \retval RJS_ERR On error.
  */
-extern RJS_Result
+RJS_INTERNAL RJS_Result
 rjs_super_call_state_push (RJS_Runtime *rt);
 
 /**
@@ -403,7 +403,7 @@ rjs_super_call_state_push (RJS_Runtime *rt);
  * \retval RJS_OK On success.
  * \retval RJS_ERR On error.
  */
-extern RJS_Result
+RJS_INTERNAL RJS_Result
 rjs_new_state_push (RJS_Runtime *rt, RJS_Value *c);
 
 /**
@@ -413,7 +413,7 @@ rjs_new_state_push (RJS_Runtime *rt, RJS_Value *c);
  * \retval RJS_OK On success.
  * \retval RJS_ERR On error.
  */
-extern RJS_Result
+RJS_INTERNAL RJS_Result
 rjs_call_state_push_arg (RJS_Runtime *rt, RJS_Value *arg);
 
 /**
@@ -423,7 +423,7 @@ rjs_call_state_push_arg (RJS_Runtime *rt, RJS_Value *arg);
  * \retval RJS_OK On success.
  * \retval RJS_ERR On error.
  */
-extern RJS_Result
+RJS_INTERNAL RJS_Result
 rjs_call_state_push_spread_args (RJS_Runtime *rt, RJS_Value *args);
 
 /**Direct eval.*/
@@ -440,7 +440,7 @@ rjs_call_state_push_spread_args (RJS_Runtime *rt, RJS_Value *args);
  * \retval RJS_OK On success.
  * \retval RJS_ERR On error.
  */
-extern RJS_Result
+RJS_INTERNAL RJS_Result
 rjs_call_state_call (RJS_Runtime *rt, size_t sp, int flags, RJS_Value *rv);
 
 /**
@@ -450,7 +450,7 @@ rjs_call_state_call (RJS_Runtime *rt, size_t sp, int flags, RJS_Value *rv);
  * \retval RJS_OK On success.
  * \retval RJS_ERR On error.
  */
-extern RJS_Result
+RJS_INTERNAL RJS_Result
 rjs_call_state_super_call (RJS_Runtime *rt, RJS_Value *rv);
 
 /**
@@ -460,7 +460,7 @@ rjs_call_state_super_call (RJS_Runtime *rt, RJS_Value *rv);
  * \retval RJS_OK On success.
  * \retval RJS_ERR On error.
  */
-extern RJS_Result
+RJS_INTERNAL RJS_Result
 rjs_call_state_new (RJS_Runtime *rt, RJS_Value *rv);
 
 /**
@@ -470,7 +470,7 @@ rjs_call_state_new (RJS_Runtime *rt, RJS_Value *rv);
  * \retval RJS_OK On success.
  * \retval RJS_ERR On error.
  */
-extern RJS_Result
+RJS_INTERNAL RJS_Result
 rjs_array_state_push (RJS_Runtime *rt, RJS_Value *array);
 
 /**
@@ -498,7 +498,7 @@ rjs_array_state_elision (RJS_Runtime *rt)
  * \retval RJS_OK On success.
  * \retval RJS_ERR On error.
  */
-extern RJS_Result
+RJS_INTERNAL RJS_Result
 rjs_array_state_add (RJS_Runtime *rt, RJS_Value *v);
 
 /**
@@ -508,7 +508,7 @@ rjs_array_state_add (RJS_Runtime *rt, RJS_Value *v);
  * \retval RJS_OK On success.
  * \retval RJS_ERR On error.
  */
-extern RJS_Result
+RJS_INTERNAL RJS_Result
 rjs_array_state_spread (RJS_Runtime *rt, RJS_Value *v);
 
 /**
@@ -518,7 +518,7 @@ rjs_array_state_spread (RJS_Runtime *rt, RJS_Value *v);
  * \retval RJS_OK On success.
  * \retval RJS_ERR On error.
  */
-extern RJS_Result
+RJS_INTERNAL RJS_Result
 rjs_object_state_push (RJS_Runtime *rt, RJS_Value *o);
 
 /**
@@ -530,7 +530,7 @@ rjs_object_state_push (RJS_Runtime *rt, RJS_Value *o);
  * \retval RJS_OK On success.
  * \retval RJS_ERR On error.
  */
-extern RJS_Result
+RJS_INTERNAL RJS_Result
 rjs_object_state_add (RJS_Runtime *rt, RJS_Value *name, RJS_Value *value, RJS_Bool is_af);
 
 /**
@@ -540,7 +540,7 @@ rjs_object_state_add (RJS_Runtime *rt, RJS_Value *name, RJS_Value *value, RJS_Bo
  * \retval RJS_OK On success.
  * \retval RJS_ERR On error.
  */
-extern RJS_Result
+RJS_INTERNAL RJS_Result
 rjs_object_state_spread (RJS_Runtime *rt, RJS_Value *value);
 
 /**
@@ -553,7 +553,7 @@ rjs_object_state_spread (RJS_Runtime *rt, RJS_Value *value);
  * \retval RJS_OK On success.
  * \retval RJS_ERR On error.
  */
-extern RJS_Result
+RJS_INTERNAL RJS_Result
 rjs_object_state_add_element (RJS_Runtime *rt, RJS_ClassElementType type, RJS_Value *name,
         RJS_Script *script, RJS_ScriptFunc *sf);
 
@@ -564,7 +564,7 @@ rjs_object_state_add_element (RJS_Runtime *rt, RJS_ClassElementType type, RJS_Va
  * \retval RJS_OK On success.
  * \retval RJS_ERR On error.
  */
-extern RJS_Result
+RJS_INTERNAL RJS_Result
 rjs_object_assi_state_push (RJS_Runtime *rt, RJS_Value *o);
 
 /**
@@ -575,7 +575,7 @@ rjs_object_assi_state_push (RJS_Runtime *rt, RJS_Value *o);
  * \retval RJS_OK On success.
  * \retval RJS_ERR On error.
  */
-extern RJS_Result
+RJS_INTERNAL RJS_Result
 rjs_object_assi_state_step (RJS_Runtime *rt, RJS_PropertyName *pn, RJS_Value *rv);
 
 /**
@@ -585,7 +585,7 @@ rjs_object_assi_state_step (RJS_Runtime *rt, RJS_PropertyName *pn, RJS_Value *rv
  * \retval RJS_OK On success.
  * \retval RJS_ERR On error.
  */
-extern RJS_Result
+RJS_INTERNAL RJS_Result
 rjs_object_assi_state_rest (RJS_Runtime *rt, RJS_Value *rv);
 
 /**
@@ -596,7 +596,7 @@ rjs_object_assi_state_rest (RJS_Runtime *rt, RJS_Value *rv);
  * \retval RJS_OK On success.
  * \retval RJS_ERR On error.
  */
-extern RJS_Result
+RJS_INTERNAL RJS_Result
 rjs_try_state_push (RJS_Runtime *rt, size_t catch_ip, size_t finally_ip);
 
 /**
@@ -615,7 +615,7 @@ rjs_native_stack_init (RJS_NativeStack *ns)
  * \param rt The current runtime.
  * \param ns The native stack to be released.
  */
-extern void
+RJS_INTERNAL void
 rjs_native_stack_deinit (RJS_Runtime *rt, RJS_NativeStack *ns);
 
 /**
@@ -623,7 +623,7 @@ rjs_native_stack_deinit (RJS_Runtime *rt, RJS_NativeStack *ns);
  * \param rt The current runtime.
  * \param ns The native stack to be cleared.
  */
-extern void
+RJS_INTERNAL void
 rjs_native_stack_clear (RJS_Runtime *rt, RJS_NativeStack *ns);
 
 /**
@@ -631,7 +631,7 @@ rjs_native_stack_clear (RJS_Runtime *rt, RJS_NativeStack *ns);
  * \param rt The current runtime.
  * \param ns The native stack to be scanned.
  */
-extern void
+RJS_INTERNAL void
 rjs_gc_scan_native_stack (RJS_Runtime *rt, RJS_NativeStack *ns);
 
 #ifdef __cplusplus

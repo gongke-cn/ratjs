@@ -89,7 +89,7 @@ typedef struct {
  * \retval RJS_OK On success.
  * \retval RJS_ERR On error.
  */
-extern RJS_Result
+RJS_INTERNAL RJS_Result
 rjs_conv_init (RJS_Runtime *rt, RJS_Conv *conv, const char *enc_in, const char *enc_out);
 
 /**
@@ -104,7 +104,7 @@ rjs_conv_init (RJS_Runtime *rt, RJS_Conv *conv, const char *enc_in, const char *
  * \retval RJS_ERR On error.
  * \retval RJS_FALSE The output buffer is not big enough.
  */
-extern RJS_Result
+RJS_INTERNAL RJS_Result
 rjs_conv_run (RJS_Runtime *rt, RJS_Conv *conv, const char **in,
         size_t *in_left, char **out, size_t *out_left);
 
@@ -118,7 +118,7 @@ rjs_conv_run (RJS_Runtime *rt, RJS_Conv *conv, const char **in,
  * \retval RJS_OK On success.
  * \retval RJS_ERR On error.
  */
-extern RJS_Result
+RJS_INTERNAL RJS_Result
 rjs_conv_to_buffer (RJS_Runtime *rt, RJS_Conv *conv, const char *in,
         size_t in_len, RJS_CharBuffer *cb);
 
@@ -127,7 +127,7 @@ rjs_conv_to_buffer (RJS_Runtime *rt, RJS_Conv *conv, const char *in,
  * \param rt The current runtime.
  * \param conv The convertor to be released.
  */
-extern void
+RJS_INTERNAL void
 rjs_conv_deinit (RJS_Runtime *rt, RJS_Conv *conv);
 
 #ifdef __cplusplus

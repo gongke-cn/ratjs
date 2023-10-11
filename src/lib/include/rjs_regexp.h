@@ -82,7 +82,7 @@ typedef struct {
  * \retval RJS_OK On success.
  * \retval RJS_ERR On error.
  */
-extern RJS_Result
+RJS_INTERNAL RJS_Result
 rjs_regexp_new (RJS_Runtime *rt, RJS_Value *v, RJS_Value *src, RJS_Value *flags);
 
 /**
@@ -94,7 +94,7 @@ rjs_regexp_new (RJS_Runtime *rt, RJS_Value *v, RJS_Value *src, RJS_Value *flags)
  * \retval RJS_OK On success.
  * \retval RJS_ERR On error.
  */
-extern RJS_Result
+RJS_INTERNAL RJS_Result
 rjs_regexp_builtin_exec (RJS_Runtime *rt, RJS_Value *v, RJS_Value *str, RJS_Value *rv);
 
 #ifdef __cplusplus

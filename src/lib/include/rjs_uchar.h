@@ -168,7 +168,7 @@ rjs_uchar_is_line_terminator (int c)
  * \retval RJS_TRUE The character is a white space.
  * \retval RJS_FALSE The character is not a white space.
  */
-extern RJS_Bool
+RJS_INTERNAL RJS_Bool
 rjs_uchar_is_white_space (int c);
 
 /**
@@ -177,7 +177,7 @@ rjs_uchar_is_white_space (int c);
  * \retval RJS_TRUE The character is a identifier start character.
  * \retval RJS_FALSE The character is not a identifier start character.
  */
-extern RJS_Bool
+RJS_INTERNAL RJS_Bool
 rjs_uchar_is_id_start (int c);
 
 /**
@@ -186,7 +186,7 @@ rjs_uchar_is_id_start (int c);
  * \retval RJS_TRUE The character is a identifier continue character.
  * \retval RJS_FALSE The character is not a identifier continue character.
  */
-extern RJS_Bool
+RJS_INTERNAL RJS_Bool
 rjs_uchar_is_id_continue (int c);
 
 /**
@@ -198,7 +198,7 @@ rjs_uchar_is_id_continue (int c);
  * \param mode The normalize mode, "NFC/NFD/NFKC/NFKD".
  * \return The length of the output string.
  */
-extern int
+RJS_INTERNAL int
 rjs_uchars_normalize (const RJS_UChar *s, int slen, RJS_UChar *d, int dlen, const char *mode);
 
 /**
@@ -206,7 +206,7 @@ rjs_uchars_normalize (const RJS_UChar *s, int slen, RJS_UChar *d, int dlen, cons
  * \param c The input character.
  * \return The mapped character,
  */
-extern int
+RJS_INTERNAL int
 rjs_uchar_fold_case (int c);
 
 #else /*ENC_CONV != ENC_CONV_ICU*/
@@ -277,7 +277,7 @@ rjs_uchar_fold_case (int c)
  * \retval <0 s1 < s2.
  * \retval >0 s1 > s2.
  */
-extern int
+RJS_INTERNAL int
 rjs_uchars_compare (const RJS_UChar *s1, int l1, const RJS_UChar *s2, int l2);
 
 /**
@@ -289,7 +289,7 @@ rjs_uchars_compare (const RJS_UChar *s1, int l1, const RJS_UChar *s2, int l2);
  * \param locale The locale.
  * \return Count of the upper characters.
  */
-extern int
+RJS_INTERNAL int
 rjs_uchars_to_upper (const RJS_UChar *s, int slen, RJS_UChar *dst, int dlen, const char *locale);
 
 /**
@@ -301,7 +301,7 @@ rjs_uchars_to_upper (const RJS_UChar *s, int slen, RJS_UChar *dst, int dlen, con
  * \param locale The locale.
  * \return Count of the lower characters.
  */
-extern int
+RJS_INTERNAL int
 rjs_uchars_to_lower (const RJS_UChar *s, int slen, RJS_UChar *dst, int dlen, const char *locale);
 
 /**

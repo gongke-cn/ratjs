@@ -56,28 +56,28 @@ typedef struct {
  * Initialize the finalization registry data in the rt.
  * \param rt The current runtime.
  */
-extern void
+RJS_INTERNAL void
 rjs_runtime_finalization_registry_init (RJS_Runtime *rt);
 
 /**
  * Release tje finalization registry data in the rt.
  * \param rt The current runtime.
  */
-extern void
+RJS_INTERNAL void
 rjs_runtime_finalization_registry_deinint (RJS_Runtime *rt);
 
 /**
  * Scan the referenced things in the finalization registry data.
  * \param rt The current runtime.
  */
-extern void
+RJS_INTERNAL void
 rjs_gc_scan_finalization_registry (RJS_Runtime *rt);
 
 /**
  * Solve the callback functions in the finalization registry.
  * \param rt The current runtime.
  */
-extern void
+RJS_INTERNAL void
 rjs_solve_finalization_registry (RJS_Runtime *rt);
 
 #ifdef __cplusplus

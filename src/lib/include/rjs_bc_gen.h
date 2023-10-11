@@ -97,7 +97,7 @@ typedef struct {
  * \retval RJS_OK On success.
  * \retval RJS_ERR On error.
  */
-extern RJS_Result
+RJS_INTERNAL RJS_Result
 rjs_bc_gen_func (RJS_Runtime *rt, RJS_BcGen *bg, RJS_AstFunc *func);
 
 /**
@@ -105,7 +105,7 @@ rjs_bc_gen_func (RJS_Runtime *rt, RJS_BcGen *bg, RJS_AstFunc *func);
  * \param rt The current runtime.
  * \param bg The byte code generator.
  */
-extern void
+RJS_INTERNAL void
 rjs_bc_gen_init (RJS_Runtime *rt, RJS_BcGen *bg);
 
 /**
@@ -113,7 +113,7 @@ rjs_bc_gen_init (RJS_Runtime *rt, RJS_BcGen *bg);
  * \param rt The current runtime.
  * \param bg The byte code generator.
  */
-extern void
+RJS_INTERNAL void
 rjs_bc_gen_deinit (RJS_Runtime *rt, RJS_BcGen *bg);
 
 /**
@@ -125,7 +125,7 @@ rjs_bc_gen_deinit (RJS_Runtime *rt, RJS_BcGen *bg);
  * \retval RJS_OK On sucess.
  * \retval RJS_ERR On error.
  */
-extern RJS_Result
+RJS_INTERNAL RJS_Result
 rjs_bc_call (RJS_Runtime *rt, RJS_ScriptCallType type, RJS_Value *v, RJS_Value *rv);
 
 /**
@@ -135,7 +135,7 @@ rjs_bc_call (RJS_Runtime *rt, RJS_ScriptCallType type, RJS_Value *v, RJS_Value *
  * \param bc The byte code pointer.
  * \return The size of the byte code.
  */
-extern int
+RJS_INTERNAL int
 rjs_bc_disassemble (RJS_Runtime *rt, FILE *fp, uint8_t *bc);
 
 #ifdef __cplusplus

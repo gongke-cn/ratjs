@@ -148,7 +148,7 @@ rjs_lex_error (RJS_Lex *lex)
  * \param lex The lexical analyzer to be initialized.
  * \param input The characters input to be used.
  */
-extern void
+RJS_INTERNAL void
 rjs_lex_init (RJS_Runtime *rt, RJS_Lex *lex, RJS_Input *input);
 
 /**
@@ -156,7 +156,7 @@ rjs_lex_init (RJS_Runtime *rt, RJS_Lex *lex, RJS_Input *input);
  * \param rt The current runtime.
  * \param lex The lexical analyzer to be released.
  */
-extern void
+RJS_INTERNAL void
 rjs_lex_deinit (RJS_Runtime *rt, RJS_Lex *lex);
 
 /**
@@ -167,7 +167,7 @@ rjs_lex_deinit (RJS_Runtime *rt, RJS_Lex *lex);
  * \retval RJS_OK On success.
  * \retval RJS_ERR On error.
  */
-extern RJS_Result
+RJS_INTERNAL RJS_Result
 rjs_lex_get_token (RJS_Runtime *rt, RJS_Lex *lex, RJS_Token *token);
 
 /**
@@ -178,7 +178,7 @@ rjs_lex_get_token (RJS_Runtime *rt, RJS_Lex *lex, RJS_Token *token);
  * \retval RJS_OK On success.
  * \retval RJS_ERR On error.
  */
-extern RJS_Result
+RJS_INTERNAL RJS_Result
 rjs_lex_get_json_token (RJS_Runtime *rt, RJS_Lex *lex, RJS_Token *token);
 
 /**
@@ -187,7 +187,7 @@ rjs_lex_get_json_token (RJS_Runtime *rt, RJS_Lex *lex, RJS_Token *token);
  * \param flags The flags of the token.
  * \return The name of the token type.
  */
-extern const char*
+RJS_INTERNAL const char*
 rjs_token_type_get_name (RJS_TokenType type, int flags);
 
 #ifdef __cplusplus

@@ -105,7 +105,7 @@ typedef struct {
  * \retval RJS_OK On success.
  * \retval RJS_ERR On error.
  */
-extern RJS_Result
+RJS_INTERNAL RJS_Result
 rjs_generator_function_new (RJS_Runtime *rt, RJS_Value *f, RJS_Value *proto,
         RJS_Script *script, RJS_ScriptFunc *sf, RJS_Environment *env,
         RJS_PrivateEnv *priv_env);
@@ -117,7 +117,7 @@ rjs_generator_function_new (RJS_Runtime *rt, RJS_Value *f, RJS_Value *proto,
  * \param[out] rv The return value.
  * \retval RJS_SUSPEND Suspended.
  */
-extern RJS_Result
+RJS_INTERNAL RJS_Result
 rjs_yield (RJS_Runtime *rt, RJS_Value *v, RJS_Value *rv);
 
 /**
@@ -129,7 +129,7 @@ rjs_yield (RJS_Runtime *rt, RJS_Value *v, RJS_Value *rv);
  * \retval RJS_THROW An error throwed.
  * \retval RJS_RETURN Return from the generator.
  */
-extern RJS_Result
+RJS_INTERNAL RJS_Result
 rjs_yield_resume (RJS_Runtime *rt, RJS_Value *result, RJS_Value *rv);
 
 /**
@@ -139,7 +139,7 @@ rjs_yield_resume (RJS_Runtime *rt, RJS_Value *result, RJS_Value *rv);
  * \retval RJS_OK On success.
  * \retval RJS_ERR On error.
  */
-extern RJS_Result
+RJS_INTERNAL RJS_Result
 rjs_iterator_yield_start (RJS_Runtime *rt, RJS_Value *v);
 
 /**
@@ -151,7 +151,7 @@ rjs_iterator_yield_start (RJS_Runtime *rt, RJS_Value *v);
  * \retval RJS_THROW Throw an error.
  * \retval RJS_RETURN Return from the generator.
  */
-extern RJS_Result
+RJS_INTERNAL RJS_Result
 rjs_iterator_yield_next (RJS_Runtime *rt, RJS_Value *rv);
 
 #if ENABLE_ASYNC
@@ -167,7 +167,7 @@ rjs_iterator_yield_next (RJS_Runtime *rt, RJS_Value *rv);
  * \retval RJS_OK On success.
  * \retval RJS_ERR On error.
  */
-extern RJS_Result
+RJS_INTERNAL RJS_Result
 rjs_async_generator_complete_step (RJS_Runtime *rt, RJS_Value *gv, RJS_GeneratorRequestType type,
         RJS_Value *rv, RJS_Bool done, RJS_Realm *realm);
 
@@ -178,7 +178,7 @@ rjs_async_generator_complete_step (RJS_Runtime *rt, RJS_Value *gv, RJS_Generator
  * \retval RJS_OK On success.
  * \retval RJS_ERR On error.
  */
-extern RJS_Result
+RJS_INTERNAL RJS_Result
 rjs_async_generator_drain_queue (RJS_Runtime *rt, RJS_Value *gv);
 
 /**
@@ -190,7 +190,7 @@ rjs_async_generator_drain_queue (RJS_Runtime *rt, RJS_Value *gv);
  * \retval RJS_OK On success.
  * \retval RJS_ERR On error.
  */
-extern RJS_Result
+RJS_INTERNAL RJS_Result
 rjs_async_generator_next (RJS_Runtime *rt, RJS_Value *ag, RJS_Value *v, RJS_Value *rv);
 
 /**
@@ -202,7 +202,7 @@ rjs_async_generator_next (RJS_Runtime *rt, RJS_Value *ag, RJS_Value *v, RJS_Valu
  * \retval RJS_OK On success.
  * \retval RJS_ERR On error.
  */
-extern RJS_Result
+RJS_INTERNAL RJS_Result
 rjs_async_generator_return (RJS_Runtime *rt, RJS_Value *ag, RJS_Value *v, RJS_Value *rv);
 
 /**
@@ -214,7 +214,7 @@ rjs_async_generator_return (RJS_Runtime *rt, RJS_Value *ag, RJS_Value *v, RJS_Va
  * \retval RJS_OK On success.
  * \retval RJS_ERR On error.
  */
-extern RJS_Result
+RJS_INTERNAL RJS_Result
 rjs_async_generator_throw (RJS_Runtime *rt, RJS_Value *ag, RJS_Value *v, RJS_Value *rv);
 
 #endif /*ENABLE_ASYNC*/
@@ -226,7 +226,7 @@ rjs_async_generator_throw (RJS_Runtime *rt, RJS_Value *ag, RJS_Value *v, RJS_Val
  * \retval RJS_OK On success.
  * \retval RJS_ERR On error.
  */
-extern RJS_Result
+RJS_INTERNAL RJS_Result
 rjs_generator_start (RJS_Runtime *rt, RJS_Value *rv);
 
 /**
@@ -239,7 +239,7 @@ rjs_generator_start (RJS_Runtime *rt, RJS_Value *rv);
  * \retval RJS_OK On success.
  * \retval RJS_ERR On error.
  */
-extern RJS_Result
+RJS_INTERNAL RJS_Result
 rjs_generator_resume (RJS_Runtime *rt, RJS_Value *gv, RJS_Value *v, RJS_Value *brand, RJS_Value *rv);
 
 /**
@@ -253,7 +253,7 @@ rjs_generator_resume (RJS_Runtime *rt, RJS_Value *gv, RJS_Value *v, RJS_Value *b
  * \retval RJS_OK On success.
  * \retval RJS_ERR On error.
  */
-extern RJS_Result
+RJS_INTERNAL RJS_Result
 rjs_generator_resume_abrupt (RJS_Runtime *rt, RJS_Value *gv, RJS_GeneratorAbruptType type,
         RJS_Value *v, RJS_Value *brand, RJS_Value *rv);
 

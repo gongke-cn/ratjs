@@ -42,7 +42,7 @@ extern "C" {
  * \param base Base of the number.
  * \return The double precision number.
  */
-extern double
+RJS_INTERNAL double
 rjs_strtoi (const char *str, char **end, int base);
 
 #ifdef __cplusplus

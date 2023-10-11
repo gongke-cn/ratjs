@@ -48,7 +48,7 @@ typedef RJS_CompareResult (*RJS_CompareFunc)(const void *, const void *, void *)
  * \retval RJS_OK On success.
  * \retval RJS_ERR On error.
  */
-extern RJS_Result
+RJS_INTERNAL RJS_Result
 rjs_sort (void *base, size_t num, size_t size, RJS_CompareFunc func, void *arg);
 
 #ifdef __cplusplus

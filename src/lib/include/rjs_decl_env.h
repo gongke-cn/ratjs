@@ -74,7 +74,7 @@ typedef struct {
  * \retval RJS_OK On success.
  * \retval RJS_ERR On error.
  */
-extern RJS_Result
+RJS_INTERNAL RJS_Result
 rjs_decl_env_new (RJS_Runtime *rt, RJS_Environment **pe, RJS_ScriptDecl *decl, RJS_Environment *outer);
 
 /**
@@ -84,7 +84,7 @@ rjs_decl_env_new (RJS_Runtime *rt, RJS_Environment **pe, RJS_ScriptDecl *decl, R
  * \param decl The script declaration.
  * \param outer The outer environment.
  */
-extern void
+RJS_INTERNAL void
 rjs_decl_env_init (RJS_Runtime *rt, RJS_DeclEnv *de, RJS_ScriptDecl *decl, RJS_Environment *outer);
 
 /**
@@ -92,7 +92,7 @@ rjs_decl_env_init (RJS_Runtime *rt, RJS_DeclEnv *de, RJS_ScriptDecl *decl, RJS_E
  * \param rt The current runtime.
  * \param de The declarative environment.
  */
-extern void
+RJS_INTERNAL void
 rjs_decl_env_deinit (RJS_Runtime *rt, RJS_DeclEnv *de);
 
 /**
@@ -100,7 +100,7 @@ rjs_decl_env_deinit (RJS_Runtime *rt, RJS_DeclEnv *de);
  * \param relam The current runtime.
  * \param ptr The declarative environment.
  */
-extern void
+RJS_INTERNAL void
 rjs_decl_env_op_gc_scan (RJS_Runtime *rt, void *ptr);
 
 /**
@@ -111,7 +111,7 @@ rjs_decl_env_op_gc_scan (RJS_Runtime *rt, void *ptr);
  * \retval RJS_TRUE The environment has the binding.
  * \retval RJS_FALSE The environment has not the binding.
  */
-extern RJS_Result
+RJS_INTERNAL RJS_Result
 rjs_decl_env_op_has_binding (RJS_Runtime *rt, RJS_Environment *env, RJS_BindingName *n);
 
 /**
@@ -123,7 +123,7 @@ rjs_decl_env_op_has_binding (RJS_Runtime *rt, RJS_Environment *env, RJS_BindingN
  * \retval RJS_OK On success.
  * \retval RJS_ERR On error.
  */
-extern RJS_Result
+RJS_INTERNAL RJS_Result
 rjs_decl_env_op_create_mutable_binding (RJS_Runtime *rt, RJS_Environment *env, RJS_BindingName *n, RJS_Bool del);
 
 /**
@@ -135,7 +135,7 @@ rjs_decl_env_op_create_mutable_binding (RJS_Runtime *rt, RJS_Environment *env, R
  * \retval RJS_OK On success.
  * \retval RJS_ERR On error.
  */
-extern RJS_Result
+RJS_INTERNAL RJS_Result
 rjs_decl_env_op_create_immutable_binding (RJS_Runtime *rt, RJS_Environment *env, RJS_BindingName *n, RJS_Bool strict);
 
 /**
@@ -147,7 +147,7 @@ rjs_decl_env_op_create_immutable_binding (RJS_Runtime *rt, RJS_Environment *env,
  * \retval RJS_OK On success.
  * \retval RJS_ERR On error.
  */
-extern RJS_Result
+RJS_INTERNAL RJS_Result
 rjs_decl_env_op_initialize_binding (RJS_Runtime *rt, RJS_Environment *env, RJS_BindingName *n, RJS_Value *v);
 
 /**
@@ -160,7 +160,7 @@ rjs_decl_env_op_initialize_binding (RJS_Runtime *rt, RJS_Environment *env, RJS_B
  * \retval RJS_OK On success.
  * \retval RJS_ERR On error.
  */
-extern RJS_Result
+RJS_INTERNAL RJS_Result
 rjs_decl_env_op_set_mutable_binding (RJS_Runtime *rt, RJS_Environment *env, RJS_BindingName *n, RJS_Value *v, RJS_Bool strict);
 
 /**
@@ -174,7 +174,7 @@ rjs_decl_env_op_set_mutable_binding (RJS_Runtime *rt, RJS_Environment *env, RJS_
  * \retval RJS_OK On success.
  * \retval RJS_ERR On error.
  */
-extern RJS_Result
+RJS_INTERNAL RJS_Result
 rjs_decl_env_op_get_binding_value (RJS_Runtime *rt, RJS_Environment *env, RJS_BindingName *n, RJS_Bool strict, RJS_Value *v);
 
 /**
@@ -185,7 +185,7 @@ rjs_decl_env_op_get_binding_value (RJS_Runtime *rt, RJS_Environment *env, RJS_Bi
  * \retval RJS_OK On success.
  * \retval RJS_ERR On error.
  */
-extern RJS_Result
+RJS_INTERNAL RJS_Result
 rjs_decl_env_op_delete_binding (RJS_Runtime *rt, RJS_Environment *env, RJS_BindingName *n);
 
 /**
@@ -195,7 +195,7 @@ rjs_decl_env_op_delete_binding (RJS_Runtime *rt, RJS_Environment *env, RJS_Bindi
  * \retval RJS_TRUE The environment has this binding.
  * \retval RJS_FALSE The environment has not this binding.
  */
-extern RJS_Result
+RJS_INTERNAL RJS_Result
 rjs_decl_env_op_has_this_binding (RJS_Runtime *rt, RJS_Environment *env);
 
 /**
@@ -205,7 +205,7 @@ rjs_decl_env_op_has_this_binding (RJS_Runtime *rt, RJS_Environment *env);
  * \retval RJS_TRUE The environment has this binding.
  * \retval RJS_FALSE The environment has not this binding.
  */
-extern RJS_Result
+RJS_INTERNAL RJS_Result
 rjs_decl_env_op_has_super_binding (RJS_Runtime *rt, RJS_Environment *env);
 
 /**
@@ -216,7 +216,7 @@ rjs_decl_env_op_has_super_binding (RJS_Runtime *rt, RJS_Environment *env);
  * \retval RJS_OK On success.
  * \retval RJS_ERR On error.
  */
-extern RJS_Result
+RJS_INTERNAL RJS_Result
 rjs_decl_env_op_with_base_object (RJS_Runtime *rt, RJS_Environment *env, RJS_Value *base);
 
 /**
@@ -226,7 +226,7 @@ rjs_decl_env_op_with_base_object (RJS_Runtime *rt, RJS_Environment *env, RJS_Val
  * \retval RJS_OK On success.
  * \retval RJS_ERR On error.
  */
-extern RJS_Result
+RJS_INTERNAL RJS_Result
 rjs_decl_env_clear (RJS_Runtime *rt, RJS_Environment *env);
 
 #ifdef __cplusplus

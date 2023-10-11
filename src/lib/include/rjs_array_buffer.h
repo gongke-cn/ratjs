@@ -52,7 +52,7 @@ typedef struct {
  * \retval RJS_OK On success.
  * \retval RJS_ERR On error.
  */
-extern RJS_Result
+RJS_INTERNAL RJS_Result
 rjs_get_value_from_raw (RJS_Runtime *rt, const uint8_t *b,
         RJS_ArrayElementType type, RJS_Bool is_little_endian, RJS_Value *v);
 
@@ -66,7 +66,7 @@ rjs_get_value_from_raw (RJS_Runtime *rt, const uint8_t *b,
  * \retval RJS_OK On success.
  * \retval RJS_ERR On error.
  */
-extern RJS_Result
+RJS_INTERNAL RJS_Result
 rjs_set_value_in_raw (RJS_Runtime *rt, uint8_t *b,
         RJS_ArrayElementType type, RJS_Value *v, RJS_Bool is_little_endian);
 

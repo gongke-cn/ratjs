@@ -55,7 +55,7 @@ typedef struct {
  * \param rt The current runtime.
  * \param ptr The script function object pointer.
  */
-extern void
+RJS_INTERNAL void
 rjs_script_func_object_op_gc_scan (RJS_Runtime *rt, void *ptr);
 
 /**
@@ -63,7 +63,7 @@ rjs_script_func_object_op_gc_scan (RJS_Runtime *rt, void *ptr);
  * \param rt The current runtime.
  * \param ptr The script function object pointer.
  */
-extern void
+RJS_INTERNAL void
 rjs_script_func_object_op_gc_free (RJS_Runtime *rt, void *ptr);
 
 /**
@@ -73,7 +73,7 @@ rjs_script_func_object_op_gc_free (RJS_Runtime *rt, void *ptr);
  * \retval RJS_OK On success.
  * \retval RJS_ERR On error.
  */
-extern RJS_Result
+RJS_INTERNAL RJS_Result
 rjs_script_func_object_make_constructor (RJS_Runtime *rt, RJS_Value *f);
 
 /**
@@ -86,7 +86,7 @@ rjs_script_func_object_make_constructor (RJS_Runtime *rt, RJS_Value *f);
  * \param pc The promise capability.
  * \return The new context.
  */
-extern RJS_ScriptContext*
+RJS_INTERNAL RJS_ScriptContext*
 rjs_prepare_for_ordinary_call (RJS_Runtime *rt, RJS_Value *f, RJS_Value *new_target,
         RJS_Value *args, size_t argc, RJS_PromiseCapability *pc);
 
@@ -96,7 +96,7 @@ rjs_prepare_for_ordinary_call (RJS_Runtime *rt, RJS_Value *f, RJS_Value *new_tar
  * \param f The function.
  * \param thiz This argument.
  */
-extern void
+RJS_INTERNAL void
 rjs_ordinary_call_bind_this (RJS_Runtime *rt, RJS_Value *f, RJS_Value *thiz);
 
 /**
@@ -110,7 +110,7 @@ rjs_ordinary_call_bind_this (RJS_Runtime *rt, RJS_Value *f, RJS_Value *thiz);
  * \retval RJS_OK On success.
  * \retval RJS_ERR On error.
  */
-extern RJS_Result
+RJS_INTERNAL RJS_Result
 rjs_script_func_object_op_call (RJS_Runtime *rt, RJS_Value *o, RJS_Value *thiz, RJS_Value *args, size_t argc, RJS_Value *rv);
 
 /**
@@ -124,7 +124,7 @@ rjs_script_func_object_op_call (RJS_Runtime *rt, RJS_Value *o, RJS_Value *thiz, 
  * \retval RJS_OK On success.
  * \retval RJS_ERR On error.
  */
-extern RJS_Result
+RJS_INTERNAL RJS_Result
 rjs_script_func_object_op_construct (RJS_Runtime *rt, RJS_Value *o, RJS_Value *args, size_t argc, RJS_Value *target, RJS_Value *rv);
 
 /**Script function object's operation functions.*/
@@ -145,7 +145,7 @@ rjs_script_func_object_op_construct (RJS_Runtime *rt, RJS_Value *o, RJS_Value *a
  * \retval RJS_OK On success.
  * \retval RJS_ERR On error.
  */
-extern RJS_Result
+RJS_INTERNAL RJS_Result
 rjs_script_func_object_new (RJS_Runtime *rt, RJS_Value *v, RJS_Value *proto,
         RJS_Script *script, RJS_ScriptFunc *sf, RJS_Environment *env, RJS_PrivateEnv *priv_env);
 
@@ -160,7 +160,7 @@ rjs_script_func_object_new (RJS_Runtime *rt, RJS_Value *v, RJS_Value *proto,
  * \param priv_env The private environment.
  * \param ops The object operation functions.
  */
-extern void
+RJS_INTERNAL void
 rjs_script_func_object_init (RJS_Runtime *rt, RJS_Value *v, RJS_ScriptFuncObject *sfo, RJS_Value *proto,
         RJS_Script *script, RJS_ScriptFunc *sf, RJS_Environment *env, RJS_PrivateEnv *priv_env,
         const RJS_ObjectOps *ops);
@@ -170,7 +170,7 @@ rjs_script_func_object_init (RJS_Runtime *rt, RJS_Value *v, RJS_ScriptFuncObject
  * \param rt The current runtime.
  * \param sfo The script function object to be released.
  */
-extern void
+RJS_INTERNAL void
 rjs_script_func_object_deinit (RJS_Runtime *rt, RJS_ScriptFuncObject *sfo);
 
 /**

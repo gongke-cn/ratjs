@@ -38,31 +38,31 @@ extern "C" {
 /**
  * Initialize the dtoa library.
  */
-extern void
+RJS_INTERNAL void
 rjs_dtoa_init (void);
 
 /**
  * Release the dtoa library.
  */
-extern void
+RJS_INTERNAL void
 rjs_dtoa_deinit (void);
 
 /**
  * Convert the string to double.
  */
-extern double
+RJS_INTERNAL double
 rjs_strtod (const char *s00, char **se);
 
 /**
  * Convert double to string.
  */
-extern char*
+RJS_INTERNAL char*
 rjs_dtoa (double d, int mode, int ndigits, int *decpt, int *sign, char **rve);
 
 /**
  * Free the string returned by rjs_dtoa.
  */
-extern void
+RJS_INTERNAL void
 rjs_freedtoa (char *s);
 
 #ifdef __cplusplus

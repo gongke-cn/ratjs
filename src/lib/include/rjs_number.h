@@ -61,7 +61,7 @@ rjs_number_unary_minus (RJS_Runtime *rt, RJS_Value *v, RJS_Value *rv)
  * \param v Input value.
  * \param[out] rv Return value.
  */
-extern void
+RJS_INTERNAL void
 rjs_number_bitwise_not (RJS_Runtime *rt, RJS_Value *v, RJS_Value *rv);
 
 /**
@@ -186,7 +186,7 @@ rjs_number_remainder (RJS_Runtime *rt, RJS_Value *v1, RJS_Value *v2, RJS_Value *
  * \param v2 Number 2.
  * \param[out] rv Return value.
  */
-extern void
+RJS_INTERNAL void
 rjs_number_exponentiate (RJS_Runtime *rt, RJS_Value *v1, RJS_Value *v2, RJS_Value *rv);
 
 /**
@@ -196,7 +196,7 @@ rjs_number_exponentiate (RJS_Runtime *rt, RJS_Value *v1, RJS_Value *v2, RJS_Valu
  * \param v2 Number 2.
  * \param[out] rv Return value.
  */
-extern void
+RJS_INTERNAL void
 rjs_number_left_shift (RJS_Runtime *rt, RJS_Value *v1, RJS_Value *v2, RJS_Value *rv);
 
 /**
@@ -206,7 +206,7 @@ rjs_number_left_shift (RJS_Runtime *rt, RJS_Value *v1, RJS_Value *v2, RJS_Value 
  * \param v2 Number 2.
  * \param[out] rv Return value.
  */
-extern void
+RJS_INTERNAL void
 rjs_number_signed_right_shift (RJS_Runtime *rt, RJS_Value *v1, RJS_Value *v2, RJS_Value *rv);
 
 /**
@@ -216,7 +216,7 @@ rjs_number_signed_right_shift (RJS_Runtime *rt, RJS_Value *v1, RJS_Value *v2, RJ
  * \param v2 Number 2.
  * \param[out] rv Return value.
  */
-extern void
+RJS_INTERNAL void
 rjs_number_unsigned_right_shift (RJS_Runtime *rt, RJS_Value *v1, RJS_Value *v2, RJS_Value *rv);
 
 /**
@@ -226,7 +226,7 @@ rjs_number_unsigned_right_shift (RJS_Runtime *rt, RJS_Value *v1, RJS_Value *v2, 
  * \param v2 Number 2.
  * \param[out] rv Return value.
  */
-extern void
+RJS_INTERNAL void
 rjs_number_bitwise_and (RJS_Runtime *rt, RJS_Value *v1, RJS_Value *v2, RJS_Value *rv);
 
 /**
@@ -236,7 +236,7 @@ rjs_number_bitwise_and (RJS_Runtime *rt, RJS_Value *v1, RJS_Value *v2, RJS_Value
  * \param v2 Number 2.
  * \param[out] rv Return value.
  */
-extern void
+RJS_INTERNAL void
 rjs_number_bitwise_xor (RJS_Runtime *rt, RJS_Value *v1, RJS_Value *v2, RJS_Value *rv);
 
 /**
@@ -246,7 +246,7 @@ rjs_number_bitwise_xor (RJS_Runtime *rt, RJS_Value *v1, RJS_Value *v2, RJS_Value
  * \param v2 Number 2.
  * \param[out] rv Return value.
  */
-extern void
+RJS_INTERNAL void
 rjs_number_bitwise_or (RJS_Runtime *rt, RJS_Value *v1, RJS_Value *v2, RJS_Value *rv);
 
 /**
@@ -285,7 +285,7 @@ rjs_number_compare (RJS_Runtime *rt, RJS_Value *v1, RJS_Value *v2)
  * \retval RJS_OK On success.
  * \retval RJS_ERR On error.
  */
-extern RJS_Result
+RJS_INTERNAL RJS_Result
 rjs_number_to_string (RJS_Runtime *rt, RJS_Number n, RJS_Value *s);
 
 /**

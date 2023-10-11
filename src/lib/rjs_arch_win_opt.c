@@ -220,6 +220,8 @@ clock_gettime(int clk_id, struct timespec *tp)
     return 0;
 }
 
+#if ENABLE_NATIVE_MODULE
+
 /**
  * Open a dynamic linked library.
  * \param filename The dynamic linked library's filename.
@@ -269,6 +271,8 @@ dlsym (void *ptr, const char *symbol)
 
     return GetProcAddress(handle, symbol);
 }
+
+#endif /*ENABLE_NATIVE_MODULE*/
 
 /**
  * Get the absolute path of the file.

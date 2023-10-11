@@ -40,7 +40,7 @@ extern "C" {
  * \param rt The current runtime.
  * \param realm The realm to be initialized.
  */
-extern void
+RJS_INTERNAL void
 rjs_realm_error_init (RJS_Runtime *rt, RJS_Realm *realm);
 
 /**
@@ -48,7 +48,7 @@ rjs_realm_error_init (RJS_Runtime *rt, RJS_Realm *realm);
  * \param rt The current runtime.
  * \param realm The realm to be initialized.
  */
-extern void
+RJS_INTERNAL void
 rjs_realm_global_object_init (RJS_Runtime *rt, RJS_Realm *realm);
 
 #ifdef __cplusplus

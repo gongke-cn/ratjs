@@ -100,7 +100,7 @@ typedef struct {
  * \param rt The current runtime.
  * \param ptr The built-in function object pointer.
  */
-extern void
+RJS_INTERNAL void
 rjs_builtin_func_object_op_gc_scan (RJS_Runtime *rt, void *ptr);
 
 /**
@@ -108,7 +108,7 @@ rjs_builtin_func_object_op_gc_scan (RJS_Runtime *rt, void *ptr);
  * \param rt The current runtime.
  * \param ptr The built-in function object pointer.
  */
-extern void
+RJS_INTERNAL void
 rjs_builtin_func_object_op_gc_free (RJS_Runtime *rt, void *ptr);
 
 /**
@@ -122,7 +122,7 @@ rjs_builtin_func_object_op_gc_free (RJS_Runtime *rt, void *ptr);
  * \retval RJS_OK On success.
  * \retval RJS_ERR On error.
  */
-extern RJS_Result
+RJS_INTERNAL RJS_Result
 rjs_builtin_func_object_op_call (RJS_Runtime *rt, RJS_Value *o, RJS_Value *thiz,
         RJS_Value *args, size_t argc, RJS_Value *rv);
 
@@ -137,7 +137,7 @@ rjs_builtin_func_object_op_call (RJS_Runtime *rt, RJS_Value *o, RJS_Value *thiz,
  * \retval RJS_OK On success.
  * \retval RJS_ERR On error.
  */
-extern RJS_Result
+RJS_INTERNAL RJS_Result
 rjs_builtin_func_object_op_construct (RJS_Runtime *rt, RJS_Value *o,
         RJS_Value *args, size_t argc, RJS_Value *target, RJS_Value *rv);
 
@@ -165,7 +165,7 @@ rjs_builtin_func_object_op_construct (RJS_Runtime *rt, RJS_Value *o,
  * \retval RJS_OK On success.
  * \retval RJS_ERR On error.
  */
-extern RJS_Result
+RJS_INTERNAL RJS_Result
 rjs_builtin_func_object_new (RJS_Runtime *rt, RJS_Value *v, RJS_Realm *realm, RJS_Value *proto,
         RJS_Script *script, RJS_NativeFunc nf, int flags);
 
@@ -183,7 +183,7 @@ rjs_builtin_func_object_new (RJS_Runtime *rt, RJS_Value *v, RJS_Realm *realm, RJ
  * \retval RJS_OK On success.
  * \retval RJS_ERR On error.
  */
-extern RJS_Result
+RJS_INTERNAL RJS_Result
 rjs_builtin_func_object_init (RJS_Runtime *rt, RJS_Value *v, RJS_BuiltinFuncObject *bfo, RJS_Realm *realm,
         RJS_Value *proto, RJS_Script *script, RJS_NativeFunc nf, int flags, const RJS_ObjectOps *ops);
 
@@ -192,7 +192,7 @@ rjs_builtin_func_object_init (RJS_Runtime *rt, RJS_Value *v, RJS_BuiltinFuncObje
  * \param rt The current runtime.
  * \param bfo The built-in function object to be released.
  */
-extern void
+RJS_INTERNAL void
 rjs_builtin_func_object_deinit (RJS_Runtime *rt, RJS_BuiltinFuncObject *bfo);
 
 /**
@@ -202,7 +202,7 @@ rjs_builtin_func_object_deinit (RJS_Runtime *rt, RJS_BuiltinFuncObject *bfo);
  * \retval RJS_OK On success.
  * \retval RJS_ERR On error.
  */
-extern RJS_Result
+RJS_INTERNAL RJS_Result
 rjs_builtin_func_object_make_constructor (RJS_Runtime *rt, RJS_Value *f);
 
 /**
@@ -222,7 +222,7 @@ rjs_builtin_func_object_make_constructor (RJS_Runtime *rt, RJS_Value *f);
  * \retval RJS_OK On success.
  * \retval RJS_ERR On error.
  */
-extern RJS_Result
+RJS_INTERNAL RJS_Result
 rjs_init_builtin_function (RJS_Runtime *rt, RJS_BuiltinFuncObject *bfo, RJS_NativeFunc nf,
         int flags, const RJS_ObjectOps *ops, size_t len, RJS_Value *name, RJS_Realm *realm,
         RJS_Value *proto, RJS_Script *script, RJS_Value *prefix, RJS_Value *f);
@@ -236,7 +236,7 @@ rjs_init_builtin_function (RJS_Runtime *rt, RJS_BuiltinFuncObject *bfo, RJS_Nati
  * \retval RJS_OK On success.
  * \retval RJS_ERR On error.
  */
-extern RJS_Result
+RJS_INTERNAL RJS_Result
 rjs_load_builtin_object_desc (RJS_Runtime *rt, RJS_Realm *realm, const RJS_BuiltinObjectDesc *desc, RJS_Value *o);
 
 /**
@@ -248,7 +248,7 @@ rjs_load_builtin_object_desc (RJS_Runtime *rt, RJS_Realm *realm, const RJS_Built
  * \retval RJS_OK On success.
  * \retval RJS_ERR On error.
  */
-extern RJS_Result
+RJS_INTERNAL RJS_Result
 rjs_load_builtin_func_desc (RJS_Runtime *rt, RJS_Realm *realm, const RJS_BuiltinFuncDesc *desc, RJS_Value *f);
 
 /**
@@ -259,7 +259,7 @@ rjs_load_builtin_func_desc (RJS_Runtime *rt, RJS_Realm *realm, const RJS_Builtin
  * \retval RJS_OK On success.
  * \retval RJS_ERR On error.
  */
-extern RJS_Result
+RJS_INTERNAL RJS_Result
 rjs_load_builtin_desc (RJS_Runtime *rt, RJS_Realm *realm, const RJS_BuiltinDesc *desc);
 
 #if ENABLE_MODULE
@@ -272,7 +272,7 @@ rjs_load_builtin_desc (RJS_Runtime *rt, RJS_Realm *realm, const RJS_BuiltinDesc 
  * \retval RJS_OK On success.
  * \retval RJS_ERR On error.
  */
-extern RJS_Result
+RJS_INTERNAL RJS_Result
 rjs_load_builtin_module_desc (RJS_Runtime *rt, RJS_Value *mod, const RJS_BuiltinDesc *desc);
 
 #endif /*ENABLE_MODULE*/

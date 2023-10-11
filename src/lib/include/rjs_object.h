@@ -101,7 +101,7 @@ typedef struct {
  * \param p The property key value.
  * \param[out] pk Return the property key.
  */
-extern void
+RJS_INTERNAL void
 rjs_property_key_get (RJS_Runtime *rt, RJS_Value *p, RJS_PropertyKey *pk);
 
 /**
@@ -109,7 +109,7 @@ rjs_property_key_get (RJS_Runtime *rt, RJS_Value *p, RJS_PropertyKey *pk);
  * \param rt The current runtime.
  * \param ptr The object pointer.
  */
-extern void
+RJS_INTERNAL void
 rjs_object_op_gc_scan (RJS_Runtime *rt, void *ptr);
 
 /**
@@ -117,7 +117,7 @@ rjs_object_op_gc_scan (RJS_Runtime *rt, void *ptr);
  * \param rt The current runtime.
  * \param ptr The object pointer.
  */
-extern void
+RJS_INTERNAL void
 rjs_object_op_gc_free (RJS_Runtime *rt, void *ptr);
 
 /**
@@ -128,7 +128,7 @@ rjs_object_op_gc_free (RJS_Runtime *rt, void *ptr);
  * \retval RJS_OK On success.
  * \retval RJS_ERR On error.
  */
-extern RJS_Result
+RJS_INTERNAL RJS_Result
 rjs_ordinary_object_op_get_prototype_of (RJS_Runtime *rt, RJS_Value *o, RJS_Value *proto);
 
 /**
@@ -140,7 +140,7 @@ rjs_ordinary_object_op_get_prototype_of (RJS_Runtime *rt, RJS_Value *o, RJS_Valu
  * \retval RJS_FALSE Cannot reset the prototype.
  * \retval RJS_ERR On error.
  */
-extern RJS_Result
+RJS_INTERNAL RJS_Result
 rjs_ordinary_object_op_set_prototype_of (RJS_Runtime *rt, RJS_Value *o, RJS_Value *proto);
 
 /**
@@ -151,7 +151,7 @@ rjs_ordinary_object_op_set_prototype_of (RJS_Runtime *rt, RJS_Value *o, RJS_Valu
  * \retval RJS_FALSE The object is not extensible.
  * \retval RJS_ERR On error.
  */
-extern RJS_Result
+RJS_INTERNAL RJS_Result
 rjs_ordinary_object_op_is_extensible (RJS_Runtime *rt, RJS_Value *o);
 
 /**
@@ -162,7 +162,7 @@ rjs_ordinary_object_op_is_extensible (RJS_Runtime *rt, RJS_Value *o);
  * \retval RJS_FALSE Cannot prevent extensions.
  * \retval RJS_ERR On error.
  */
-extern RJS_Result
+RJS_INTERNAL RJS_Result
 rjs_ordinary_object_op_prevent_extensions (RJS_Runtime *rt, RJS_Value *o);
 
 /**
@@ -175,7 +175,7 @@ rjs_ordinary_object_op_prevent_extensions (RJS_Runtime *rt, RJS_Value *o);
  * \retval RJS_FALSE The property is not defined.
  * \retval RJS_ERR On error.
  */
-extern RJS_Result
+RJS_INTERNAL RJS_Result
 rjs_ordinary_object_op_get_own_property (RJS_Runtime *rt, RJS_Value *o, RJS_PropertyName *pn, RJS_PropertyDesc *pd);
 
 /**
@@ -188,7 +188,7 @@ rjs_ordinary_object_op_get_own_property (RJS_Runtime *rt, RJS_Value *o, RJS_Prop
  * \retval RJS_FALSE Cannot create or updete the property.
  * \retval RJS_ERR On error.
  */
-extern RJS_Result
+RJS_INTERNAL RJS_Result
 rjs_ordinary_object_op_define_own_property (RJS_Runtime *rt, RJS_Value *o, RJS_PropertyName *pn, RJS_PropertyDesc *pd);
 
 /**
@@ -200,7 +200,7 @@ rjs_ordinary_object_op_define_own_property (RJS_Runtime *rt, RJS_Value *o, RJS_P
  * \retval RJS_FALSE The object has not the property.
  * \retval RJS_ERR On error.
  */
-extern RJS_Result
+RJS_INTERNAL RJS_Result
 rjs_ordinary_object_op_has_property (RJS_Runtime *rt, RJS_Value *o, RJS_PropertyName *pn);
 
 /**
@@ -213,7 +213,7 @@ rjs_ordinary_object_op_has_property (RJS_Runtime *rt, RJS_Value *o, RJS_Property
  * \retval RJS_OK On success.
  * \retval RJS_ERR On error.
  */
-extern RJS_Result
+RJS_INTERNAL RJS_Result
 rjs_ordinary_object_op_get (RJS_Runtime *rt, RJS_Value *o, RJS_PropertyName *pn, RJS_Value *receiver, RJS_Value *pv);
 
 /**
@@ -226,7 +226,7 @@ rjs_ordinary_object_op_get (RJS_Runtime *rt, RJS_Value *o, RJS_PropertyName *pn,
  * \retval RJS_OK On success.
  * \retval RJS_ERR On error.
  */
-extern RJS_Result
+RJS_INTERNAL RJS_Result
 rjs_ordinary_object_op_set (RJS_Runtime *rt, RJS_Value *o, RJS_PropertyName *pn, RJS_Value *pv, RJS_Value *receiver);
 
 /**
@@ -238,7 +238,7 @@ rjs_ordinary_object_op_set (RJS_Runtime *rt, RJS_Value *o, RJS_PropertyName *pn,
  * \retval RJS_FALSE The property is not deleted.
  * \retval RJS_ERR On error.
  */
-extern RJS_Result
+RJS_INTERNAL RJS_Result
 rjs_ordinary_object_op_delete (RJS_Runtime *rt, RJS_Value *o, RJS_PropertyName *pn);
 
 /**
@@ -249,7 +249,7 @@ rjs_ordinary_object_op_delete (RJS_Runtime *rt, RJS_Value *o, RJS_PropertyName *
  * \retval RJS_OK On success.
  * \retval RJS_ERR On error.
  */
-extern RJS_Result
+RJS_INTERNAL RJS_Result
 rjs_ordinary_object_op_own_property_keys (RJS_Runtime *rt, RJS_Value *o, RJS_Value *keys);
 
 /**Ordinary object operation functions.*/
@@ -276,7 +276,7 @@ rjs_ordinary_object_op_own_property_keys (RJS_Runtime *rt, RJS_Value *o, RJS_Val
  * \retval RJS_TRUE On success.
  * \retval RJS_FALSE Some properties cannot be deleted.
  */
-extern RJS_Result
+RJS_INTERNAL RJS_Result
 rjs_ordinary_object_delete_from_index (RJS_Runtime *rt, RJS_Value *o,
         uint32_t old_len, uint32_t new_len, uint32_t *last_idx);
 
@@ -290,7 +290,7 @@ rjs_ordinary_object_delete_from_index (RJS_Runtime *rt, RJS_Value *o,
  * \retval RJS_OK On success.
  * \retval RJS_ERR On error.
  */
-extern RJS_Result
+RJS_INTERNAL RJS_Result
 rjs_object_init (RJS_Runtime *rt, RJS_Value *v, RJS_Object *o, RJS_Value *proto, const RJS_ObjectOps *ops);
 
 /**
@@ -298,7 +298,7 @@ rjs_object_init (RJS_Runtime *rt, RJS_Value *v, RJS_Object *o, RJS_Value *proto,
  * \param rt The current runtime.
  * \param o The object to be released.
  */
-extern void
+RJS_INTERNAL void
 rjs_object_deinit (RJS_Runtime *rt, RJS_Object *o);
 
 /**
@@ -310,7 +310,7 @@ rjs_object_deinit (RJS_Runtime *rt, RJS_Object *o);
  * \retval RJS_OK On success.
  * \retval RJS_ERR On error.
  */
-RJS_Result
+RJS_INTERNAL RJS_Result
 rjs_ordinary_to_primitive (RJS_Runtime *rt, RJS_Value *v, RJS_Value *prim, RJS_ValueType type);
 
 #ifdef __cplusplus

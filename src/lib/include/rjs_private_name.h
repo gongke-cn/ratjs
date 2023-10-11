@@ -61,7 +61,7 @@ struct RJS_PrivateEnv_s {
  * \param spe The script private environment record.
  * \return The new private environment.
  */
-extern RJS_PrivateEnv*
+RJS_INTERNAL RJS_PrivateEnv*
 rjs_private_env_push (RJS_Runtime *rt, RJS_Script *script, RJS_ScriptPrivEnv *spe);
 
 /**
@@ -69,7 +69,7 @@ rjs_private_env_push (RJS_Runtime *rt, RJS_Script *script, RJS_ScriptPrivEnv *sp
  * \param rt The current runtime.
  * \param env The private environment to be popped.
  */
-extern void
+RJS_INTERNAL void
 rjs_private_env_pop (RJS_Runtime *rt, RJS_PrivateEnv *env);
 
 /**
@@ -82,7 +82,7 @@ rjs_private_env_pop (RJS_Runtime *rt, RJS_PrivateEnv *env);
  * \retval RJS_FALSE Cannot find the private name.
  * \retval RJS_ERR On error.
  */
-extern RJS_Result
+RJS_INTERNAL RJS_Result
 rjs_private_name_lookup (RJS_Runtime *rt, RJS_Value *id, RJS_PrivateEnv *env, RJS_Value *pn);
 
 /**
@@ -94,7 +94,7 @@ rjs_private_name_lookup (RJS_Runtime *rt, RJS_Value *id, RJS_PrivateEnv *env, RJ
  * \retval RJS_OK On success.
  * \retval RJS_ERR On error.
  */
-extern RJS_Result
+RJS_INTERNAL RJS_Result
 rjs_private_get (RJS_Runtime *rt, RJS_Value *v, RJS_PropertyName *pn, RJS_Value *pv);
 
 /**
@@ -106,7 +106,7 @@ rjs_private_get (RJS_Runtime *rt, RJS_Value *v, RJS_PropertyName *pn, RJS_Value 
  * \retval RJS_OK On success.
  * \retval RJS_ERR On error.
  */
-extern RJS_Result
+RJS_INTERNAL RJS_Result
 rjs_private_set (RJS_Runtime *rt, RJS_Value *v, RJS_PropertyName *pn, RJS_Value *pv);
 
 /**
@@ -118,7 +118,7 @@ rjs_private_set (RJS_Runtime *rt, RJS_Value *v, RJS_PropertyName *pn, RJS_Value 
  * \retval RJS_OK On success.
  * \retval RJS_ERR On error.
  */
-extern RJS_Result
+RJS_INTERNAL RJS_Result
 rjs_private_field_add (RJS_Runtime *rt, RJS_Value *o, RJS_Value *p, RJS_Value *pv);
 
 /**
@@ -130,7 +130,7 @@ rjs_private_field_add (RJS_Runtime *rt, RJS_Value *o, RJS_Value *p, RJS_Value *p
  * \retval RJS_OK On success.
  * \retval RJS_ERR On error.
  */
-extern RJS_Result
+RJS_INTERNAL RJS_Result
 rjs_private_method_add (RJS_Runtime *rt, RJS_Value *o, RJS_Value *p, RJS_Value *pv);
 
 /**
@@ -143,7 +143,7 @@ rjs_private_method_add (RJS_Runtime *rt, RJS_Value *o, RJS_Value *p, RJS_Value *
  * \retval RJS_OK On success.
  * \retval RJS_ERR On error.
  */
-extern RJS_Result
+RJS_INTERNAL RJS_Result
 rjs_private_accessor_add (RJS_Runtime *rt, RJS_Value *o, RJS_Value *p, RJS_Value *get, RJS_Value *set);
 
 /**
@@ -155,7 +155,7 @@ rjs_private_accessor_add (RJS_Runtime *rt, RJS_Value *o, RJS_Value *p, RJS_Value
  * \retval RJS_FALSE Cannot find the private element.
  * \retval RJS_ERR On error.
  */
-extern RJS_Result
+RJS_INTERNAL RJS_Result
 rjs_private_element_find (RJS_Runtime *rt, RJS_Value *o, RJS_Value *p);
 
 #ifdef __cplusplus

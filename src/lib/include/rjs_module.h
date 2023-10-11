@@ -121,7 +121,9 @@ typedef struct {
     RJS_Environment      *env;                     /**< The module environment.*/
     RJS_Value             import_meta;             /**< Import meta value.*/
     RJS_NativeData        native_data;             /**< The native data.*/
+#if ENABLE_NATIVE_MODULE
     void                 *native_handle;           /**< The native module's handle.*/
+#endif /*ENABLE_NATIVE_MODULE*/
 } RJS_Module;
 
 /**
@@ -131,28 +133,28 @@ typedef struct {
  * \param realm The realm.
  * \return The new module.
  */
-extern RJS_Module*
+RJS_INTERNAL RJS_Module*
 rjs_module_new (RJS_Runtime *rt, RJS_Value *v, RJS_Realm *realm);
 
 /**
  * Initialize the module data in the rt.
  * \param rt The current runtime.
  */
-extern void
+RJS_INTERNAL void
 rjs_runtime_module_init (RJS_Runtime *rt);
 
 /**
  * Release the module data in the rt.
  * \param rt The current runtime.
  */
-extern void
+RJS_INTERNAL void
 rjs_runtime_module_deinit (RJS_Runtime *rt);
 
 /**
  * Scan the module data in the rt.
  * \param rt The current runtime.
  */
-extern void
+RJS_INTERNAL void
 rjs_gc_scan_module (RJS_Runtime *rt);
 
 #ifdef __cplusplus

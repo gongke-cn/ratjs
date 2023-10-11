@@ -199,7 +199,7 @@ struct RJS_Script_s {
  * \param script The script to be initialized.
  * \param realm The realm.
  */
-extern void
+RJS_INTERNAL void
 rjs_script_init (RJS_Runtime *rt, RJS_Script *script, RJS_Realm *realm);
 
 /**
@@ -207,7 +207,7 @@ rjs_script_init (RJS_Runtime *rt, RJS_Script *script, RJS_Realm *realm);
  * \param rt The current runtime.
  * \param script The script to be released.
  */
-extern void
+RJS_INTERNAL void
 rjs_script_deinit (RJS_Runtime *rt, RJS_Script *script);
 
 /**
@@ -215,7 +215,7 @@ rjs_script_deinit (RJS_Runtime *rt, RJS_Script *script);
  * \param rt The current runtime.
  * \param ptr The script's pointer.
  */
-extern void
+RJS_INTERNAL void
 rjs_script_op_gc_scan (RJS_Runtime *rt, void *ptr);
 
 /**
@@ -226,7 +226,7 @@ rjs_script_op_gc_scan (RJS_Runtime *rt, void *ptr);
  * \retval RJS_OK On success.
  * \retval RJS_ERR On error.
  */
-extern RJS_Script*
+RJS_INTERNAL RJS_Script*
 rjs_script_new (RJS_Runtime *rt, RJS_Value *v, RJS_Realm *realm);
 
 /**
@@ -240,7 +240,7 @@ rjs_script_new (RJS_Runtime *rt, RJS_Value *v, RJS_Realm *realm);
  * \retval RJS_OK On success.
  * \retval RJS_ERR On error.
  */
-extern RJS_Result
+RJS_INTERNAL RJS_Result
 rjs_global_declaration_instantiation (RJS_Runtime *rt,
         RJS_Script *script,
         RJS_ScriptDecl *decl,
@@ -256,7 +256,7 @@ rjs_global_declaration_instantiation (RJS_Runtime *rt,
  * \retval RJS_OK On success.
  * \retval RJS_ERR On error.
  */
-extern RJS_Result
+RJS_INTERNAL RJS_Result
 rjs_script_binding_group_init (RJS_Runtime *rt, RJS_Script *script, RJS_ScriptBindingGroup *grp);
 
 /**
@@ -269,7 +269,7 @@ rjs_script_binding_group_init (RJS_Runtime *rt, RJS_Script *script, RJS_ScriptBi
  * \retval RJS_OK On success.
  * \retval RJS_ERR On error.
  */
-extern RJS_Result
+RJS_INTERNAL RJS_Result
 rjs_script_binding_group_dup (RJS_Runtime *rt, RJS_Script *script, RJS_ScriptBindingGroup *grp,
         RJS_Environment *env, RJS_Environment *src);
 
@@ -282,7 +282,7 @@ rjs_script_binding_group_dup (RJS_Runtime *rt, RJS_Script *script, RJS_ScriptBin
  * \retval RJS_OK On success.
  * \retval RJS_ERR On error.
  */
-extern RJS_Result
+RJS_INTERNAL RJS_Result
 rjs_script_func_group_init (RJS_Runtime *rt, RJS_Script *script, RJS_ScriptFuncDeclGroup *grp, RJS_Bool is_top);
 
 /**
@@ -295,7 +295,7 @@ rjs_script_func_group_init (RJS_Runtime *rt, RJS_Script *script, RJS_ScriptFuncD
  * \retval RJS_ERR On error.
  * \retval RJS_FALSE The async function is waiting a promise.
  */
-extern RJS_Result
+RJS_INTERNAL RJS_Result
 rjs_script_func_call (RJS_Runtime *rt, RJS_ScriptCallType type, RJS_Value *v, RJS_Value *rv);
 
 /**
@@ -305,7 +305,7 @@ rjs_script_func_call (RJS_Runtime *rt, RJS_ScriptCallType type, RJS_Value *v, RJ
  * \param fp The output file.
  * \param id The value's index.
  */
-extern void
+RJS_INTERNAL void
 rjs_script_print_value (RJS_Runtime *rt, RJS_Script *script, FILE *fp, int id);
 
 /**
@@ -315,7 +315,7 @@ rjs_script_print_value (RJS_Runtime *rt, RJS_Script *script, FILE *fp, int id);
  * \param fp The output file.
  * \param v The value pointer.
  */
-extern void
+RJS_INTERNAL void
 rjs_script_print_value_pointer (RJS_Runtime *rt, RJS_Script *script, FILE *fp, RJS_Value *v);
 
 /**
@@ -328,7 +328,7 @@ rjs_script_print_value_pointer (RJS_Runtime *rt, RJS_Script *script, FILE *fp, R
  * \retval RJS_OK On success.
  * \retval RJS_ERR On error.
  */
-extern RJS_Result
+RJS_INTERNAL RJS_Result
 rjs_function_disassemble (RJS_Runtime *rt, RJS_Value *v,
         RJS_ScriptFunc *func, FILE *fp, int flags);
 
@@ -340,7 +340,7 @@ rjs_function_disassemble (RJS_Runtime *rt, RJS_Value *v,
  * \param ip The instruction pointer.
  * \return The line number.
  */
-extern int
+RJS_INTERNAL int
 rjs_function_get_line (RJS_Runtime *rt, RJS_Script *script, RJS_ScriptFunc *func, int ip);
 
 #ifdef __cplusplus

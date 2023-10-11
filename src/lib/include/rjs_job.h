@@ -49,21 +49,21 @@ typedef struct {
  * Initialize the jobs queue in the rt.
  * \param rt The current runtime.
  */
-extern void
+RJS_INTERNAL void
 rjs_runtime_job_init (RJS_Runtime *rt);
 
 /**
  * Release the jobs in the rt.
  * \param rt The current runtime.
  */
-extern void
+RJS_INTERNAL void
 rjs_runtime_job_deinit (RJS_Runtime *rt);
 
 /**
  * Scan the reference things in the jobs.
  * \param rt The current runtime.
  */
-extern void
+RJS_INTERNAL void
 rjs_gc_scan_job (RJS_Runtime *rt);
 
 #ifdef __cplusplus

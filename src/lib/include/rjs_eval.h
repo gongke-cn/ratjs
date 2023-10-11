@@ -47,7 +47,7 @@ extern "C" {
  * \retval RJS_OK On success.
  * \retval RJS_ERR On error.
  */
-extern RJS_Result
+RJS_INTERNAL RJS_Result
 rjs_eval_declaration_instantiation (RJS_Runtime *rt,
         RJS_Script *script,
         RJS_ScriptDecl *decl,

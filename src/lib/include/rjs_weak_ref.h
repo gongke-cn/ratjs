@@ -47,21 +47,21 @@ struct RJS_WeakRef_s {
  * Solve the weak references in the rt.
  * \param rt The current runtime.
  */
-extern void
+RJS_INTERNAL void
 rjs_solve_weak_refs (RJS_Runtime *rt);
 
 /**
  * Initialize the weak reference data in the rt.
  * \param rt The current runtime.
  */
-extern void
+RJS_INTERNAL void
 rjs_runtime_weak_ref_init (RJS_Runtime *rt);
 
 /**
  * Release the weak reference data in the rt.
  * \param rt The current runtime.
  */
-extern void
+RJS_INTERNAL void
 rjs_runtime_weak_ref_deinit (RJS_Runtime *rt);
 
 #ifdef __cplusplus

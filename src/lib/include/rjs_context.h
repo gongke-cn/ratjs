@@ -100,7 +100,7 @@ typedef struct {
  * \param func The function.
  * \return The new context.
  */
-extern RJS_Context*
+RJS_INTERNAL RJS_Context*
 rjs_context_push (RJS_Runtime *rt, RJS_Value *func);
 
 /**
@@ -116,7 +116,7 @@ rjs_context_push (RJS_Runtime *rt, RJS_Value *func);
  * \param argc The arguments' count.
  * \return The new context.
  */
-extern RJS_Context*
+RJS_INTERNAL RJS_Context*
 rjs_script_context_push (RJS_Runtime *rt, RJS_Value *func, RJS_Script *script,
         RJS_ScriptFunc *sf, RJS_Environment *var_env, RJS_Environment *lex_env,
         RJS_PrivateEnv *priv_env, RJS_Value *args, size_t argc);
@@ -135,7 +135,7 @@ rjs_script_context_push (RJS_Runtime *rt, RJS_Value *func, RJS_Script *script,
  * \param argc The arguments' count.
  * \return The new context.
  */
-extern RJS_Context*
+RJS_INTERNAL RJS_Context*
 rjs_generator_context_push (RJS_Runtime *rt, RJS_Value *func, RJS_Script *script,
         RJS_ScriptFunc *sf, RJS_Environment *var_env, RJS_Environment *lex_env,
         RJS_PrivateEnv *priv_env, RJS_Value *args, size_t argc);
@@ -157,7 +157,7 @@ rjs_generator_context_push (RJS_Runtime *rt, RJS_Value *func, RJS_Script *script
  * \param pc The promise capability.
  * \return The new context.
  */
-extern RJS_Context*
+RJS_INTERNAL RJS_Context*
 rjs_async_context_push (RJS_Runtime *rt, RJS_Value *func, RJS_Script *script,
         RJS_ScriptFunc *sf, RJS_Environment *var_env, RJS_Environment *lex_env,
         RJS_PrivateEnv *priv_env, RJS_Value *args, size_t argc, RJS_PromiseCapability *pc);
@@ -169,7 +169,7 @@ rjs_async_context_push (RJS_Runtime *rt, RJS_Value *func, RJS_Script *script,
  * \param i The integer parameter of the function.
  * \param v The value parameter of the function.
  */
-extern void
+RJS_INTERNAL void
 rjs_async_context_set_op (RJS_Runtime *rt, RJS_AsyncOpFunc op, size_t i, RJS_Value *v);
 
 #endif /*ENABLE_ASYNC*/
@@ -178,7 +178,7 @@ rjs_async_context_set_op (RJS_Runtime *rt, RJS_AsyncOpFunc op, size_t i, RJS_Val
  * Popup the top context from the stack.
  * \param rt The current runtime.
  */
-extern void
+RJS_INTERNAL void
 rjs_context_pop (RJS_Runtime *rt);
 
 /**
@@ -186,7 +186,7 @@ rjs_context_pop (RJS_Runtime *rt);
  * \param rt The current runtime.
  * \param ctxt The context.
  */
-extern void
+RJS_INTERNAL void
 rjs_context_restore (RJS_Runtime *rt, RJS_Context *ctxt);
 
 #if ENABLE_GENERATOR || ENABLE_ASYNC
@@ -194,7 +194,7 @@ rjs_context_restore (RJS_Runtime *rt, RJS_Context *ctxt);
  * Solve all the generator contexts.
  * \param rt The current runtime.
  */
-extern void
+RJS_INTERNAL void
 rjs_solve_generator_contexts (RJS_Runtime *rt);
 #endif /*ENABLE_GENERATOR || ENABLE_ASYNC*/
 
@@ -202,21 +202,21 @@ rjs_solve_generator_contexts (RJS_Runtime *rt);
  * Initialize the context stack in the rt.
  * \param rt The current runtime.
  */
-extern void
+RJS_INTERNAL void
 rjs_runtime_context_init (RJS_Runtime *rt);
 
 /**
  * Release the context stack in the rt.
  * \param rt The current runtime.
  */
-extern void
+RJS_INTERNAL void
 rjs_runtime_context_deinit (RJS_Runtime *rt);
 
 /**
  * Scan the referenced things in the context stack.
  * \param rt The current runtime.
  */
-extern void
+RJS_INTERNAL void
 rjs_gc_scan_context_stack (RJS_Runtime *rt);
 
 #ifdef __cplusplus

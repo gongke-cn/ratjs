@@ -48,7 +48,7 @@ typedef struct {
  * \retval RJS_OK On success.
  * \retval RJS_ERR On error.
  */
-extern RJS_Result
+RJS_INTERNAL RJS_Result
 rjs_module_env_new (RJS_Runtime *rt, RJS_Environment **pe, RJS_Environment *outer);
 
 #ifdef __cplusplus

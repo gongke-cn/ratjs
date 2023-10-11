@@ -52,7 +52,7 @@ extern "C" {
  * \retval RJS_TRUE The string is an array index.
  * \retval RJS_FALSE The string is not an array index.
  */
-extern RJS_Bool
+RJS_INTERNAL RJS_Bool
 rjs_string_to_index_internal (RJS_Runtime *rt, RJS_Value *v, int64_t *pi);
 
 /**
@@ -87,7 +87,7 @@ rjs_string_to_index (RJS_Runtime *rt, RJS_Value *v, int64_t *pi)
  * \retval RJS_TRUE The string is a numeric index string.
  * \retval RJS_FALSE The string is not a numeric index string.
  */
-extern RJS_Bool
+RJS_INTERNAL RJS_Bool
 rjs_canonical_numeric_index_string_internal (RJS_Runtime *rt, RJS_Value *v, RJS_Number *pn);
 
 /**
@@ -124,7 +124,7 @@ rjs_canonical_numeric_index_string (RJS_Runtime *rt, RJS_Value *v, RJS_Number *p
  * \retval RJS_OK On success.
  * \retval RJS_ERR On error.
  */
-extern RJS_Result
+RJS_INTERNAL RJS_Result
 rjs_string_to_big_int (RJS_Runtime *rt, RJS_Value *v, RJS_Value *bi);
 
 #endif /*ENABLE_BIG_INT*/
@@ -135,7 +135,7 @@ rjs_string_to_big_int (RJS_Runtime *rt, RJS_Value *v, RJS_Value *bi);
  * \param v The string value.
  * \return The hash key code of the string.
  */
-extern size_t
+RJS_INTERNAL size_t
 rjs_string_hash_key (RJS_Runtime *rt, RJS_Value *v);
 
 /**
@@ -149,7 +149,7 @@ rjs_string_hash_key (RJS_Runtime *rt, RJS_Value *v);
  * \retval RJS_OK On success.
  * \retval RJS_ERR On error.
  */
-extern RJS_Result
+RJS_INTERNAL RJS_Result
 rjs_get_substitution (RJS_Runtime *rt, RJS_Value *str, size_t pos,
         RJS_Value *captures, RJS_Value *rep_templ, RJS_Value *rv);
 
@@ -162,28 +162,28 @@ rjs_get_substitution (RJS_Runtime *rt, RJS_Value *str, size_t pos,
  * \retval RJS_OK On success.
  * \retval RJS_ERR On error.
  */
-extern RJS_Result
+RJS_INTERNAL RJS_Result
 rjs_string_from_file (RJS_Runtime *rt, RJS_Value *str, const char *fn, const char *enc);
 
 /**
  * Initialize the string resource in the rt.
  * \param rt The rt to be initialized.
  */
-extern void
+RJS_INTERNAL void
 rjs_runtime_string_init (RJS_Runtime *rt);
 
 /**
  * Release the string resource in the rt.
  * \param rt The rt to be released.
  */
-extern void
+RJS_INTERNAL void
 rjs_runtime_string_deinit (RJS_Runtime *rt);
 
 /**
  * Scan the internal strings in the rt.
  * \param rt The current runtime.
  */
-extern void
+RJS_INTERNAL void
 rjs_gc_scan_internal_strings (RJS_Runtime *rt);
 
 #ifdef __cplusplus

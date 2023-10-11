@@ -2806,7 +2806,7 @@ rjs_regexp_builtin_exec (RJS_Runtime *rt, RJS_Value *v, RJS_Value *str, RJS_Valu
 {
     RJS_RegExpCtxt   ctxt;
     RJS_Result       r;
-    int64_t          last_idx, end_idx;
+    int64_t          last_idx= 0, end_idx;
     int              i;
     RJS_Bool         has_group, has_indices;
     RJS_RegExp      *re      = (RJS_RegExp*)rjs_value_get_object(rt, v);

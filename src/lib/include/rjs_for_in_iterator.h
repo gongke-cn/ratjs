@@ -53,7 +53,7 @@ typedef struct {
  * \retval RJS_OK On success.
  * \retval RJS_ERR On error.
  */
-RJS_Result
+RJS_INTERNAL RJS_Result
 rjs_for_in_iterator_new (RJS_Runtime *rt, RJS_Value *iterv, RJS_Value *v);
 
 /**
@@ -61,7 +61,7 @@ rjs_for_in_iterator_new (RJS_Runtime *rt, RJS_Value *iterv, RJS_Value *v);
  * \param rt The current runtime.
  * \param realm The realm to be initialized.
  */
-extern void
+RJS_INTERNAL void
 rjs_realm_for_in_iterator_init (RJS_Runtime *rt, RJS_Realm *realm);
 
 #ifdef __cplusplus

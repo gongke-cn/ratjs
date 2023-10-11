@@ -112,9 +112,11 @@ mod_op_gc_free (RJS_Runtime *rt, void *ptr)
     /*Free the native data.*/
     rjs_native_data_free(rt, &mod->native_data);
 
+#if ENABLE_NATIVE_MODULE
     /*Unload the native module.*/
     if (mod->native_handle)
         dlclose(mod->native_handle);
+#endif /*ENABLE_NATIVE_MODULE*/
 
     RJS_DEL(rt, mod);
 }
@@ -212,12 +214,15 @@ rjs_module_new (RJS_Runtime *rt, RJS_Value *v, RJS_Realm *realm)
     mod->module_requests        = NULL;
     mod->import_entries         = NULL;
     mod->export_entries         = NULL;
-    mod->native_handle          = NULL;
     mod->module_request_num     = 0;
     mod->import_entry_num       = 0;
     mod->local_export_entry_num = 0;
     mod->indir_export_entry_num = 0;
     mod->star_export_entry_num  = 0;
+
+#if ENABLE_NATIVE_MODULE
+    mod->native_handle          = NULL;
+#endif /*ENABLE_NATIVE_MODULE*/
 
     rjs_native_data_init(&mod->native_data);
 
@@ -602,7 +607,9 @@ execute_module (RJS_Runtime *rt, RJS_Value *modv, RJS_PromiseCapability *pc)
             rjs_context_pop(rt);
         }
 #endif /*ENABLE_ASYNC*/
-    } else if (mod->native_handle) {
+    }
+#if ENABLE_NATIVE_MODULE
+    else if (mod->native_handle) {
         RJS_ModuleExecFunc ef;
 
         ef = dlsym(mod->native_handle, "ratjs_module_exec");
@@ -611,6 +618,7 @@ execute_module (RJS_Runtime *rt, RJS_Value *modv, RJS_PromiseCapability *pc)
                 RJS_LOGE("native module execute failed");
         }
     }
+#endif /*ENABLE_NATIVE_MODULE*/
 
     rjs_value_stack_restore(rt, top);
     return (r == RJS_ERR) ? RJS_ERR : RJS_OK;
@@ -1243,6 +1251,8 @@ load_json_module (RJS_Runtime *rt, RJS_Value *mod, const char *path, RJS_Realm *
 
 #endif /*ENABLE_JSON*/
 
+#if ENABLE_NATIVE_MODULE
+
 /*Load the native module.*/
 static RJS_Result
 load_native_module (RJS_Runtime *rt, RJS_Value *mod, const char *path, RJS_Realm *realm)
@@ -1278,6 +1288,8 @@ load_native_module (RJS_Runtime *rt, RJS_Value *mod, const char *path, RJS_Realm
     return RJS_OK;
 }
 
+#endif /*ENABLE_NATIVE_MODULE*/
+
 /*Create the module from the filename.*/
 static RJS_Result
 module_from_file (RJS_Runtime *rt, RJS_Value *mod, const char *path, RJS_Realm *realm)
@@ -1310,9 +1322,12 @@ module_from_file (RJS_Runtime *rt, RJS_Value *mod, const char *path, RJS_Realm *
         r = load_json_module(rt, mod, rpath, realm);
     } else
 #endif /*ENABLE_JSON*/
+#if ENABLE_NATIVE_MODULE
     if (sub && !strcasecmp(sub, ".njs")) {
         r = load_native_module(rt, mod, rpath, realm);
-    } else {
+    } else
+#endif /*ENABLE_NATIVE_MODULE*/
+    {
         r = load_script_module(rt, mod, rpath, realm);
     }
 

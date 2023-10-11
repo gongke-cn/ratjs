@@ -56,6 +56,14 @@
     #include <iconv.h>
 #endif
 
+#if OSIZE == 1
+    #define RJS_INTERNAL static
+#elif defined __GNUC__ || defined __clang__
+    #define RJS_INTERNAL __attribute__ ((visibility("hidden"))) extern
+#else
+    #define RJS_INTERNAL extern
+#endif
+
 #if defined WIN32 || defined WIN64
     #include "include/rjs_arch_win.h"
 #else

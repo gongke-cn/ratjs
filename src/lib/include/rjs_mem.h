@@ -225,14 +225,14 @@ rjs_char_star_free (RJS_Runtime *rt, void *ptr)
  * Initialize the memory resource in the rt.
  * \param rt The rt to be initialized.
  */
-extern void
+RJS_INTERNAL void
 rjs_runtime_mem_init (RJS_Runtime *rt);
 
 /**
  * Release the memory resource in the rt.
  * \param rt The rt to be released.
  */
-extern void
+RJS_INTERNAL void
 rjs_runtime_mem_deinit (RJS_Runtime *rt);
 
 #ifdef __cplusplus

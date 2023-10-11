@@ -52,7 +52,7 @@ typedef struct {
  * \retval RJS_OK On success.
  * \retval RJS_ERR On error. 
  */
-extern RJS_Result
+RJS_INTERNAL RJS_Result
 rjs_unmapped_arguments_object_new (RJS_Runtime *rt, RJS_Value *v, RJS_Value *args, size_t argc);
 
 /**
@@ -67,7 +67,7 @@ rjs_unmapped_arguments_object_new (RJS_Runtime *rt, RJS_Value *v, RJS_Value *arg
  * \retval RJS_OK On success.
  * \retval RJS_ERR On error.
  */
-extern RJS_Result
+RJS_INTERNAL RJS_Result
 rjs_mapped_arguments_object_new (RJS_Runtime *rt, RJS_Value *v, RJS_Value *f,
         RJS_ScriptBindingGroup *bg, RJS_Value *args, size_t argc, RJS_Environment *env);
 
