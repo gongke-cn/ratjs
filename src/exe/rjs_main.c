@@ -252,6 +252,52 @@ module_dir_add (const char *dir)
     rjs_list_append(&module_dir_list, &md->ln);
 }
 
+/*Function "addModuleDirectory"*/
+static RJS_NF(addModuleDirectory)
+{
+    RJS_Value  *dir = rjs_argument_get(rt, args, argc, 0);
+    size_t      top = rjs_value_stack_save(rt);
+    RJS_Value  *str = rjs_value_stack_push(rt);
+    const char *cstr;
+    RJS_Result  r;
+
+    if ((r = rjs_to_string(rt, dir, str)) == RJS_ERR)
+        goto end;
+
+    cstr = rjs_string_to_enc_chars(rt, str, NULL, NULL);
+
+    module_dir_add(cstr);
+
+    rjs_value_set_undefined(rt, rv);
+    r = RJS_OK;
+end:
+    rjs_value_stack_restore(rt, top);
+    return r;
+}
+
+/*Add "addModuleDirectory" function.*/
+static void
+module_dir_function (void)
+{
+    size_t     top   = rjs_value_stack_save(rt);
+    RJS_Value *name  = rjs_value_stack_push(rt);
+    RJS_Value *func  = rjs_value_stack_push(rt);
+    RJS_Realm *realm = rjs_realm_current(rt);
+    RJS_PropertyName pn;
+    RJS_Value *global;
+
+    rjs_string_from_chars(rt, name, "addModuleDirectory", -1);
+    rjs_create_builtin_function(rt, NULL, addModuleDirectory, 1, name, realm, NULL, NULL, func);
+
+    global = rjs_global_object(realm);
+
+    rjs_property_name_init(rt, &pn, name);
+    rjs_create_data_property_or_throw(rt, global, &pn, func);
+    rjs_property_name_deinit(rt, &pn);
+
+    rjs_value_stack_restore(rt, top);
+}
+
 /*Module evaluation ok callback.*/
 static RJS_NF(on_module_eval_ok)
 {
@@ -540,6 +586,8 @@ main (int argc, char **argv)
 
 #if ENABLE_MODULE
     module_dir_list_init();
+
+    module_dir_function();
 #endif /*ENABLE_MODULE*/
 
     /*Parse options.*/

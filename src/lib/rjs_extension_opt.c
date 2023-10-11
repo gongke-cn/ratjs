@@ -367,6 +367,33 @@ end:
     return r;
 }
 
+/*Get all the modules loaded.*/
+static RJS_NF(ext_modules)
+{
+    size_t      top  = rjs_value_stack_save(rt);
+    RJS_Value  *name = rjs_value_stack_push(rt);
+    int64_t     idx  = 0;
+    RJS_Result  r;
+    size_t      i;
+    RJS_Module *mod;
+
+    if ((r = rjs_array_new(rt, rv, 0, NULL)) == RJS_ERR)
+        goto end;
+
+    rjs_hash_foreach_c(&rt->mod_hash, i, mod, RJS_Module, he) {
+        rjs_string_from_enc_chars(rt, name, mod->script.path, -1, NULL);
+        if ((r = rjs_set_index(rt, rv, idx, name, RJS_TRUE)) == RJS_ERR)
+            goto end;
+
+        idx ++;
+    }
+
+    r = RJS_OK;
+end:
+    rjs_value_stack_restore(rt, top);
+    return r;
+}
+
 /*Extension functions description.*/
 static const RJS_BuiltinFuncDesc
 ext_function_descs[] = {
@@ -434,6 +461,11 @@ ext_function_descs[] = {
         "getcwd",
         0,
         ext_getcwd
+    },
+    {
+        "modules",
+        0,
+        ext_modules
     },
     {NULL}
 };
