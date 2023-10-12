@@ -97,7 +97,7 @@ else
     build out_m32 M=32
     build out_mingw_32 ARCH=win CROSS_COMPILE=i686-w64-mingw32-
     build out_mingw_64 ARCH=win CROSS_COMPILE=x86_64-w64-mingw32-
-    build out_osize OSIZE=1
-    build out_static_only STATIC_ONLY=1
+    build out_osize OPTIMIZE_FOR_SIZE=1
+    build out_static_only STATIC_LIBRARY_ONLY=1
 fi
 

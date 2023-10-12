@@ -39,13 +39,13 @@ CFLAGS += -Wall -Iinclude -I$(O)/include -I$(O)/src/lib
 # Linked libraries and flags
 LIBS += -lm
 
-ifneq ($(OSIZE),1)
+ifneq ($(OPTIMIZE_FOR_SIZE),1)
 	CFLAGS += -O2
 else
 	CFLAGS += -Os
 endif
 
-ifneq ($(STATIC_ONLY),1)
+ifneq ($(STATIC_LIBRARY_ONLY),1)
 	CFLAGS += -fPIC
 endif
 
@@ -200,8 +200,8 @@ $(eval $(call bool_config,ENABLE_COLOR_CONSOLE,1,enable color terminal output))
 $(eval $(call bool_config,ENABLE_FUNC_SOURCE,1,enable function source))
 $(eval $(call bool_config,ENABLE_NATIVE_MODULE,1,enable native module))
 $(eval $(call bool_config,ENABLE_EXTENSION,1,enable extension functions,src/lib/rjs_extension_opt.c))
-$(eval $(call bool_config,STATIC_ONLY,0,do not generate the dynamic library))
-$(eval $(call bool_config,OSIZE,0,optimize to reduce size))
+$(eval $(call bool_config,STATIC_LIBRARY_ONLY,0,do not generate the dynamic library))
+$(eval $(call bool_config,OPTIMIZE_FOR_SIZE,0,optimize to reduce size))
 
 # Host C
 HOST_CC := cc
@@ -272,7 +272,7 @@ LIBRATJS_SLIB := $(O)/libratjs$(SLIB_SUFFIX)
 LIBRATJS_DLIB := $(O)/libratjs$(DLIB_SUFFIX)
 # Libraries targets: libratjs
 LIBRATJS := $(LIBRATJS_SLIB)
-ifneq ($(STATIC_ONLY),1)
+ifneq ($(STATIC_LIBRARY_ONLY),1)
 LIBRATJS += $(LIBRATJS_DLIB)
 endif
 # Source files of libratjs
@@ -338,7 +338,7 @@ $(O)/$(1)$(SLIB_SUFFIX): $$(patsubst %.c,$(O)/%.o,$(2))
 endef
 
 # Link dynamic library
-ifneq ($(STATIC_ONLY),1)
+ifneq ($(STATIC_LIBRARY_ONLY),1)
 ifeq ($(ARCH),win)
 define build_dlib =
 $(O)/$(1)$(DLIB_SUFFIX): $$(patsubst %.c,$(O)/%.o,$(2))
@@ -358,7 +358,7 @@ build_dlib =
 endif
 
 # Build library
-ifneq ($(OSIZE),1)
+ifneq ($(OPTIMIZE_FOR_SIZE),1)
 define build_lib =
 $(eval $(call compile_srcs,$(2)))
 $(eval $(call build_slib,$(1),$(2)))

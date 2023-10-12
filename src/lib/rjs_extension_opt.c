@@ -367,6 +367,8 @@ end:
     return r;
 }
 
+#if ENABLE_MODULE
+
 /*Get all the modules loaded.*/
 static RJS_NF(ext_modules)
 {
@@ -393,6 +395,8 @@ end:
     rjs_value_stack_restore(rt, top);
     return r;
 }
+
+#endif /*ENABLE_MODULE*/
 
 /*Extension functions description.*/
 static const RJS_BuiltinFuncDesc
@@ -462,11 +466,13 @@ ext_function_descs[] = {
         0,
         ext_getcwd
     },
+#if ENABLE_MODULE
     {
         "modules",
         0,
         ext_modules
     },
+#endif /*ENABLE_MODULE*/
     {NULL}
 };
 

@@ -56,7 +56,7 @@
     #include <iconv.h>
 #endif
 
-#if OSIZE == 1
+#if OPTIMIZE_FOR_SIZE == 1
     #define RJS_INTERNAL static
 #elif defined __GNUC__ || defined __clang__
     #define RJS_INTERNAL __attribute__ ((visibility("hidden"))) extern
