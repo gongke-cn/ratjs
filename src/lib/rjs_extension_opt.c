@@ -367,6 +367,15 @@ end:
     return r;
 }
 
+/*Solve jobs.*/
+static RJS_NF(ext_solveJobs)
+{
+    rjs_solve_jobs(rt);
+    rjs_value_set_undefined(rt, rv);
+
+    return RJS_OK;
+}
+
 #if ENABLE_MODULE
 
 /*Get all the modules loaded.*/
@@ -465,6 +474,11 @@ ext_function_descs[] = {
         "getcwd",
         0,
         ext_getcwd
+    },
+    {
+        "solveJobs",
+        0,
+        ext_solveJobs
     },
 #if ENABLE_MODULE
     {
