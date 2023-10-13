@@ -31,6 +31,7 @@
 #include <string.h>
 #include <limits.h>
 #include <libgen.h>
+#include <ctype.h>
 #include <ratjs.h>
 
 /*JS rt.*/
@@ -127,7 +128,7 @@ show_help (char *cmd)
 
 #if ENABLE_MODULE
 
-/*Check if the name is a relative name.*/
+/*Check if the pathname is a relative pathname.*/
 static RJS_Bool
 is_rel_name (const char *name)
 {
@@ -137,6 +138,18 @@ is_rel_name (const char *name)
         if (name[1] == '/')
             return RJS_TRUE;
     }
+
+    return RJS_FALSE;
+}
+
+/*Check if the name is a absolute pathname.*/
+static RJS_Bool
+is_abs_name (const char *name)
+{
+    if (name[0] == '/')
+        return RJS_TRUE;
+    if (isalpha(name[0]) && (name[1] == ':'))
+        return RJS_TRUE;
 
     return RJS_FALSE;
 }
@@ -199,6 +212,11 @@ module_path_func (RJS_Runtime *rt, const char *base, const char *name,
         bpath = dirname(bpbuf);
 
         snprintf(path, size, "%s/%s", bpath, name);
+
+        if (module_exist(path, size) == RJS_OK)
+            return RJS_OK;
+    } else if (is_abs_name(name)) {
+        snprintf(path, size, "%s", name);
 
         if (module_exist(path, size) == RJS_OK)
             return RJS_OK;
