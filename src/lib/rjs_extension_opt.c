@@ -367,6 +367,26 @@ end:
     return r;
 }
 
+/*Get the current script's pathname.*/
+static RJS_NF(ext_scriptPath)
+{
+    RJS_Context       *ctxt = rjs_context_running(rt);
+    RJS_ScriptContext *bctxt;
+    RJS_Script        *script;
+
+    assert(ctxt->bot);
+
+    bctxt  = (RJS_ScriptContext*)ctxt->bot;
+    script = bctxt->script;
+
+    if (script->path)
+        rjs_string_from_enc_chars(rt, rv, script->path, -1, NULL);
+    else
+        rjs_value_copy(rt, rv, rjs_s_empty(rt));
+
+    return RJS_OK;
+}
+
 /*Solve jobs.*/
 static RJS_NF(ext_solveJobs)
 {
@@ -479,6 +499,11 @@ ext_function_descs[] = {
         "solveJobs",
         0,
         ext_solveJobs
+    },
+    {
+        "scriptPath",
+        0,
+        ext_scriptPath
     },
 #if ENABLE_MODULE
     {
