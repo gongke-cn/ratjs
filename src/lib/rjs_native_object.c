@@ -82,13 +82,13 @@ rjs_native_object_new (RJS_Runtime *rt, RJS_Value *o, RJS_Value *proto)
 
     RJS_NEW(rt, no);
 
+    rjs_native_data_init(&no->native_data);
+
     r = rjs_object_init(rt, o, &no->o, proto, &native_object_ops);
     if (r == RJS_ERR) {
         RJS_DEL(rt, no);
         return RJS_ERR;
     }
-
-    rjs_native_data_init(&no->native_data);
 
     return RJS_OK;
 }
