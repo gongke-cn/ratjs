@@ -1727,6 +1727,29 @@ end:
     return r;
 }
 
+/*Dir.prototype.return*/
+static RJS_NF(Dir_prototype_return)
+{
+    RJS_Dir   *dir;
+    RJS_Result r;
+
+    if (rjs_native_object_get_tag(rt, thiz) != dir_tag) {
+        r = rjs_throw_type_error(rt, _("the object is not a directory"));
+        goto end;
+    }
+
+    dir = rjs_native_object_get_data(rt, thiz);
+    if (dir->dir) {
+        closedir(dir->dir);
+        dir->dir = NULL;
+    }
+
+    rjs_create_iter_result_object(rt, rjs_v_undefined(rt), RJS_TRUE, rv);
+    r = RJS_OK;
+end:
+    return r;
+}
+
 static const RJS_BuiltinFuncDesc
 dir_prototype_function_descs[] = {
     {
@@ -1747,7 +1770,7 @@ dir_prototype_function_descs[] = {
     {
         "return",
         0,
-        Dir_prototype_close
+        Dir_prototype_return
     },
     {NULL}
 };
