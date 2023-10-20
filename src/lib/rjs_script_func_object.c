@@ -222,6 +222,8 @@ rjs_script_func_object_op_construct (RJS_Runtime *rt, RJS_Value *o, RJS_Value *a
 
     sc = rjs_prepare_for_ordinary_call(rt, o, target, args, argc, NULL);
 
+    constr_env = sc->scb.lex_env;
+
     if(!(sfo->script_func->flags & RJS_FUNC_FL_DERIVED)) {
         rjs_ordinary_call_bind_this(rt, o, thiz);
 
@@ -237,9 +239,7 @@ rjs_script_func_object_op_construct (RJS_Runtime *rt, RJS_Value *o, RJS_Value *a
 
     r = rjs_script_func_call(rt, RJS_SCRIPT_CALL_CONSTRUCT, target, rv);
 
-    constr_env = sc->scb.lex_env;
     rt->env = constr_env;
-
     rjs_context_pop(rt);
 
     if (r == RJS_ERR)
