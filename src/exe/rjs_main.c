@@ -162,8 +162,10 @@ module_exist (char *path, size_t size)
     int         r;
     size_t      len, space;
 
-    if ((r = stat(path, &sb)) != -1)
-        return RJS_OK;
+    if ((r = stat(path, &sb)) != -1) {
+        if ((sb.st_mode & S_IFMT) == S_IFREG)
+            return RJS_OK;
+    }
 
     len = strlen(path);
     if ((len >= 3) && !strcasecmp(path + len - 3, ".js"))
