@@ -467,6 +467,7 @@ bc_gen_ref (RJS_Runtime *rt, RJS_BcGen *bg, RJS_Ast *expr, int rid, RJS_BcRef *r
     case RJS_AST_MemberExpr: {
         RJS_AstBinaryExpr *be = (RJS_AstBinaryExpr*)expr;
         RJS_Ast           *ast;
+        int                line1, line2;
 
         ref->type          = RJS_BC_REF_PROPERTY;
         ref->base_rid      = bc_reg_add(rt, bg);
@@ -475,14 +476,17 @@ bc_gen_ref (RJS_Runtime *rt, RJS_BcGen *bg, RJS_Ast *expr, int rid, RJS_BcRef *r
 
         ast = bc_ast_get(rt, &be->operand1);
         bc_gen_expr(rt, bg, ast, ref->base_rid);
+        line1 = ast->location.first_line;
 
-        ast  = bc_ast_get(rt, &be->operand2);
-        line = ast->location.first_line;
+        ast = bc_ast_get(rt, &be->operand2);
+        line2 = ast->location.first_line;
 
         if (ast->type == RJS_AST_PropRef) {
             RJS_AstPropRef *pr = (RJS_AstPropRef*)ast;
 
             ref->ref_name_prop = pr;
+
+            line = line1;
 
             cid = bc_cmd_add(rt, bg, RJS_BC_require_object, line);
             cmd = bc_cmd_get(bg, cid);
@@ -491,6 +495,8 @@ bc_gen_ref (RJS_Runtime *rt, RJS_BcGen *bg, RJS_Ast *expr, int rid, RJS_BcRef *r
             int tmp_rid = bc_reg_add(rt, bg);
 
             ref->ref_name_rid = bc_reg_add(rt, bg);
+
+            line = line2;
 
             bc_gen_expr(rt, bg, ast, tmp_rid);
 
