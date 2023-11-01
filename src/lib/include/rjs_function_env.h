@@ -63,6 +63,14 @@ typedef struct {
 RJS_INTERNAL RJS_Result
 rjs_function_env_new (RJS_Runtime *rt, RJS_Environment **pe, RJS_Value *func, RJS_Value *new_target);
 
+/**
+ * Clear the function environment.
+ * \param rt The current runtime.
+ * \param env The function environment to be cleared.
+ */
+RJS_INTERNAL void
+rjs_function_env_clear (RJS_Runtime *rt, RJS_Environment *env);
+
 #ifdef __cplusplus
 }
 #endif

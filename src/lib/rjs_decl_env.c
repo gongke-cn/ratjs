@@ -106,7 +106,13 @@ rjs_decl_env_init (RJS_Runtime *rt, RJS_DeclEnv *de, RJS_ScriptDecl *decl, RJS_E
 void
 rjs_decl_env_deinit (RJS_Runtime *rt, RJS_DeclEnv *de)
 {
-    rjs_decl_env_clear(rt, &de->env);
+    RJS_Binding *b, *nb;
+    size_t       i;
+
+    rjs_hash_foreach_safe_c(&de->binding_hash, i, b, nb, RJS_Binding, he) {
+        RJS_DEL(rt, b);
+    }
+
     rjs_hash_deinit(&de->binding_hash, &rjs_hash_size_ops, rt);
 }
 
@@ -424,14 +430,8 @@ RJS_Result
 rjs_decl_env_clear (RJS_Runtime *rt, RJS_Environment *env)
 {
     RJS_DeclEnv *de = (RJS_DeclEnv*)env;
-    RJS_Binding *b, *nb;
-    size_t       i;
 
-    rjs_hash_foreach_safe_c(&de->binding_hash, i, b, nb, RJS_Binding, he) {
-        RJS_DEL(rt, b);
-    }
-
-    rjs_hash_deinit(&de->binding_hash, &rjs_hash_size_ops, rt);
+    rjs_decl_env_deinit(rt, de);
     rjs_hash_init(&de->binding_hash);
 
     return RJS_OK;

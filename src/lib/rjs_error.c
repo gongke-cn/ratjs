@@ -273,14 +273,14 @@ rjs_throw (RJS_Runtime *rt, RJS_Value *err)
 
     rjs_value_copy(rt, &rt->error, err);
 
-#if 0
-    {
+    if (rt->throw_dump) {
         const char *cstr;
 
+        rjs_dump_error_stack(rt, stderr);
+
         cstr = rjs_to_desc_chars(rt, err, NULL, NULL);
-        RJS_LOGD("throw: %s", cstr);
+        fprintf(stderr, "throw: %s\n", cstr);
     }
-#endif
 
     return RJS_ERR;
 }

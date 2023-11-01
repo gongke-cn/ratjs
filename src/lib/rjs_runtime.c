@@ -93,6 +93,7 @@ rjs_runtime_new (void)
     rt->env           = NULL;
     rt->error_ip      = 0;
     rt->error_flag    = RJS_FALSE;
+    rt->throw_dump    = RJS_FALSE;
     rt->error_context = NULL;
     rt->mod_path_func = NULL;
 
@@ -238,6 +239,21 @@ RJS_Result
 rjs_set_module_path_func (RJS_Runtime *rt, RJS_ModulePathFunc fn)
 {
     rt->mod_path_func = fn;
+
+    return RJS_OK;
+}
+
+/**
+ * Enable or disable stack dump function when throw an error.
+ * \param rt The current runtime.
+ * \param enable Enable/disable flag.
+ * \retval RJS_OK On success.
+ * \retval RJS_ERR On error.
+ */
+RJS_Result
+rjs_set_throw_dump (RJS_Runtime *rt, RJS_Bool enable)
+{
+    rt->throw_dump = enable;
 
     return RJS_OK;
 }

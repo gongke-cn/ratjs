@@ -52,6 +52,7 @@ struct RJS_Runtime_s {
     RJS_Hash         str_prop_key_hash;    /**< String property keys hash table.*/
     RJS_Value        error;                /**< Error value.*/
     RJS_Bool         error_flag;           /**< Error set flag.*/
+    RJS_Bool         throw_dump;           /**< Dump stack when throwing error.*/
     RJS_Context     *error_context;        /**< The context throw the error.*/
     size_t           error_ip;             /**< The instruction pointer where throw the error.*/
     RJS_Value        strings[RJS_S_MAX];   /**< Internal strings.*/

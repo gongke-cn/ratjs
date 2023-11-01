@@ -227,3 +227,29 @@ rjs_env_get_super_base (RJS_Runtime *rt, RJS_Environment *env, RJS_Value *sb)
 
     return rjs_object_get_prototype_of(rt, &sfo->home_object, sb);
 }
+
+/**
+ * Clear the function environment.
+ * \param rt The current runtime.
+ * \param env The function environment to be cleared.
+ */
+void
+rjs_function_env_clear (RJS_Runtime *rt, RJS_Environment *env)
+{
+    RJS_FunctionEnv      *fe = (RJS_FunctionEnv*)env;
+    RJS_ScriptFuncObject *sfo;
+
+    rjs_decl_env_clear(rt, env);
+
+    rjs_value_set_undefined(rt, &fe->this_value);
+    rjs_value_set_undefined(rt, &fe->new_target);
+
+    sfo = (RJS_ScriptFuncObject*)rjs_value_get_object(rt, &fe->function);
+
+#if ENABLE_ARROW_FUNC
+    if (sfo->script_func->flags & RJS_FUNC_FL_ARROW)
+        fe->this_status = RJS_THIS_STATUS_LEXICAL;
+    else
+#endif /*ENABLE_ARROW_FUNC*/
+        fe->this_status = RJS_THIS_STATUS_UNINITIALIZED;
+}

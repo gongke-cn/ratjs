@@ -97,6 +97,16 @@ extern RJS_Result
 rjs_set_module_path_func (RJS_Runtime *rt, RJS_ModulePathFunc fn);
 
 /**
+ * Enable or disable stack dump function when throw an error.
+ * \param rt The current runtime.
+ * \param enable Enable/disable flag.
+ * \retval RJS_OK On success.
+ * \retval RJS_ERR On error.
+ */
+extern RJS_Result
+rjs_set_throw_dump (RJS_Runtime *rt, RJS_Bool enable);
+
+/**
  * Get the value undefined.
  * \param rt The current runtime.
  * \return The value undefined.

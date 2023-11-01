@@ -108,6 +108,7 @@ show_help (char *cmd)
             "  -e STRING        eval the string\n"
 #endif /*ENABLE_EVAL*/
             "  --strict         run in strict mode\n"
+            "  --dump-stack     dump stack when throwing an error\n"
             "  -d all|func|code|value|decl|binding|fdecl|prop|import|export\n"
             "                   disassemble\n"
             "        all:           output all information\n"
@@ -415,7 +416,8 @@ parse_options (int argc, char **argv)
         enum {
             OPT_HELP = 256,
             OPT_STRICT,
-            OPT_VERSION
+            OPT_VERSION,
+            OPT_DUMP_STACK
         };
 
         static const char *short_opts =
@@ -438,6 +440,7 @@ parse_options (int argc, char **argv)
             {"strict",  no_argument,   0,  OPT_STRICT},
             {"version", no_argument,   0,  OPT_VERSION},
             {"help",    no_argument,   0,  OPT_HELP},
+            {"dump-stack", no_argument,0,  OPT_DUMP_STACK},
             {0,         0,             0,  0}
         };
 
@@ -511,6 +514,9 @@ parse_options (int argc, char **argv)
                 disassemble |= RJS_DISASSEMBLE_EXPORT;
             else if (!strcmp(optarg, "penv"))
                 disassemble |= RJS_DISASSEMBLE_PRIV_ENV;
+            break;
+        case OPT_DUMP_STACK:
+            rjs_set_throw_dump(rt, RJS_TRUE);
             break;
         case OPT_STRICT:
             strict_mode = RJS_TRUE;
