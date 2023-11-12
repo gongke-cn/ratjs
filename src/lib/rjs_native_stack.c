@@ -1176,8 +1176,7 @@ rjs_call_state_call (RJS_Runtime *rt, size_t sp, int flags, RJS_Value *rv)
         rt->env         = sc->scb.lex_env;
         sc->scb.lex_env = sc->scb.var_env;
 
-        //rjs_function_env_clear(rt, sc->scb.var_env);
-        rjs_decl_env_clear(rt, sc->scb.var_env);
+        rjs_function_env_clear(rt, sc->scb.var_env);
         rjs_ordinary_call_bind_this(rt, &ctxt->function, s->s.s_call.thiz);
         sc->scb.lex_env = rt->env;
 
