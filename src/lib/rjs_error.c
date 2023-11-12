@@ -307,7 +307,8 @@ rjs_dump_error_stack (RJS_Runtime *rt, FILE *fp)
     while (ctxt) {
         fprintf(fp, "  %d: ", depth);
 
-        if (!rjs_value_is_undefined(rt, &ctxt->function)) {
+        if (!rjs_value_is_undefined(rt, &ctxt->function)
+                && !rjs_value_is_null(rt, &ctxt->function)) {
             r = rjs_get_v(rt, &ctxt->function, rjs_pn_name(rt), name);
             if ((r == RJS_OK) && rjs_value_is_string(rt, name)) {
                 fprintf(fp, "%s ", rjs_string_to_enc_chars(rt, name, NULL, NULL));
