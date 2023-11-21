@@ -106,6 +106,8 @@ json_parser_init (RJS_Runtime *rt, RJS_JsonParser *jp, RJS_Input *input)
     rjs_char_buffer_init(rt, &jp->cb);
     rjs_uchar_buffer_init(rt, &jp->ucb);
     rjs_lex_init(rt, &jp->lex, input);
+
+    jp->lex.status |= RJS_LEX_ST_JSON;
 }
 
 /*Release the JSON parser.*/
@@ -210,7 +212,8 @@ parse_object (RJS_Runtime *rt, RJS_JsonParser *jp, RJS_Value *v)
         if (tok->type == RJS_TOKEN_rbrace)
             break;
 
-        if ((tok->type == RJS_TOKEN_STRING) || (tok->type == RJS_TOKEN_IDENTIFIER)) {
+        if ((tok->type == RJS_TOKEN_STRING)
+                || (tok->type == RJS_TOKEN_IDENTIFIER)) {
             rjs_value_copy(rt, key, tok->value);
         } else {
             json_parse_error(rt, jp, &tok->location, _("expect a string here"));

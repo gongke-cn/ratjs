@@ -1119,7 +1119,7 @@ lex_template (RJS_Runtime *rt, RJS_Lex *lex, RJS_Bool is_head, RJS_Token *token)
             break;
         }
 
-        if (c == '$') {
+        if ((c == '$') && !(lex->status & RJS_LEX_ST_JSON)) {
             c = lex_get_uc(rt, lex);
             if (c == '{') {
                 break;
@@ -1221,41 +1221,48 @@ lex_template (RJS_Runtime *rt, RJS_Lex *lex, RJS_Bool is_head, RJS_Token *token)
         }
     }
 
-    if (is_end) {
-        lex->template_brace_level.item_num --;
-
-        if (is_head)
-            token->type = RJS_TOKEN_TEMPLATE;
-        else
-            token->type = RJS_TOKEN_TEMPLATE_TAIL;
+    if (lex->status & RJS_LEX_ST_JSON) {
+        /*JSON*/
+        token->type = RJS_TOKEN_STRING;
+        rjs_string_from_uchars(rt, token->value, lex->uc_text.items, lex->uc_text.item_num);
     } else {
-        if (is_head)
-            token->type = RJS_TOKEN_TEMPLATE_HEAD;
-        else
-            token->type = RJS_TOKEN_TEMPLATE_MIDDLE;
+        /*Script*/
+        if (is_end) {
+            lex->template_brace_level.item_num --;
+
+            if (is_head)
+                token->type = RJS_TOKEN_TEMPLATE;
+            else
+                token->type = RJS_TOKEN_TEMPLATE_TAIL;
+        } else {
+            if (is_head)
+                token->type = RJS_TOKEN_TEMPLATE_HEAD;
+            else
+                token->type = RJS_TOKEN_TEMPLATE_MIDDLE;
+        }
+
+        if (escape_error) {
+            token->flags |= RJS_TOKEN_FL_INVALIE_ESCAPE;
+            rjs_value_set_undefined(rt, str);
+        } else {
+            rjs_string_from_uchars(rt, str, lex->uc_text.items, lex->uc_text.item_num);
+        }
+
+        if (!escape_error && (lex->raw_uc_text.item_num == lex->uc_text.item_num)) {
+            rjs_value_copy(rt, raw, str);
+        } else {
+            rjs_string_from_uchars(rt, raw,
+                    lex->raw_uc_text.items,
+                    lex->raw_uc_text.item_num);
+        }
+
+        rjs_input_get_position(lex->input,
+                &token->location.last_line,
+                &token->location.last_column,
+                &token->location.last_pos);
+
+        rjs_template_entry_new(rt, &token->location, str, raw, token);
     }
-
-    if (escape_error) {
-        token->flags |= RJS_TOKEN_FL_INVALIE_ESCAPE;
-        rjs_value_set_undefined(rt, str);
-    } else {
-        rjs_string_from_uchars(rt, str, lex->uc_text.items, lex->uc_text.item_num);
-    }
-
-    if (!escape_error && (lex->raw_uc_text.item_num == lex->uc_text.item_num)) {
-        rjs_value_copy(rt, raw, str);
-    } else {
-        rjs_string_from_uchars(rt, raw,
-                lex->raw_uc_text.items,
-                lex->raw_uc_text.item_num);
-    }
-
-    rjs_input_get_position(lex->input,
-            &token->location.last_line,
-            &token->location.last_column,
-            &token->location.last_pos);
-
-    rjs_template_entry_new(rt, &token->location, str, raw, token);
 
     rjs_value_stack_restore(rt, top);
 }
@@ -1480,6 +1487,9 @@ rjs_lex_get_json_token (RJS_Runtime *rt, RJS_Lex *lex, RJS_Token *token)
     case '\"':
     case '\'':
         lex_string(rt, lex, token, c);
+        break;
+    case '`':
+        lex_template(rt, lex, RJS_TRUE, token);
         break;
     case '.':
         lex_unget_uc(rt, lex, c);
