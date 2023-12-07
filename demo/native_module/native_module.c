@@ -89,11 +89,12 @@ ratjs_module_exec (RJS_Runtime *rt, RJS_Value *mod)
     /*Add "test" binding.*/
     rjs_string_from_enc_chars(rt, name, "test", -1, NULL);
     rjs_create_builtin_function(rt, mod, test_func, 0, name, NULL, NULL, NULL, func);
-    rjs_module_add_binding(rt, mod, "test", func);
+    rjs_module_add_binding(rt, mod, name, func);
 
     /*Add default export binding.*/
     rjs_create_builtin_function(rt, mod, default_func, 0, NULL, NULL, NULL, NULL, func);
-    rjs_module_add_binding(rt, mod, "*default*", func);
+    rjs_string_from_enc_chars(rt, name, "*default*", -1, NULL);
+    rjs_module_add_binding(rt, mod, name, func);
 
     rjs_value_stack_restore(rt, top);
     return RJS_OK;

@@ -2247,10 +2247,8 @@ rjs_module_set_import_export (RJS_Runtime *rt, RJS_Value *modv,
  * \retval RJS_ERR On error.
  */
 RJS_Result
-rjs_module_get_binding (RJS_Runtime *rt, RJS_Value *modv, const char *name, RJS_Value *v)
+rjs_module_get_binding (RJS_Runtime *rt, RJS_Value *modv, RJS_Value *name, RJS_Value *v)
 {
-    size_t          top = rjs_value_stack_save(rt);
-    RJS_Value      *nv  = rjs_value_stack_push(rt);
     RJS_BindingName bn;
     RJS_Module     *mod;
     RJS_Result      r;
@@ -2259,14 +2257,12 @@ rjs_module_get_binding (RJS_Runtime *rt, RJS_Value *modv, const char *name, RJS_
 
     mod = rjs_value_get_gc_thing(rt, modv);
 
-    rjs_string_from_chars(rt, nv, name, -1);
-    rjs_string_to_property_key(rt, nv);
+    rjs_string_to_property_key(rt, name);
 
-    rjs_binding_name_init(rt, &bn, nv);
+    rjs_binding_name_init(rt, &bn, name);
     r = rjs_env_get_binding_value(rt, mod->env, &bn, RJS_TRUE, v);
     rjs_binding_name_deinit(rt, &bn);
 
-    rjs_value_stack_restore(rt, top);
     return r;
 }
 
@@ -2281,10 +2277,8 @@ rjs_module_get_binding (RJS_Runtime *rt, RJS_Value *modv, const char *name, RJS_
  * \retval RJS_ERR On error.
  */
 RJS_Result
-rjs_module_add_binding (RJS_Runtime *rt, RJS_Value *modv, const char *name, RJS_Value *v)
+rjs_module_add_binding (RJS_Runtime *rt, RJS_Value *modv, RJS_Value *name, RJS_Value *v)
 {
-    size_t          top = rjs_value_stack_save(rt);
-    RJS_Value      *nv  = rjs_value_stack_push(rt);
     RJS_BindingName bn;
     RJS_Module     *mod;
     RJS_Result      r;
@@ -2293,16 +2287,14 @@ rjs_module_add_binding (RJS_Runtime *rt, RJS_Value *modv, const char *name, RJS_
 
     mod = rjs_value_get_gc_thing(rt, modv);
 
-    rjs_string_from_chars(rt, nv, name, -1);
-    rjs_string_to_property_key(rt, nv);
+    rjs_string_to_property_key(rt, name);
 
-    rjs_binding_name_init(rt, &bn, nv);
+    rjs_binding_name_init(rt, &bn, name);
     r = rjs_env_create_immutable_binding(rt, mod->env, &bn, RJS_TRUE);
     if (r == RJS_OK)
         r = rjs_env_initialize_binding(rt, mod->env, &bn, v);
     rjs_binding_name_deinit(rt, &bn);
 
-    rjs_value_stack_restore(rt, top);
     return r;
 }
 

@@ -262,7 +262,7 @@ rjs_module_set_import_export (RJS_Runtime *rt,
  * \retval RJS_ERR On error.
  */
 extern RJS_Result
-rjs_module_get_binding (RJS_Runtime *rt, RJS_Value *mod, const char *name, RJS_Value *v);
+rjs_module_get_binding (RJS_Runtime *rt, RJS_Value *mod, RJS_Value *name, RJS_Value *v);
 
 /**
  * Add a module binding.
@@ -275,7 +275,7 @@ rjs_module_get_binding (RJS_Runtime *rt, RJS_Value *mod, const char *name, RJS_V
  * \retval RJS_ERR On error.
  */
 extern RJS_Result
-rjs_module_add_binding (RJS_Runtime *rt, RJS_Value *mod, const char *name, RJS_Value *v);
+rjs_module_add_binding (RJS_Runtime *rt, RJS_Value *mod, RJS_Value *name, RJS_Value *v);
 
 /**
  * @}
