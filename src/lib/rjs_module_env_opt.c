@@ -182,16 +182,17 @@ rjs_env_create_import_binding (RJS_Runtime *rt, RJS_Environment *env, RJS_Value 
     str = rjs_value_get_string(rt, n);
 
     r = rjs_hash_lookup(&me->decl_env.binding_hash, str, &he, &phe, &rjs_hash_size_ops, rt);
-    assert(r == RJS_FALSE);
+    if (r == RJS_FALSE) {
+        RJS_NEW(rt, b);
 
-    RJS_NEW(rt, b);
-
-    b->flags = RJS_BINDING_FL_IMPORT|RJS_BINDING_FL_INITIALIZED|RJS_BINDING_FL_IMMUTABLE;
+        b->flags = RJS_BINDING_FL_IMPORT|RJS_BINDING_FL_INITIALIZED|RJS_BINDING_FL_IMMUTABLE;
+        rjs_hash_insert(&me->decl_env.binding_hash, str, &b->he, phe, &rjs_hash_size_ops, rt);
+    } else {
+        b = RJS_CONTAINER_OF(he, RJS_Binding, he);
+    }
 
     rjs_value_copy(rt, &b->b.import.module, mod);
     rjs_value_copy(rt, &b->b.import.name, n2);
-
-    rjs_hash_insert(&me->decl_env.binding_hash, str, &b->he, phe, &rjs_hash_size_ops, rt);
 
     return RJS_OK;
 }
