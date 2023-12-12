@@ -27,7 +27,7 @@
 
 /**Data view.*/
 typedef struct {
-    RJS_Object objcet;      /**< Base object data.*/
+    RJS_Object object;      /**< Base object data.*/
     RJS_Value  buffer;      /**< Viewd buffer.*/
     size_t     byte_offset; /**< Byte offset.*/
     size_t     byte_length; /**< Byte length.*/
@@ -39,7 +39,7 @@ data_view_op_gc_scan (RJS_Runtime *rt, void *ptr)
 {
     RJS_DataView *dv = ptr;
 
-    rjs_object_op_gc_scan(rt, &dv->objcet);
+    rjs_object_op_gc_scan(rt, &dv->object);
     rjs_gc_scan_value(rt, &dv->buffer);
 }
 
@@ -120,7 +120,7 @@ static RJS_NF(DataView_constructor)
     dv->byte_offset = offset;
     dv->byte_length = view_byte_len;
 
-    r = rjs_ordinary_init_from_constructor(rt, &dv->objcet, nt, RJS_O_DataView_prototype, &data_view_ops, rv);
+    r = rjs_ordinary_init_from_constructor(rt, &dv->object, nt, RJS_O_DataView_prototype, &data_view_ops, rv);
     if (r == RJS_ERR) {
         RJS_DEL(rt, dv);
         goto end;
@@ -281,8 +281,6 @@ static RJS_NF(DataView_prototype_setBigInt64)
     RJS_Result r;
 
     r = set_view_value(rt, thiz, byte_off, is_little, RJS_ARRAY_ELEMENT_BIGINT64, setv);
-    if (r == RJS_OK)
-        rjs_value_set_undefined(rt, rv);
 
     return r;
 }
@@ -296,8 +294,6 @@ static RJS_NF(DataView_prototype_setBigUint64)
     RJS_Result r;
 
     r = set_view_value(rt, thiz, byte_off, is_little, RJS_ARRAY_ELEMENT_BIGUINT64, setv);
-    if (r == RJS_OK)
-        rjs_value_set_undefined(rt, rv);
 
     return r;
 }
@@ -384,8 +380,6 @@ static RJS_NF(DataView_prototype_setFloat32)
     RJS_Result r;
 
     r = set_view_value(rt, thiz, byte_off, is_little, RJS_ARRAY_ELEMENT_FLOAT32, setv);
-    if (r == RJS_OK)
-        rjs_value_set_undefined(rt, rv);
 
     return r;
 }
@@ -399,8 +393,6 @@ static RJS_NF(DataView_prototype_setFloat64)
     RJS_Result r;
 
     r = set_view_value(rt, thiz, byte_off, is_little, RJS_ARRAY_ELEMENT_FLOAT64, setv);
-    if (r == RJS_OK)
-        rjs_value_set_undefined(rt, rv);
 
     return r;
 }
@@ -414,8 +406,6 @@ static RJS_NF(DataView_prototype_setInt8)
     RJS_Result r;
 
     r = set_view_value(rt, thiz, byte_off, is_little, RJS_ARRAY_ELEMENT_INT8, setv);
-    if (r == RJS_OK)
-        rjs_value_set_undefined(rt, rv);
 
     return r;
 }
@@ -429,8 +419,6 @@ static RJS_NF(DataView_prototype_setInt16)
     RJS_Result r;
 
     r = set_view_value(rt, thiz, byte_off, is_little, RJS_ARRAY_ELEMENT_INT16, setv);
-    if (r == RJS_OK)
-        rjs_value_set_undefined(rt, rv);
 
     return r;
 }
@@ -444,8 +432,6 @@ static RJS_NF(DataView_prototype_setInt32)
     RJS_Result r;
 
     r = set_view_value(rt, thiz, byte_off, is_little, RJS_ARRAY_ELEMENT_INT32, setv);
-    if (r == RJS_OK)
-        rjs_value_set_undefined(rt, rv);
 
     return r;
 }
@@ -459,8 +445,6 @@ static RJS_NF(DataView_prototype_setUint8)
     RJS_Result r;
 
     r = set_view_value(rt, thiz, byte_off, is_little, RJS_ARRAY_ELEMENT_UINT8, setv);
-    if (r == RJS_OK)
-        rjs_value_set_undefined(rt, rv);
 
     return r;
 }
@@ -474,8 +458,6 @@ static RJS_NF(DataView_prototype_setUint16)
     RJS_Result r;
 
     r = set_view_value(rt, thiz, byte_off, is_little, RJS_ARRAY_ELEMENT_UINT16, setv);
-    if (r == RJS_OK)
-        rjs_value_set_undefined(rt, rv);
 
     return r;
 }
@@ -489,8 +471,6 @@ static RJS_NF(DataView_prototype_setUint32)
     RJS_Result r;
 
     r = set_view_value(rt, thiz, byte_off, is_little, RJS_ARRAY_ELEMENT_UINT32, setv);
-    if (r == RJS_OK)
-        rjs_value_set_undefined(rt, rv);
 
     return r;
 }

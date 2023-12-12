@@ -1,0 +1,269 @@
+{
+    "$def": {
+        "members": {
+            "type": "object",
+            "description": "Structure or union's members.",
+            "additionalProperties": {
+                "oneOf": [
+                    {
+                        "description": "The member's data type.",
+                        "type": "string"
+                    },
+                    {
+                        "type": "object",
+                        "properties": {
+                            "type": {
+                                "description": "The member's data type.",
+                                "type": "string"
+                            },
+                            "length": {
+                                "description": "The array items' number.",
+                                "type": "string"
+                            },
+                            "readonly": {
+                                "description": "The member is readonly.",
+                                "type": "boolean"
+                            },
+                            "nullTerminated": {
+                                "description": "The member array is null terminated.",
+                                "type": "boolean"
+                            }
+                        },
+                        "required": ["type"],
+                        "unevaluatedProperties": false
+                    },
+                    {
+                        "type": "object",
+                        "properties": {
+                            "struct": {
+                                "description": "The member is a structure.",
+                                "$ref": "#/$def/members"
+                            }
+                        },
+                        "required": ["struct"],
+                        "unevaluatedProperties": false
+                    },
+                    {
+                        "type": "object",
+                        "properties": {
+                            "union": {
+                                "description": "The member is an union.",
+                                "$ref": "#/$def/members"
+                            }
+                        },
+                        "required": ["union"],
+                        "unevaluatedProperties": false
+                    }
+                ]
+            }
+        },
+        "functionType": {
+            "description": "Function type definition.",
+            "type": "object",
+            "properties": {
+                "parameters": {
+                    "description": "The parameters of the function.",
+                    "type": "object",
+                    "additionalProperties": {
+                        "oneOf": [
+                            {
+                                "description": "The parameter's data type.",
+                                "type": "string"
+                            },
+                            {
+                                "type": "object",
+                                "properties": {
+                                    "type": {
+                                        "description": "The parameter's data type.",
+                                        "type": "string"
+                                    },
+                                    "length": {
+                                        "description": "The array items' number.",
+                                        "type": "string"
+                                    },
+                                    "nullTerminated": {
+                                        "description": "The parameter is a null terminated array.",
+                                        "type": "boolean"
+                                    },
+                                    "new": {
+                                        "description": "The parameter return a new allocated buffer.",
+                                        "type": "boolean"
+                                    },
+                                    "free": {
+                                        "description": "The parameter pointed buffer is freed in function.",
+                                        "type": "boolean"
+                                    },
+                                    "direction": {
+                                        "description": "The parameter transfer direction.",
+                                        "type": "string",
+                                        "enum": ["in", "out", "inout"]
+                                    }
+                                },
+                                "required": ["type"],
+                                "unevaluatedProperties": false
+                            }
+                        ]
+                    }
+                },
+                "return": {
+                    "oneOf": [
+                        {
+                            "description": "The return value's data type.",
+                            "type": "string"
+                        },
+                        {
+                            "type": "object",
+                            "properties": {
+                                "type": {
+                                    "description": "The return value's data type.",
+                                    "type": "string"
+                                },
+                                "length": {
+                                    "description": "The return array items' number.",
+                                    "type": "string"
+                                },
+                                "nullTerminated": {
+                                    "description": "The return value is a null terminated array.",
+                                    "type": "boolean"
+                                },
+                                "-1": {
+                                    "description": "-1 is a special return value.",
+                                    "type": "boolean"
+                                },
+                                "new": {
+                                    "description": "The return value is a new allocated buffer.",
+                                    "type": "boolean"
+                                }
+                            },
+                            "required": ["type"],
+                            "unevaluatedProperties": false
+                        }
+                    ]
+                }
+            },
+            "unevaluatedProperties": false
+        }
+    },
+    "type": "object",
+    "properties": {
+        "numberMacros": {
+            "description": "Number type macros definition array.",
+            "type": "array",
+            "items": {
+                "description": "The name of the macro.",
+                "type": "string"
+            }
+        },
+        "enumerations": {
+            "description": "The enumerations. The property's name is the enumeration's name, the property's value is the enumeration's definition.",
+            "type": "object",
+            "additionalProperties": {
+                "type": "array",
+                "items": {
+                    "description": "The name of the enumeration item.",
+                    "type": "string"
+                }
+            }
+        },
+        "structures": {
+            "description": "The structures. The property's name is the structure's name, the property's value is the structure's definition.",
+            "type": "object",
+            "additionalProperties": {
+                "type": "object",
+                "properties": {
+                    "noConstructor": {
+                        "description": "Do not generate constructor of the structure.",
+                        "type": "boolean"
+                    },
+                    "noTypeDef": {
+                        "description": "false if the name is the structure's typedef name, or true if the structure has not typedef name, use \"struct NAME\" to specify it.",
+                        "type": "boolean"
+                    },
+                    "readonly": {
+                        "description": "All the members of the structure are readonly.",
+                        "type": "boolean"
+                    },
+                    "members": {
+                        "$ref": "#/$def/members"
+                    }
+                },
+                "unevaluatedProperties": false
+            }
+        },
+        "unions": {
+            "description": "The unions. The property's name is the union's name, the property's value is the union's definition.",
+            "type": "object",
+            "additionalProperties": {
+                "type": "object",
+                "properties": {
+                    "noConstructor": {
+                        "description": "Do not generate constructor of the union.",
+                        "type": "boolean"
+                    },
+                    "noTypeDef": {
+                        "description": "false if the name is the union's typedef name, or true if the union has not typedef name, use \"union NAME\" to specify it.",
+                        "type": "boolean"
+                    },
+                    "readonly": {
+                        "description": "All the members of the union are readonly.",
+                        "type": "boolean"
+                    },
+                    "members": {
+                        "$ref": "#/$def/members"
+                    }
+                },
+                "unevaluatedProperties": false
+            }
+        },
+        "functionTypes": {
+            "description": "The function types. The property's name is the function type's name, the property's value is the function type's definition.",
+            "type": "object",
+            "additionalProperties": {
+                "$ref": "#/$def/functionType"
+            }
+        },
+        "functions": {
+            "description": "The functions. The property's name is the function's name, the property's value is the function's definition.",
+            "type": "object",
+            "additionalProperties": {
+                "$ref": "#/$def/functionType"
+            }
+        },
+        "variables": {
+            "description": "The variables. The property's name is the variable's name, the property's value is the variable's definition.",
+            "type": "object",
+            "additionalProperties": {
+                "oneOf": [
+                    {
+                        "description": "The data type of the variable.",
+                        "type": "string"
+                    },
+                    {
+                        "type": "object",
+                        "properties": {
+                            "type": {
+                                "description": "The data type of the variable.",
+                                "type": "string"
+                            },
+                            "readonly": {
+                                "description": "The variable is readonly.",
+                                "type": "boolean"
+                            },
+                            "length": {
+                                "description": "The array variable items' number.",
+                                "type": "string"
+                            },
+                            "nullTerminated": {
+                                "description": "The array variable is null terminated.",
+                                "type": "boolean"
+                            }
+                        },
+                        "required": ["type"],
+                        "unevaluatedProperties": false
+                    }
+                ]
+            }
+        }
+    },
+    "unevaluatedProperties": false
+}

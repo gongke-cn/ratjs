@@ -52,14 +52,12 @@ end:
 /*Print to stdout.*/
 static RJS_NF(ext_print)
 {
-    rjs_value_set_undefined(rt, rv);
     return print_to_file(rt, args, argc, stdout);
 }
 
 /*Print to stderr.*/
 static RJS_NF(ext_prerr)
 {
-    rjs_value_set_undefined(rt, rv);
     return print_to_file(rt, args, argc, stderr);
 }
 
@@ -133,7 +131,6 @@ static RJS_NF(ext_realpath)
 
     rstr = realpath(cstr, rbuf);
     if (!rstr) {
-        rjs_value_set_undefined(rt, rv);
         r = RJS_OK;
     } else {
         r = rjs_string_from_enc_chars(rt, rv, rstr, -1, NULL);
@@ -172,7 +169,6 @@ static RJS_NF(ext_rename)
         goto end;
     }
 
-    rjs_value_set_undefined(rt, rv);
     r = RJS_OK;
 end:
     rjs_char_buffer_deinit(rt, &ocb);
@@ -200,7 +196,6 @@ static RJS_NF(ext_unlink)
         goto end;
     }
 
-    rjs_value_set_undefined(rt, rv);
     r = RJS_OK;
 end:
     rjs_value_stack_restore(rt, top);
@@ -226,7 +221,6 @@ static RJS_NF(ext_rmdir)
         goto end;
     }
 
-    rjs_value_set_undefined(rt, rv);
     r = RJS_OK;
 end:
     rjs_value_stack_restore(rt, top);
@@ -261,7 +255,6 @@ static RJS_NF(ext_mkdir)
         goto end;
     }
 
-    rjs_value_set_undefined(rt, rv);
     r = RJS_OK;
 end:
     rjs_value_stack_restore(rt, top);
@@ -292,7 +285,6 @@ static RJS_NF(ext_chmod)
         goto end;
     }
 
-    rjs_value_set_undefined(rt, rv);
     r = RJS_OK;
 end:
     rjs_value_stack_restore(rt, top);
@@ -316,7 +308,6 @@ static RJS_NF(ext_getenv)
     rcstr = getenv(ncstr);
 
     if (!rcstr) {
-        rjs_value_set_undefined(rt, rv);
         r = RJS_OK;
     } else {
         r = rjs_string_from_enc_chars(rt, rv, rcstr, -1, NULL);
@@ -391,10 +382,188 @@ static RJS_NF(ext_scriptPath)
 static RJS_NF(ext_solveJobs)
 {
     rjs_solve_jobs(rt);
-    rjs_value_set_undefined(rt, rv);
 
     return RJS_OK;
 }
+
+#if ENABLE_ARRAY_BUFFER
+
+/*Encode a string to a text buffer.*/
+static RJS_NF(ext_encodeText)
+{
+    RJS_Value       *sarg  = rjs_argument_get(rt, args, argc, 0);
+    RJS_Value       *earg  = rjs_argument_get(rt, args, argc, 1);
+    RJS_Value       *buf   = rjs_argument_get(rt, args, argc, 2);
+    RJS_Value       *start = rjs_argument_get(rt, args, argc, 3);
+    size_t           top   = rjs_value_stack_save(rt);
+    RJS_Value       *str   = rjs_value_stack_push(rt);
+    RJS_Value       *estr  = rjs_value_stack_push(rt);
+    RJS_CharBuffer   ecb, scb;
+    const char      *ecstr, *cstr;
+    size_t           len;
+    RJS_Number       rel_start;
+    ssize_t          from, buf_len;
+    RJS_DataBlock   *db;
+    RJS_Result       r;
+
+    rjs_char_buffer_init(rt, &ecb);
+    rjs_char_buffer_init(rt, &scb);
+
+    /*Get the string.*/
+    if ((r = rjs_to_string(rt, sarg, str)) == RJS_ERR)
+        goto end;
+
+    /*Get the encoding.*/
+    if ((argc > 1) && !rjs_value_is_null(rt, earg) && !rjs_value_is_undefined(rt, earg)) {
+        if ((r = rjs_to_string(rt, earg, estr)) == RJS_ERR)
+            goto end;
+        if (!(ecstr = rjs_string_to_enc_chars(rt, estr, &ecb, NULL))) {
+            r = RJS_ERR;
+            goto end;
+        }
+    } else {
+        ecstr = NULL;
+    }
+
+    /*Encode.*/
+    if (!(cstr = rjs_string_to_enc_chars(rt, str, &scb, ecstr))) {
+        r = RJS_ERR;
+        goto end;
+    }
+
+    len = scb.item_num;
+
+    /*Store the text to the buffer.*/
+    if (argc < 3) {
+        if ((r = rjs_allocate_array_buffer(rt, NULL, len, rv)) == RJS_ERR)
+            goto end;
+
+        db = rjs_array_buffer_get_data_block(rt, rv);
+        memcpy(db->data, cstr, len);
+
+        r = RJS_OK;
+        goto end;
+    }
+
+    if (!rjs_is_array_buffer(rt, buf)) {
+        r = rjs_throw_type_error(rt, _("the value is not an array buffer"));
+        goto end;
+    }
+
+    buf_len = rjs_array_buffer_get_size(rt, buf);
+
+    if (rjs_value_is_undefined(rt, start)) {
+        from = 0;
+    } else {
+        if ((r = rjs_to_number(rt, start, &rel_start)) == RJS_ERR)
+            goto end;
+        if (rel_start == -INFINITY)
+            from = 0;
+        else if (rel_start < 0)
+            from = RJS_MAX(rel_start + buf_len, 0);
+        else
+            from = RJS_MIN(rel_start, buf_len);
+    }
+
+    len = RJS_MIN(buf_len - from, len);
+
+    db = rjs_array_buffer_get_data_block(rt, buf);
+
+    rjs_array_buffer_lock(rt, buf);
+    memcpy(db->data + from, cstr, len);
+    rjs_array_buffer_unlock(rt, buf);
+
+    rjs_value_set_number(rt, rv, len);
+
+    r = RJS_OK;
+end:
+    rjs_char_buffer_deinit(rt, &ecb);
+    rjs_char_buffer_deinit(rt, &scb);
+    rjs_value_stack_restore(rt, top);
+    return r;
+}
+
+/*Decode a string from a text buffer.*/
+static RJS_NF(ext_decodeText)
+{
+    RJS_Value       *earg  = rjs_argument_get(rt, args, argc, 0);
+    RJS_Value       *buf   = rjs_argument_get(rt, args, argc, 1);
+    RJS_Value       *start = rjs_argument_get(rt, args, argc, 2);
+    RJS_Value       *end   = rjs_argument_get(rt, args, argc, 3);
+    size_t           top   = rjs_value_stack_save(rt);
+    RJS_Value       *estr  = rjs_value_stack_push(rt);
+    RJS_CharBuffer   ecb;
+    const char      *ecstr;
+    RJS_Number       rel_start, rel_end;
+    ssize_t          from, to, buf_len, len;
+    RJS_DataBlock   *db;
+    RJS_Result       r;
+
+    rjs_char_buffer_init(rt, &ecb);
+
+    /*Get the encoding.*/
+    if (!rjs_value_is_null(rt, earg) && !rjs_value_is_undefined(rt, earg)) {
+        if ((r = rjs_to_string(rt, earg, estr)) == RJS_ERR)
+            goto end;
+        if (!(ecstr = rjs_string_to_enc_chars(rt, estr, &ecb, NULL))) {
+            r = RJS_ERR;
+            goto end;
+        }
+    } else {
+        ecstr = NULL;
+    }
+
+    if (!rjs_is_array_buffer(rt, buf)) {
+        r = rjs_throw_type_error(rt, _("the value is not an array buffer"));
+        goto end;
+    }
+
+    buf_len = rjs_array_buffer_get_size(rt, buf);
+
+    if (rjs_value_is_undefined(rt, start)) {
+        from = 0;
+    } else {
+        if ((r = rjs_to_number(rt, start, &rel_start)) == RJS_ERR)
+            goto end;
+        if (rel_start == -INFINITY)
+            from = 0;
+        else if (rel_start < 0)
+            from = RJS_MAX(rel_start + buf_len, 0);
+        else
+            from = RJS_MIN(rel_start, buf_len);
+    }
+
+    if (rjs_value_is_undefined(rt, end)) {
+        to = buf_len;
+    } else {
+        if ((r = rjs_to_number(rt, end, &rel_end)) == RJS_ERR)
+            goto end;
+        if (rel_end == -INFINITY)
+            to = 0;
+        else if (rel_end < 0)
+            to = RJS_MAX(rel_end + buf_len, 0);
+        else
+            to = RJS_MIN(rel_end, buf_len);
+    }
+
+    len = RJS_MAX(to - from, 0);
+
+    db = rjs_array_buffer_get_data_block(rt, buf);
+
+    rjs_array_buffer_lock(rt, buf);
+    r = rjs_string_from_enc_chars(rt, rv, (char*)db->data + from, len, ecstr);
+    rjs_array_buffer_unlock(rt, buf);
+    if (r == RJS_ERR)
+        goto end;
+
+    r = RJS_OK;
+end:
+    rjs_char_buffer_deinit(rt, &ecb);
+    rjs_value_stack_restore(rt, top);
+    return r;
+}
+
+#endif /*ENABLE_ARRAY_BUFFER*/
 
 #if ENABLE_MODULE
 
@@ -505,6 +674,18 @@ ext_function_descs[] = {
         0,
         ext_scriptPath
     },
+#if ENABLE_ARRAY_BUFFER
+    {
+        "encodeText",
+        1,
+        ext_encodeText
+    },
+    {
+        "decodeText",
+        1,
+        ext_decodeText
+    },
+#endif /*ENABLE_ARRAY_BUFFER*/
 #if ENABLE_MODULE
     {
         "modules",
@@ -546,7 +727,6 @@ static RJS_NF(FileState_constructor)
     ncstr = rjs_string_to_enc_chars(rt, nstr, NULL, NULL);
 
     if (stat(ncstr, &sb) == -1) {
-        rjs_value_set_undefined(rt, rv);
         r = RJS_OK;
         goto end;
     }
@@ -1008,7 +1188,6 @@ static RJS_NF(File_prototype_close)
         }
     }
 
-    rjs_value_set_undefined(rt, rv);
     r = RJS_OK;
 end:
     return r;
@@ -1033,9 +1212,7 @@ static RJS_NF(File_prototype_getChar)
     }
 
     c = fgetc(file->fp);
-    if (c == EOF) {
-        rjs_value_set_undefined(rt, rv);
-    } else {
+    if (c != EOF) {
         rjs_value_set_number(rt, rv, c);
     }
 
@@ -1365,7 +1542,6 @@ file_save_string (RJS_Runtime *rt, RJS_Value *args, size_t argc, RJS_Value *rv, 
         goto end;
     }
 
-    rjs_value_set_undefined(rt, rv);
     r = RJS_OK;
 end:
     if (fp)
@@ -1502,7 +1678,6 @@ file_save_data (RJS_Runtime *rt, RJS_Value *args, size_t argc, RJS_Value *rv, co
         goto end;
     }
 
-    rjs_value_set_undefined(rt, rv);
     r = RJS_OK;
 end:
     if (fp)
@@ -1654,9 +1829,7 @@ static RJS_NF(Dir_prototype_read)
     }
 
     dent = readdir(dir->dir);
-    if (!dent) {
-        rjs_value_set_undefined(rt, rv);
-    } else {
+    if (dent) {
         rjs_string_from_enc_chars(rt, rv, dent->d_name, -1, NULL);
     }
 
@@ -1721,7 +1894,6 @@ static RJS_NF(Dir_prototype_close)
         dir->dir = NULL;
     }
 
-    rjs_value_set_undefined(rt, rv);
     r = RJS_OK;
 end:
     return r;

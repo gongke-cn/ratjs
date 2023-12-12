@@ -219,7 +219,7 @@ static RJS_NF(Function_prototype_toString)
         if (sfo->script_func->name_idx != RJS_INVALID_VALUE_INDEX) {
             name = &sfo->bfo.script->value_table[sfo->script_func->name_idx];
         }
-    } else if (gtt == RJS_GC_THING_BUILTIN_FUNC) {
+    } else if ((gtt == RJS_GC_THING_BUILTIN_FUNC) || (gtt == RJS_GC_THING_NATIVE_FUNCTION)) {
         RJS_BuiltinFuncObject *bfo = (RJS_BuiltinFuncObject*)rjs_value_get_object(rt, thiz);
 
         flags = bfo->flags;
@@ -335,10 +335,8 @@ static RJS_NF(Function_prototype_caller_get)
     if (!rjs_same_value(rt, thiz, &ctxt->function))
         return rjs_throw_type_error(rt, _("\"caller\" cannot be used here"));
 
-    if (!ctxt->bot) {
-        rjs_value_set_undefined(rt, rv);
+    if (!ctxt->bot)
         return RJS_OK;
-    }
 
     ctxt = ctxt->bot;
 

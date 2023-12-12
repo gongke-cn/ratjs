@@ -118,7 +118,6 @@ rjs_for_in_iterator_new (RJS_Runtime *rt, RJS_Value *iterv, RJS_Value *v)
 {
     RJS_Realm         *realm = rjs_realm_current(rt);
     RJS_ForInIterator *fii;
-    RJS_Result         r;
 
     RJS_NEW(rt, fii);
 
@@ -134,9 +133,9 @@ rjs_for_in_iterator_new (RJS_Runtime *rt, RJS_Value *iterv, RJS_Value *v)
     rjs_value_set_undefined(rt, &fii->keys);
     rjs_hash_init(&fii->key_hash);
 
-    r = rjs_object_init(rt, iterv, &fii->object, rjs_o_ForInIteratorPrototype(realm), &for_in_iterator_ops);
+    rjs_object_init(rt, iterv, &fii->object, rjs_o_ForInIteratorPrototype(realm), &for_in_iterator_ops);
 
-    return r;
+    return RJS_OK;
 }
 
 /*%ForInIteratorPrototype.next()%*/

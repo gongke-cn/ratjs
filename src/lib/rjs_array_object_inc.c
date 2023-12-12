@@ -325,9 +325,7 @@ static RJS_NF(Array_prototype_at)
     else
         k = l + n;
 
-    if ((k < 0) || (k >= len)) {
-        rjs_value_set_undefined(rt, rv);
-    } else {
+    if ((k >= 0) && (k < len)) {
         if ((r = rjs_get_index(rt, o, k, rv)) == RJS_ERR)
             goto end;
     }
@@ -667,7 +665,6 @@ create_array_iterator (RJS_Runtime *rt, RJS_Value *a, RJS_ArrayIteratorType type
 {
     RJS_Realm         *realm = rjs_realm_current(rt);
     RJS_ArrayIterator *ai;
-    RJS_Result         r;
 
     RJS_NEW(rt, ai);
 
@@ -676,11 +673,9 @@ create_array_iterator (RJS_Runtime *rt, RJS_Value *a, RJS_ArrayIteratorType type
     ai->type = type;
     ai->curr = 0;
 
-    r = rjs_object_init(rt, iter, &ai->object, rjs_o_ArrayIteratorPrototype(realm), &array_iter_ops);
-    if (r == RJS_ERR)
-        RJS_DEL(rt, ai);
+    rjs_object_init(rt, iter, &ai->object, rjs_o_ArrayIteratorPrototype(realm), &array_iter_ops);
 
-    return r;
+    return RJS_OK;
 }
 
 /*Array.prototype.entries*/
@@ -917,7 +912,6 @@ static RJS_NF(Array_prototype_find)
         }
     }
 
-    rjs_value_set_undefined(rt, rv);
     r = RJS_OK;
 end:
     rjs_value_stack_restore(rt, top);
@@ -1011,7 +1005,6 @@ static RJS_NF(Array_prototype_findLast)
         }
     }
 
-    rjs_value_set_undefined(rt, rv);
     r = RJS_OK;
 end:
     rjs_value_stack_restore(rt, top);
@@ -1275,7 +1268,6 @@ static RJS_NF(Array_prototype_forEach)
         }
     }
 
-    rjs_value_set_undefined(rt, rv);
     r = RJS_OK;
 end:
     rjs_value_stack_restore(rt, top);
@@ -1650,8 +1642,6 @@ static RJS_NF(Array_prototype_pop)
 
         if ((r = rjs_set(rt, o, rjs_pn_length(rt), lenv, RJS_TRUE)) == RJS_ERR)
             goto end;
-
-        rjs_value_set_undefined(rt, rv);
     } else {
         RJS_PropertyName pn;
 
@@ -2028,7 +2018,6 @@ static RJS_NF(Array_prototype_shift)
         if ((r = rjs_set(rt, o, rjs_pn_length(rt), lenv, RJS_TRUE)) == RJS_ERR)
             goto end;
 
-        rjs_value_set_undefined(rt, rv);
         r = RJS_OK;
         goto end;
     }

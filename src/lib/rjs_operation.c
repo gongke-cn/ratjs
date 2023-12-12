@@ -873,6 +873,8 @@ rjs_make_constructor (RJS_Runtime *rt, RJS_Value *f, RJS_Bool writable, RJS_Valu
         rjs_script_func_object_make_constructor(rt, f);
     } else if (gtt == RJS_GC_THING_BUILTIN_FUNC) {
         rjs_builtin_func_object_make_constructor(rt, f);
+    } else if (gtt == RJS_GC_THING_NATIVE_FUNCTION) {
+        rjs_native_func_object_make_constructor(rt, f);
     }
 
     if (!proto) {
@@ -1071,6 +1073,7 @@ rjs_set_function_name (RJS_Runtime *rt, RJS_Value *f, RJS_Value *name, RJS_Value
     size_t           top = rjs_value_stack_save(rt);
     RJS_Value       *n1  = rjs_value_stack_push(rt);
     RJS_Value       *n2  = rjs_value_stack_push(rt);
+    RJS_GcThingType  gtt;
     RJS_Result       r;
     RJS_PropertyDesc pd;
     RJS_UCharBuffer  ucb;
@@ -1106,7 +1109,8 @@ rjs_set_function_name (RJS_Runtime *rt, RJS_Value *f, RJS_Value *name, RJS_Value
     }
 
 #if ENABLE_FUNC_SOURCE
-    if (rjs_value_get_gc_thing_type(rt, f) == RJS_GC_THING_BUILTIN_FUNC) {
+    gtt = rjs_value_get_gc_thing_type(rt, f);
+    if ((gtt == RJS_GC_THING_BUILTIN_FUNC) || (gtt == RJS_GC_THING_NATIVE_FUNCTION)) {
         RJS_BuiltinFuncObject *bfo = (RJS_BuiltinFuncObject*)rjs_value_get_object(rt, f);
 
         rjs_value_copy(rt, &bfo->init_name, n1);
@@ -2295,7 +2299,8 @@ rjs_get_function_realm (RJS_Runtime *rt, RJS_Value *obj)
         realm = sfo->realm;
         break;
     }
-    case RJS_GC_THING_BUILTIN_FUNC: {
+    case RJS_GC_THING_BUILTIN_FUNC:
+    case RJS_GC_THING_NATIVE_FUNCTION: {
         RJS_BuiltinFuncObject *bfo = (RJS_BuiltinFuncObject*)rjs_value_get_object(rt, obj);
 
         realm = bfo->realm;

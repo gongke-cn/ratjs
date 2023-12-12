@@ -96,6 +96,14 @@ extern RJS_Value*
 rjs_realm_iterator_prototype (RJS_Realm *realm);
 
 /**
+ * Get the "Function.prototype" object of the realm.
+ * \param realm The realm.
+ * \return "Function.prototype" value's pointer.
+ */
+extern RJS_Value*
+rjs_realm_function_prototype (RJS_Realm *realm);
+
+/**
  * @}
  */
 

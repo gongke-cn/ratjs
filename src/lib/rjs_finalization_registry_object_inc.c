@@ -63,7 +63,6 @@ static RJS_NF(FinalizationRegistry_prototype_register)
     if ((r = rjs_finalization_register(rt, thiz, target, held, token)) == RJS_ERR)
         return r;
 
-    rjs_value_set_undefined(rt, rv);
     return RJS_OK;
 }
 

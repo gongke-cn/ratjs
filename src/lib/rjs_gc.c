@@ -92,6 +92,10 @@ gc_scan_root (RJS_Runtime *rt)
     rjs_gc_scan_finalization_registry(rt);
 #endif /*ENABLE_FINALIZATION_REGISTRY*/
 
+#if ENABLE_CTYPE
+    rjs_gc_scan_ctype(rt);
+#endif /*ENABLE_CTYPE*/
+
     /*Scan the runtime's native data.*/
     rjs_native_data_scan(rt, &rt->native_data);
 }

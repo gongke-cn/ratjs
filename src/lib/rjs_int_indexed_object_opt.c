@@ -31,6 +31,11 @@ int_indexed_object_op_gc_scan (RJS_Runtime *rt, void *ptr)
 {
     RJS_IntIndexedObject *iio = ptr;
 
+#if ENABLE_CTYPE
+    if (iio->cptr)
+        rjs_gc_mark(rt, iio->cptr);
+#endif /*ENABLE_CTYPE*/
+
     rjs_object_op_gc_scan(rt, &iio->object);
     rjs_gc_scan_value(rt, &iio->buffer);
 }
@@ -354,6 +359,10 @@ rjs_int_indexed_object_create (RJS_Runtime *rt, RJS_Value *proto, RJS_Value *v)
     iio->array_length = 0;
     iio->byte_offset  = 0;
     iio->byte_length  = 0;
+
+#if ENABLE_CTYPE
+    iio->cptr = NULL;
+#endif /*ENABLE_CTYPE*/
 
     rjs_value_set_undefined(rt, &iio->buffer);
 

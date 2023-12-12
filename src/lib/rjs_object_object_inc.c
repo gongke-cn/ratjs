@@ -56,9 +56,6 @@ static RJS_NF(Object_assign)
     RJS_Value  *target = rjs_argument_get(rt, args, argc, 0);
     size_t      top    = rjs_value_stack_save(rt);
     RJS_Value  *to     = rjs_value_stack_push(rt);
-    RJS_Value  *from   = rjs_value_stack_push(rt);
-    RJS_Value  *keys   = rjs_value_stack_push(rt);
-    RJS_Value  *kv     = rjs_value_stack_push(rt);
     RJS_PropertyDesc pd;
     size_t      aid;
     RJS_Result  r;
@@ -79,35 +76,8 @@ static RJS_NF(Object_assign)
 
         src = rjs_value_buffer_item(rt, args, aid);
 
-        if (!rjs_value_is_undefined(rt, src) && !rjs_value_is_null(rt, src)) {
-            RJS_PropertyKeyList *pkl;
-            size_t               kid;
-
-            if ((r = rjs_to_object(rt, src, from)) == RJS_ERR)
-                goto end;
-
-            if ((r = rjs_object_own_property_keys(rt, from, keys)) == RJS_ERR)
-                goto end;
-
-            pkl = rjs_value_get_gc_thing(rt, keys);
-            for (kid = 0; kid < pkl->keys.item_num; kid ++) {
-                RJS_PropertyName pn;
-                RJS_Value       *key = &pkl->keys.items[kid];
-
-                rjs_property_name_init(rt, &pn, key);
-                r = rjs_object_get_own_property(rt, from, &pn, &pd);
-
-                if ((r == RJS_OK) && (pd.flags & RJS_PROP_FL_ENUMERABLE)) {
-                    if ((r = rjs_get(rt, from, &pn, kv)) == RJS_OK) {
-                        r = rjs_set(rt, to, &pn, kv, RJS_TRUE);
-                    }
-                }
-                rjs_property_name_deinit(rt, &pn);
-
-                if (r == RJS_ERR)
-                    goto end;
-            }
-        }
+        if ((r = rjs_object_assign(rt, to, src)) == RJS_ERR)
+            goto end;
     }
 
     rjs_value_copy(rt, rv, to);
@@ -425,10 +395,10 @@ static RJS_NF(Object_getOwnPropertyDescriptor)
     if (r == RJS_ERR)
         goto end;
 
-    if (!r)
-        rjs_value_set_undefined(rt, rv);
-    else
+    if (r)
         r = rjs_from_property_descriptor(rt, &pd, rv);
+    else
+        r = RJS_OK;
 end:
     rjs_property_desc_deinit(rt, &pd);
     rjs_value_stack_restore(rt, top);
@@ -1120,7 +1090,6 @@ static RJS_NF(Object_prototype___defineGetter__)
     if ((r = rjs_define_property_or_throw(rt, o, &pn, &pd)) == RJS_ERR)
         goto end;
 
-    rjs_value_set_undefined(rt, rv);
     r = RJS_OK;
 end:
     rjs_property_name_deinit(rt, &pn);
@@ -1165,7 +1134,6 @@ static RJS_NF(Object_prototype___defineSetter__)
     if ((r = rjs_define_property_or_throw(rt, o, &pn, &pd)) == RJS_ERR)
         goto end;
 
-    rjs_value_set_undefined(rt, rv);
     r = RJS_OK;
 end:
     rjs_property_name_deinit(rt, &pn);
@@ -1200,23 +1168,17 @@ static RJS_NF(Object_prototype___lookupGetter__)
             goto end;
 
         if (r) {
-            if (rjs_is_accessor_descriptor(&pd)) {
+            if (rjs_is_accessor_descriptor(&pd))
                 rjs_value_copy(rt, rv, pd.get);
-            } else {
-                rjs_value_set_undefined(rt, rv);
-            }
 
-            r = RJS_OK;
             break;
         }
 
         if ((r = rjs_object_get_prototype_of(rt, o, proto)) == RJS_ERR)
             goto end;
 
-        if (rjs_value_is_null(rt, proto)) {
-            rjs_value_set_undefined(rt, rv);
+        if (rjs_value_is_null(rt, proto))
             break;
-        }
 
         rjs_value_copy(rt, o, proto);
     }
@@ -1255,23 +1217,17 @@ static RJS_NF(Object_prototype___lookupSetter__)
             goto end;
 
         if (r) {
-            if (rjs_is_accessor_descriptor(&pd)) {
+            if (rjs_is_accessor_descriptor(&pd))
                 rjs_value_copy(rt, rv, pd.set);
-            } else {
-                rjs_value_set_undefined(rt, rv);
-            }
 
-            r = RJS_OK;
             break;
         }
 
         if ((r = rjs_object_get_prototype_of(rt, o, proto)) == RJS_ERR)
             goto end;
 
-        if (rjs_value_is_null(rt, proto)) {
-            rjs_value_set_undefined(rt, rv);
+        if (rjs_value_is_null(rt, proto))
             break;
-        }
 
         rjs_value_copy(rt, o, proto);
     }
@@ -1310,13 +1266,11 @@ static RJS_NF(Object_prototype___proto___set)
         goto end;
 
     if (!rjs_value_is_object(rt, proto) && !rjs_value_is_null(rt, proto)) {
-        rjs_value_set_undefined(rt, rv);
         r = RJS_OK;
         goto end;
     }
 
     if (!rjs_value_is_object(rt, thiz)) {
-        rjs_value_set_undefined(rt, rv);
         r = RJS_OK;
         goto end;
     }
@@ -1329,7 +1283,6 @@ static RJS_NF(Object_prototype___proto___set)
         goto end;
     }
 
-    rjs_value_set_undefined(rt, rv);
     r = RJS_OK;
 end:
     return r;

@@ -97,28 +97,6 @@ RJS_INTERNAL RJS_Result
 rjs_big_int_from_int (RJS_Runtime *rt, RJS_Value *bi, int i);
 
 /**
- * Create a big integer from 64 bits signed integer number.
- * \param rt The current runtime.
- * \param[out] bi Return the big integer.
- * \param i The integer number.
- * \retval RJS_OK On success.
- * \retval RJS_ERR On error.
- */
-RJS_INTERNAL RJS_Result
-rjs_big_int_from_int64 (RJS_Runtime *rt, RJS_Value *bi, int64_t i);
-
-/**
- * Create a big integer from 64 bits unsigned integer number.
- * \param rt The current runtime.
- * \param[out] bi Return the big integer.
- * \param i The integer number.
- * \retval RJS_OK On success.
- * \retval RJS_ERR On error.
- */
-RJS_INTERNAL RJS_Result
-rjs_big_int_from_uint64 (RJS_Runtime *rt, RJS_Value *bi, uint64_t i);
-
-/**
  * Convert the big integer value to string.
  * \param rt The current runtime.
  * \param v The big integer value.

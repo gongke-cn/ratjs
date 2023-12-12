@@ -78,6 +78,10 @@ struct RJS_Runtime_s {
 #if ENABLE_FINALIZATION_REGISTRY
     RJS_List         final_cb_list;        /**< Finalization callback list.*/
 #endif /*ENABLE_FINALIZATION_REGISTRY*/
+#if ENABLE_CTYPE
+    RJS_Hash         ctype_hash;           /**< C type hash table.*/
+    RJS_Hash         cptr_hash;            /**< C pointer hash table.*/
+#endif /*ENABLE_CTYPE*/
 };
 
 #ifdef __cplusplus

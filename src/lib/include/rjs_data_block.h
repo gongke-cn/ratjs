@@ -39,17 +39,18 @@ extern "C" {
 struct RJS_DataBlock_s {
     atomic_int      ref;          /**< Reference count.*/
     size_t          size;         /**< Size of the data block.*/
+    int             flags;        /**< The flags of the data block.*/
 #if ENABLE_SHARED_ARRAY_BUFFER
-    RJS_Bool        is_shared;    /**< Is a shread array buffer.*/
     pthread_mutex_t lock;         /**< The mutex.*/
 #endif /*ENABLE_SHARED_ARRAY_BUFFER*/
 #if ENABLE_ATOMICS
     RJS_List        waiter_lists; /**< Waiter lists.*/
 #endif /*ENABLE_ATOMICS*/
-    uint8_t         data[0];      /**< Data buffer.*/
+    uint8_t        *data;         /**< Data buffer.*/
 };
 
 #if ENABLE_ATOMICS
+
 /**Waiter.*/
 struct RJS_Waiter_s {
     RJS_List       ln;   /**< List node data.*/
@@ -62,6 +63,39 @@ struct RJS_WaiterList_s {
     RJS_List  waiters; /**< Waiters.*/
     size_t    pos;     /**< The position of the waiter list.*/
 };
+
+/**
+ * Get the waiter list.
+ * \param rt The current runtime.
+ * \param db The data block.
+ * \param pos The value position in the buffer.
+ * \return The waiter list.
+ */
+extern RJS_WaiterList*
+rjs_get_waiter_list (RJS_Runtime *rt, RJS_DataBlock *db, size_t pos);
+
+/**
+ * Add a waiter to the waiter list.
+ * \param rt The current runtime.
+ * \param db The data block.
+ * \param wl The waiter list.
+ * \param timeout Wait timeout.
+ * \retval RJS_TRUE When the waiter is notified.
+ * \retval RJS_FALSE When timeout.
+ */
+extern RJS_Result
+rjs_add_waiter (RJS_Runtime *rt, RJS_DataBlock *db, RJS_WaiterList *wl, RJS_Number timeout);
+
+/**
+ * Notify the waiter.
+ * \param rt The current runtime.
+ * \param w The waiter.
+ * \retval RJS_OK On success.
+ * \retval RJS_ERR On error.
+ */
+extern RJS_Result
+rjs_notify_waiter (RJS_Runtime *rt, RJS_Waiter *w);
+
 #endif /*ENABLE_ATOMICS*/
 
 #ifdef __cplusplus

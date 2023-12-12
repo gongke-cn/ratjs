@@ -1621,9 +1621,9 @@ static RJS_NF(String_prototype_iterator)
     rjs_value_copy(rt, &si->str, s);
     si->pos = 0;
 
-    r = rjs_object_init(rt, rv, &si->object, rjs_o_StringIteratorPrototype(realm), &string_iterator_ops);
-    if (r == RJS_ERR)
-        RJS_DEL(rt, si);
+    rjs_object_init(rt, rv, &si->object, rjs_o_StringIteratorPrototype(realm), &string_iterator_ops);
+
+    r = RJS_OK;
 end:
     rjs_value_stack_restore(rt, top);
     return r;

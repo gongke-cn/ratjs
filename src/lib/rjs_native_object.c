@@ -32,6 +32,13 @@ typedef struct {
     RJS_NativeData native_data; /**< The native data.*/
 } RJS_NativeObject;
 
+/**The native function.*/
+typedef struct {
+    RJS_BuiltinFuncObject bfo;         /**< Base built-in function object data.*/
+    const void           *tag;         /**< Data's tag.*/
+    RJS_NativeData        native_data; /**< The native data.*/
+} RJS_NativeFuncObject;
+
 /*Scan the referenced things in the native object.*/
 static void
 native_object_op_gc_scan (RJS_Runtime *rt, void *ptr)
@@ -65,6 +72,50 @@ native_object_ops = {
     RJS_ORDINARY_OBJECT_OPS
 };
 
+/*Scan referenced things in the native function.*/
+static void
+native_function_op_gc_scan (RJS_Runtime *rt, void *ptr)
+{
+    RJS_NativeFuncObject *nfo = ptr;
+
+    rjs_native_data_scan(rt, &nfo->native_data);
+    rjs_builtin_func_object_op_gc_scan(rt, &nfo->bfo);
+}
+
+/*Free the native function.*/
+static void
+native_function_op_gc_free (RJS_Runtime *rt, void *ptr)
+{
+    RJS_NativeFuncObject *nfo = ptr;
+
+    rjs_native_data_free(rt, &nfo->native_data);
+    rjs_builtin_func_object_deinit(rt, &nfo->bfo);
+
+    RJS_DEL(rt, nfo);
+}
+
+/**Native function object's operation functions.*/
+static const RJS_ObjectOps
+native_function_ops = {
+    {
+        RJS_GC_THING_NATIVE_FUNCTION,
+        native_function_op_gc_scan,
+        native_function_op_gc_free
+    },
+    RJS_BUILTIN_FUNCTION_OBJECT_OPS
+};
+
+/**Native constructor object's operation functions.*/
+static const RJS_ObjectOps
+native_constructor_ops = {
+    {
+        RJS_GC_THING_NATIVE_FUNCTION,
+        native_function_op_gc_scan,
+        native_function_op_gc_free
+    },
+    RJS_BUILTIN_CONSTRUCTOR_OBJECT_OPS
+};
+
 /**
  * Create a new native object.
  * \param rt The current runtime.
@@ -78,17 +129,12 @@ RJS_Result
 rjs_native_object_new (RJS_Runtime *rt, RJS_Value *o, RJS_Value *proto)
 {
     RJS_NativeObject *no;
-    RJS_Result        r;
 
     RJS_NEW(rt, no);
 
     rjs_native_data_init(&no->native_data);
 
-    r = rjs_object_init(rt, o, &no->o, proto, &native_object_ops);
-    if (r == RJS_ERR) {
-        RJS_DEL(rt, no);
-        return RJS_ERR;
-    }
+    rjs_object_init(rt, o, &no->o, proto, &native_object_ops);
 
     return RJS_OK;
 }
@@ -126,6 +172,57 @@ end:
 }
 
 /**
+ * Create a new native function.
+ * \param rt The current runtime.
+ * \param mod The module contains this function.
+ * \param nf The native function.
+ * \param len The parameters length.
+ * \param name The function's name.
+ * \param realm The realm.
+ * \param proto The prototype value.
+ * \param prefix The name prefix.
+ * \param[out] f Return the new built-in function.
+ * \retval RJS_OK On success.
+ * \retval RJS_ERR On error.
+ */
+RJS_Result
+rjs_create_native_function (RJS_Runtime *rt, RJS_Value *mod, RJS_NativeFunc nf, size_t len,
+        RJS_Value *name, RJS_Realm *realm, RJS_Value *proto, RJS_Value *prefix, RJS_Value *f)
+{
+    RJS_Result            r;
+    RJS_Script           *script = NULL;
+    int                   flags  = 0;
+    RJS_NativeFuncObject *nfo;
+
+    if (mod)
+        script = rjs_value_get_gc_thing(rt, mod);
+
+    if (prefix) {
+        if (rjs_same_value(rt, prefix, rjs_s_get(rt)))
+            flags = RJS_FUNC_FL_GET;
+        else if (rjs_same_value(rt, prefix, rjs_s_set(rt)))
+            flags = RJS_FUNC_FL_SET;
+    }
+
+    RJS_NEW(rt, nfo);
+
+    nfo->tag = NULL;
+    rjs_native_data_init(&nfo->native_data);
+
+    rjs_builtin_func_object_init(rt, f, &nfo->bfo, realm, proto, script, nf, flags, &native_function_ops);
+
+    if ((r = rjs_set_function_length(rt, f, len)) == RJS_ERR)
+        return r;
+
+    if (name) {
+        if ((r = rjs_set_function_name(rt, f, name, prefix)) == RJS_ERR)
+            return r;
+    }
+
+    return RJS_OK;
+}
+
+/**
  * Set the native data of the object.
  * \param rt The current runtime.
  * \param o The native object.
@@ -140,15 +237,25 @@ RJS_Result
 rjs_native_object_set_data (RJS_Runtime *rt, RJS_Value *o, const void *tag,
         void *data, RJS_ScanFunc scan, RJS_FreeFunc free)
 {
-    RJS_NativeObject *no;
+    RJS_GcThingType gtt;
 
-    assert(rjs_value_get_gc_thing_type(rt, o) == RJS_GC_THING_NATIVE_OBJECT);
+    gtt = rjs_value_get_gc_thing_type(rt, o);
 
-    no = (RJS_NativeObject*)rjs_value_get_object(rt, o);
+    if (gtt == RJS_GC_THING_NATIVE_OBJECT) {
+        RJS_NativeObject *no;
 
-    no->tag = tag;
+        no = (RJS_NativeObject*)rjs_value_get_object(rt, o);
+        no->tag = tag;
+        rjs_native_data_set(&no->native_data, data, scan, free);
+    } else if (gtt == RJS_GC_THING_NATIVE_FUNCTION) {
+        RJS_NativeFuncObject *nfo;
 
-    rjs_native_data_set(&no->native_data, data, scan, free);
+        nfo = (RJS_NativeFuncObject*)rjs_value_get_object(rt, o);
+        nfo->tag = tag;
+        rjs_native_data_set(&nfo->native_data, data, scan, free);
+    } else {
+        assert(0);
+    }
 
     return RJS_OK;
 }
@@ -162,14 +269,28 @@ rjs_native_object_set_data (RJS_Runtime *rt, RJS_Value *o, const void *tag,
 const void*
 rjs_native_object_get_tag (RJS_Runtime *rt, RJS_Value *o)
 {
-    RJS_NativeObject *no;
+    RJS_GcThingType gtt;
+    const void     *tag;
 
-    if (rjs_value_get_gc_thing_type(rt, o) != RJS_GC_THING_NATIVE_OBJECT)
-        return NULL;
+    gtt = rjs_value_get_gc_thing_type(rt, o);
 
-    no = (RJS_NativeObject*)rjs_value_get_object(rt, o);
+    if (gtt == RJS_GC_THING_NATIVE_OBJECT) {
+        RJS_NativeObject *no;
 
-    return no->tag;
+        no = (RJS_NativeObject*)rjs_value_get_object(rt, o);
+
+        tag = no->tag;
+    } else if (gtt == RJS_GC_THING_NATIVE_FUNCTION) {
+        RJS_NativeFuncObject *nfo;
+
+        nfo = (RJS_NativeFuncObject*)rjs_value_get_object(rt, o);
+
+        tag = nfo->tag;
+    } else {
+        assert(0);
+    }
+
+    return tag;
 }
 
 /**
@@ -181,12 +302,109 @@ rjs_native_object_get_tag (RJS_Runtime *rt, RJS_Value *o)
 void*
 rjs_native_object_get_data (RJS_Runtime *rt, RJS_Value *o)
 {
-    RJS_NativeObject *no;
+    RJS_GcThingType gtt;
+    void           *data;
 
-    if (rjs_value_get_gc_thing_type(rt, o) != RJS_GC_THING_NATIVE_OBJECT)
-        return NULL;
+    gtt = rjs_value_get_gc_thing_type(rt, o);
 
-    no = (RJS_NativeObject*)rjs_value_get_object(rt, o);
+    if (gtt == RJS_GC_THING_NATIVE_OBJECT) {
+        RJS_NativeObject *no;
 
-    return no->native_data.data;
+        no = (RJS_NativeObject*)rjs_value_get_object(rt, o);
+
+        data = no->native_data.data;
+    } else if (gtt == RJS_GC_THING_NATIVE_FUNCTION) {
+        RJS_NativeFuncObject *nfo;
+
+        nfo = (RJS_NativeFuncObject*)rjs_value_get_object(rt, o);
+
+        data = nfo->native_data.data;
+    } else {
+        assert(0);
+    }
+
+    return data;
+}
+
+/**
+ * Get default native object operation functions.
+ * \param rt The current runtime.
+ * \param[out] ops Return the operation functions.
+ * \retval RJS_OK On success.
+ * \retval RJS_ERR On error.
+ */
+RJS_Result
+rjs_native_object_default_ops (RJS_Runtime *rt, RJS_ObjectOps *ops)
+{
+    *ops = native_object_ops;
+
+    return RJS_OK;
+}
+
+/**
+ * Get default native function operation functions.
+ * \param rt The current runtime.
+ * \param[out] ops Return the operation functions.
+ * \retval RJS_OK On success.
+ * \retval RJS_ERR On error.
+ */
+RJS_Result
+rjs_native_function_default_ops (RJS_Runtime *rt, RJS_ObjectOps *ops)
+{
+    *ops = native_function_ops;
+
+    return RJS_OK;
+}
+
+/**
+ * Get default native constructor operation functions.
+ * \param rt The current runtime.
+ * \param[out] ops Return the operation functions.
+ * \retval RJS_OK On success.
+ * \retval RJS_ERR On error.
+ */
+RJS_Result
+rjs_native_constructor_default_ops (RJS_Runtime *rt, RJS_ObjectOps *ops)
+{
+    *ops = native_constructor_ops;
+
+    return RJS_OK;
+}
+
+/**
+ * Set current object operation functions.
+ * \param rt The current runtime.
+ * \param o The native object.
+ * \param ops The operation functions.
+ * \retval RJS_OK On success.
+ * \retval RJS_ERR On error.
+ */
+RJS_Result
+rjs_native_object_set_ops (RJS_Runtime *rt, RJS_Value *o, const RJS_ObjectOps *ops)
+{
+    RJS_Object *p;
+
+    p = rjs_value_get_object(rt, o);
+
+    p->gc_thing.ops = (RJS_GcThingOps*)ops;
+
+    return RJS_OK;
+}
+
+/**
+ * Make the native function object as constructor.
+ * \param rt The current runtime.
+ * \param f The script function object.
+ * \retval RJS_OK On success.
+ * \retval RJS_ERR On error.
+ */
+RJS_Result
+rjs_native_func_object_make_constructor (RJS_Runtime *rt, RJS_Value *f)
+{
+    RJS_NativeFuncObject *nfo = (RJS_NativeFuncObject*)rjs_value_get_object(rt, f);
+
+    if (nfo->bfo.bfo.object.gc_thing.ops == (RJS_GcThingOps*)&native_function_ops)
+        nfo->bfo.bfo.object.gc_thing.ops = (RJS_GcThingOps*)&native_constructor_ops;
+
+    return RJS_OK;
 }

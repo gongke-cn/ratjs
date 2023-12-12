@@ -522,6 +522,164 @@ extern RJS_Result
 rjs_object_to_number (RJS_Runtime *rt, RJS_Value *v, RJS_Number *pn);
 
 /**
+ * Assign the properies of destination object to the source.
+ * \param rt The current runtime.
+ * \param dst The destination object.
+ * \param src The source object.
+ * \retval RJS_OK On success.
+ * \retval RJS_ERR On error.
+ */
+extern RJS_Result
+rjs_object_assign (RJS_Runtime *rt, RJS_Value *dst, RJS_Value *src);
+
+/**
+ * Get the prototype of an ordinary object.
+ * \param rt The current runtime.
+ * \param o The object.
+ * \param[out] proto Return the prototype object or null.
+ * \retval RJS_OK On success.
+ * \retval RJS_ERR On error.
+ */
+extern RJS_Result
+rjs_ordinary_object_op_get_prototype_of (RJS_Runtime *rt, RJS_Value *o, RJS_Value *proto);
+
+/**
+ * Set the prototype of an ordinary object.
+ * \param rt The current runtime.
+ * \param o The object.
+ * \param proto The prototype object or null.
+ * \retval RJS_TRUE On success.
+ * \retval RJS_FALSE Cannot reset the prototype.
+ * \retval RJS_ERR On error.
+ */
+extern RJS_Result
+rjs_ordinary_object_op_set_prototype_of (RJS_Runtime *rt, RJS_Value *o, RJS_Value *proto);
+
+/**
+ * Check if the ordinary object is extensible.
+ * \param rt The current runtime.
+ * \param o The object.
+ * \retval RJS_TRUE The object is extensible.
+ * \retval RJS_FALSE The object is not extensible.
+ * \retval RJS_ERR On error.
+ */
+extern RJS_Result
+rjs_ordinary_object_op_is_extensible (RJS_Runtime *rt, RJS_Value *o);
+
+/**
+ * Prevent the extensions of the ordinary object.
+ * \param rt The current runtime.
+ * \param o The object.
+ * \retval RJS_TRUE On success.
+ * \retval RJS_FALSE Cannot prevent extensions.
+ * \retval RJS_ERR On error.
+ */
+extern RJS_Result
+rjs_ordinary_object_op_prevent_extensions (RJS_Runtime *rt, RJS_Value *o);
+
+/**
+ * Get the own property's descriptor of the ordinary object.
+ * \param rt The current runtime.
+ * \param o the object.
+ * \param pn The property name.
+ * \param[out] pd Return the property descriptor.
+ * \retval RJS_OK On success.
+ * \retval RJS_FALSE The property is not defined.
+ * \retval RJS_ERR On error.
+ */
+extern RJS_Result
+rjs_ordinary_object_op_get_own_property (RJS_Runtime *rt, RJS_Value *o, RJS_PropertyName *pn, RJS_PropertyDesc *pd);
+
+/**
+ * Define an own property of an ordinary object.
+ * \param rt The current runtime.
+ * \param o The object.
+ * \param pn The property name.
+ * \param pd The property's descriptor.
+ * \retval RJS_TRUE On success.
+ * \retval RJS_FALSE Cannot create or updete the property.
+ * \retval RJS_ERR On error.
+ */
+extern RJS_Result
+rjs_ordinary_object_op_define_own_property (RJS_Runtime *rt, RJS_Value *o, RJS_PropertyName *pn, RJS_PropertyDesc *pd);
+
+/**
+ * Check if the ordinary object has the property.
+ * \param rt The current runtime.
+ * \param o The object.
+ * \param pn The property name.
+ * \retval RJS_TRUE The object has the property.
+ * \retval RJS_FALSE The object has not the property.
+ * \retval RJS_ERR On error.
+ */
+extern RJS_Result
+rjs_ordinary_object_op_has_property (RJS_Runtime *rt, RJS_Value *o, RJS_PropertyName *pn);
+
+/**
+ * Get the property value of an ordinary object.
+ * \param rt The current runtime.
+ * \param o The object.
+ * \param pn The property name.
+ * \param receiver The receiver object.
+ * \param[out] pv Return the property value.
+ * \retval RJS_OK On success.
+ * \retval RJS_ERR On error.
+ */
+extern RJS_Result
+rjs_ordinary_object_op_get (RJS_Runtime *rt, RJS_Value *o, RJS_PropertyName *pn, RJS_Value *receiver, RJS_Value *pv);
+
+/**
+ * Set the property value of an ordinary object.
+ * \param rt The current runtime.
+ * \param o The object.
+ * \param pn The property name.
+ * \param pv The new property value.
+ * \param receiver The receiver object.
+ * \retval RJS_OK On success.
+ * \retval RJS_ERR On error.
+ */
+extern RJS_Result
+rjs_ordinary_object_op_set (RJS_Runtime *rt, RJS_Value *o, RJS_PropertyName *pn, RJS_Value *pv, RJS_Value *receiver);
+
+/**
+ * Delete a property of an ordinary object.
+ * \param rt The current runtime.
+ * \param o The object.
+ * \param pn The property name.
+ * \retval RJS_TRUE The property is deleted.
+ * \retval RJS_FALSE The property is not deleted.
+ * \retval RJS_ERR On error.
+ */
+extern RJS_Result
+rjs_ordinary_object_op_delete (RJS_Runtime *rt, RJS_Value *o, RJS_PropertyName *pn);
+
+/**
+ * Get the own properties' keys of an ordinary object.
+ * \param rt The current runtime.
+ * \param o The object.
+ * \param[out] keys Return the object's keys list object.
+ * \retval RJS_OK On success.
+ * \retval RJS_ERR On error.
+ */
+extern RJS_Result
+rjs_ordinary_object_op_own_property_keys (RJS_Runtime *rt, RJS_Value *o, RJS_Value *keys);
+
+/**
+ * Validate and try to apply the property descriptor.
+ * \param rt The current runtime.
+ * \param v The object value.
+ * \param pn The property name.
+ * \param ext The object is extensiable.
+ * \param desc The new property description.
+ * \param curr Current property description.
+ * \retval RJS_OK On success.
+ * \retval RJS_ERR On error.
+ */
+extern RJS_Result
+rjs_validate_and_apply_property (RJS_Runtime *rt, RJS_Value *v, RJS_PropertyName *pn, RJS_Bool ext,
+        RJS_PropertyDesc *desc, RJS_PropertyDesc *curr);
+
+/**
  * @}
  */
 

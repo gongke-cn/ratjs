@@ -314,10 +314,8 @@ rjs_unmapped_arguments_object_new (RJS_Runtime *rt, RJS_Value *v, RJS_Value *arg
     rjs_property_desc_init(rt, &pd);
 
     RJS_NEW(rt, o);
-    if ((r = rjs_object_init(rt, v, o, rjs_o_Object_prototype(realm), &unmapped_arguments_object_ops)) == RJS_ERR) {
-        RJS_DEL(rt, o);
-        goto end;
-    }
+
+    rjs_object_init(rt, v, o, rjs_o_Object_prototype(realm), &unmapped_arguments_object_ops);
 
     /*length*/
     pd.flags = RJS_PROP_FL_DATA|RJS_PROP_FL_WRITABLE|RJS_PROP_FL_CONFIGURABLE;

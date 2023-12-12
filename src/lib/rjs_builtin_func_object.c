@@ -96,6 +96,8 @@ rjs_builtin_func_object_op_call (RJS_Runtime *rt, RJS_Value *o, RJS_Value *thiz,
 
     ctxt->realm = bfo->realm;
 
+    rjs_value_set_undefined(rt, rv);
+
     r = bfo->func(rt, o, thiz, args, argc, NULL, rv);
 
     rjs_context_pop(rt);
@@ -125,6 +127,8 @@ rjs_builtin_func_object_op_construct (RJS_Runtime *rt, RJS_Value *o, RJS_Value *
     bfo  = (RJS_BuiltinFuncObject*)rjs_value_get_object(rt, o);
 
     ctxt->realm = bfo->realm;
+
+    rjs_value_set_undefined(rt, rv);
 
     r = bfo->func(rt, o, NULL, args, argc, target, rv);
 
@@ -1020,7 +1024,9 @@ rjs_get_function_module (RJS_Runtime *rt, RJS_Value *func, RJS_Value *mod)
     RJS_GcThingType     gtt = rjs_value_get_gc_thing_type(rt, func);
     RJS_BaseFuncObject *bfo;
 
-    assert((gtt == RJS_GC_THING_SCRIPT_FUNC) || (gtt == RJS_GC_THING_BUILTIN_FUNC));
+    assert((gtt == RJS_GC_THING_SCRIPT_FUNC)
+            || (gtt == RJS_GC_THING_BUILTIN_FUNC)
+            || (gtt == RJS_GC_THING_NATIVE_FUNCTION));
 
     bfo = (RJS_BaseFuncObject*)rjs_value_get_object(rt, func);
 
@@ -1028,4 +1034,58 @@ rjs_get_function_module (RJS_Runtime *rt, RJS_Value *func, RJS_Value *mod)
 
     rjs_value_set_gc_thing(rt, mod, bfo->script);
     return RJS_OK;
+}
+
+/**
+ * Create an accessor with built-in functions.
+ * \param rt The current runtime.
+ * \param mod The module contains this function.
+ * \param o The object which the accessor to be added to.
+ * \param get The getter native function.
+ * \param set The setter native function.
+ * \param name The name of the property.
+ * \param realm The realm.
+ * \retval RJS_OK On success.
+ * \retval RJS_ERR On error.
+ */
+RJS_Result
+rjs_create_builtin_accessor (RJS_Runtime *rt, RJS_Value *mod, RJS_Value *o,
+        RJS_NativeFunc get, RJS_NativeFunc set, RJS_Value *name, RJS_Realm *realm)
+{
+    size_t           top  = rjs_value_stack_save(rt);
+    RJS_PropertyDesc pd;
+    RJS_PropertyName pn;
+    RJS_Result       r;
+
+    rjs_property_desc_init(rt, &pd);
+
+    pd.flags = RJS_PROP_FL_ACCESSOR|RJS_PROP_FL_CONFIGURABLE;
+
+    if (get) {
+        if ((r = rjs_create_builtin_function(rt, mod, get, 0, name, realm, NULL,
+                rjs_s_get(rt), pd.get)) == RJS_ERR)
+            goto end;
+    } else {
+        rjs_value_set_undefined(rt, pd.get);
+    }
+
+    if (set) {
+        if ((r = rjs_create_builtin_function(rt, mod, set, 1, name, realm, NULL,
+                rjs_s_set(rt), pd.set)) == RJS_ERR)
+            goto end;
+    } else {
+        rjs_value_set_undefined(rt, pd.set);
+    }
+
+    rjs_property_name_init(rt, &pn, name);
+    r = rjs_define_property_or_throw(rt, o, &pn, &pd);
+    rjs_property_name_deinit(rt, &pn);
+    if (r == RJS_ERR)
+        goto end;
+
+    r = RJS_OK;
+end:
+    rjs_property_desc_deinit(rt, &pd);
+    rjs_value_stack_restore(rt, top);
+    return r;
 }

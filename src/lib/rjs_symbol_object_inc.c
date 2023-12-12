@@ -205,8 +205,6 @@ static RJS_NF(Symbol_keyFor)
         sr = RJS_CONTAINER_OF(he, RJS_SymbolRegistry, sym_he);
 
         rjs_value_copy(rt, rv, &sr->key);
-    } else {
-        rjs_value_set_undefined(rt, rv);
     }
 
     return RJS_OK;

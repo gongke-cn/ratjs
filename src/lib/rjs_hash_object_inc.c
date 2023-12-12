@@ -449,7 +449,6 @@ hash_iter_new (RJS_Runtime *rt, RJS_Value *iterv, RJS_Value *hashv,
 {
     RJS_HashObject *ho = (RJS_HashObject*)rjs_value_get_object(rt, hashv);
     RJS_HashIter   *hi;
-    RJS_Result      r;
 
     RJS_NEW(rt, hi);
 
@@ -459,11 +458,7 @@ hash_iter_new (RJS_Runtime *rt, RJS_Value *iterv, RJS_Value *hashv,
 
     rjs_value_copy(rt, &hi->hash, hashv);
 
-    r = rjs_object_init(rt, iterv, &hi->object, proto, &hash_iter_ops);
-    if (r == RJS_ERR) {
-        RJS_DEL(rt, hi);
-        return r;
-    }
+    rjs_object_init(rt, iterv, &hi->object, proto, &hash_iter_ops);
 
     rjs_list_append(&ho->iters, &hi->ln);
     return RJS_OK;

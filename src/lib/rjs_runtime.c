@@ -122,6 +122,10 @@ rjs_runtime_new (void)
     /*Create symbol registry.*/
     rjs_runtime_symbol_registry_init(rt);
 
+#if ENABLE_CTYPE
+    rjs_runtime_ctype_init(rt);
+#endif /*ENABLE_CTYPE*/
+
     rt->rb.gc_enable = RJS_TRUE;
 
     /*Create the main realm.*/
@@ -171,6 +175,10 @@ rjs_runtime_free (RJS_Runtime *rt)
     rjs_runtime_gc_deinit(rt);
     rjs_runtime_job_deinit(rt);
     rjs_runtime_string_deinit(rt);
+
+#if ENABLE_CTYPE
+    rjs_runtime_ctype_deinit(rt);
+#endif /*ENABLE_CTYPE*/
 
     rjs_native_data_free(rt, &rt->native_data);
 

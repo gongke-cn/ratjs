@@ -81,7 +81,7 @@
 #endif
 
 #if ENABLE_INT_INDEXED_OBJECT
-    #include <ratjs/rjs_int_indexed_object.h>
+    #include <ratjs/rjs_typed_array.h>
 #endif
 
 #if ENABLE_EVAL
@@ -102,6 +102,10 @@
 
 #if ENABLE_JSON
     #include <ratjs/rjs_json.h>
+#endif
+
+#if ENABLE_CTYPE
+    #include <ratjs/rjs_ctype.h>
 #endif
 
 #ifdef __cplusplus

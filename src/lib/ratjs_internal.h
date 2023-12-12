@@ -58,7 +58,7 @@
 
 #if OPTIMIZE_FOR_SIZE == 1
     #define RJS_INTERNAL static
-#elif defined __GNUC__ || defined __clang__
+#elif (defined __GNUC__ || defined __clang__) && (!defined WIN32 || !defined WIN64)
     #define RJS_INTERNAL __attribute__ ((visibility("hidden"))) extern
 #else
     #define RJS_INTERNAL extern
@@ -91,6 +91,11 @@
 #include "include/rjs_string.h"
 #include "include/rjs_symbol.h"
 #include "include/rjs_object.h"
+
+#if ENABLE_CTYPE
+    #include "include/rjs_ctype.h"
+#endif
+
 #include "include/rjs_function.h"
 #include "include/rjs_for_in_iterator.h"
 #include "include/rjs_context.h"

@@ -88,10 +88,8 @@ static RJS_NF(revoke_proxy)
     RJS_RevokeFunc  *rf = (RJS_RevokeFunc*)rjs_value_get_object(rt, f);
     RJS_ProxyObject *po;
 
-    if (rjs_value_is_null(rt, &rf->proxy)) {
-        rjs_value_set_undefined(rt, rv);
+    if (rjs_value_is_null(rt, &rf->proxy))
         return RJS_OK;
-    }
 
     po = (RJS_ProxyObject*)rjs_value_get_object(rt, &rf->proxy);
 
@@ -99,7 +97,6 @@ static RJS_NF(revoke_proxy)
     rjs_value_set_null(rt, &po->handler);
     rjs_value_set_null(rt, &rf->proxy);
 
-    rjs_value_set_undefined(rt, rv);
     return RJS_OK;
 }
 

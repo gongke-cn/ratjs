@@ -117,10 +117,10 @@ rjs_ordinary_init_from_constructor (RJS_Runtime *rt, RJS_Object *o, RJS_Value *c
     if ((r = rjs_get_prototype_from_constructor(rt, constr, dp_idx, proto)) == RJS_ERR)
         return r;
 
-    r = rjs_object_init(rt, ov, o, proto, ops);
+    rjs_object_init(rt, ov, o, proto, ops);
 
     rjs_value_stack_restore(rt, top);
-    return r;
+    return RJS_OK;
 }
 
 /**

@@ -1159,5 +1159,7 @@ rjs_proxy_object_new (RJS_Runtime *rt, RJS_Value *v, RJS_Value *target, RJS_Valu
         ops = &proxy_object_ops;
     }
 
-    return rjs_object_init(rt, v, &po->object, NULL, ops);
+    rjs_object_init(rt, v, &po->object, NULL, ops);
+
+    return RJS_OK;
 }

@@ -1,0 +1,171 @@
+{
+    "numberMacros": [
+        "AF_UNIX",
+        "AF_INET",
+        "AF_INET6",
+        "SOCK_STREAM",
+        "SOCK_DGRAM",
+        "SOCK_SEQPACKET"
+    ],
+    "structures": {
+        "sockaddr_un": {
+            "noTypeDef": true,
+            "members": {
+                "sun_family": "int",
+                "sun_path": "char[]"
+            }
+        },
+        "in_addr": {
+            "noTypeDef": true
+        },
+        "sockaddr_in": {
+            "noTypeDef": true,
+            "members": {
+                "sin_family": "int",
+                "sin_port": "uint16_t",
+                "sin_addr": "struct in_addr"
+            }
+        },
+        "in6_addr": {
+            "noTypeDef": true
+        },
+        "sockaddr_in6": {
+            "noTypeDef": true,
+            "members": {
+                "sin6_family": "int",
+                "sin6_port": "uint16_t",
+                "sin6_flowinfo": "uint32_t",
+                "sin6_addr": "struct in6_addr",
+                "sin6_scope_id": "uint32_t"
+            }
+        }
+    },
+    "functions": {
+        "socket": {
+            "parameters": {
+                "domain": "int",
+                "type": "int",
+                "protocal": "int"
+            },
+            "return": "int"
+        },
+        "close": {
+            "parameters": {
+                "sockfd": "int"
+            },
+            "return": "int"
+        },
+        "connect": {
+            "parameters": {
+                "sockfd": "int",
+                "addr": {
+                    "type": "const void *",
+                    "length": "addrlen"
+                },
+                "addrlen": "int"
+            },
+            "return": "int"
+        },
+        "bind": {
+            "parameters": {
+                "sockfd": "int",
+                "addr": {
+                    "type": "const void *",
+                    "length": "addrlen"
+                },
+                "addrlen": "int"
+            },
+            "return": "int"
+        },
+        "listen": {
+            "parameters": {
+                "sockfd": "int",
+                "backlog": "int"
+            },
+            "return": "int"
+        },
+        "accept": {
+            "parameters": {
+                "sockfd": "int",
+                "addr": {
+                    "type": "void *",
+                    "direction": "out",
+                    "length": "*addrlen"
+                },
+                "addrlen": {
+                    "type": "uint32_t*",
+                    "direction": "out"
+                }
+            },
+            "return": "int"
+        },
+        "read": {
+            "parameters": {
+                "fd": "int",
+                "buf": {
+                    "type": "void*",
+                    "direction": "out",
+                    "length": "count"
+                },
+                "count": "size_t"
+            },
+            "return": "ssize_t"
+        },
+        "write": {
+            "parameters": {
+                "fd": "int",
+                "buf": {
+                    "type": "void*",
+                    "length": "count"
+                },
+                "count": "size_t"
+            },
+            "return": "ssize_t"
+        },
+        "htonl": {
+            "parameters": {
+                "hostlong": "uint32_t"
+            },
+            "return": "uint32_t"
+        },
+        "htons": {
+            "parameters": {
+                "hostshort": "uint16_t"
+            },
+            "return": "uint16_t"
+        },
+        "ntohl": {
+            "parameters": {
+                "netlong": "uint32_t"
+            },
+            "return": "uint32_t"
+        },
+        "ntohs": {
+            "parameters": {
+                "netshort": "uint16_t"
+            },
+            "return": "uint16_t"
+        },
+        "inet_aton": {
+            "parameters": {
+                "cp": "const char*",
+                "inp": {
+                    "type": "struct in_addr *",
+                    "direction": "out"
+                }
+            },
+            "return": "int"
+        },
+        "inet_pton": {
+            "parameters": {
+                "af": "int",
+                "src": "const char*",
+                "dst": {
+                    "type": "void*",
+                    "direction": "out"
+                }
+            },
+            "return": "int"
+        }
+    }
+}

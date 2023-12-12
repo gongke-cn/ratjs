@@ -116,8 +116,6 @@ static RJS_NF(WeakMap_prototype_get)
     wme = (RJS_WeakMapEntry*)hash_get(rt, thiz, key);
     if (wme) {
         rjs_value_copy(rt, rv, &wme->me.value);
-    } else {
-        rjs_value_set_undefined(rt, rv);
     }
 
     r = RJS_OK;

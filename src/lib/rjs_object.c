@@ -25,7 +25,7 @@
 
 #include "ratjs_internal.h"
 
-/*Scan the reference things in the property key list/*/
+/*Scan the reference things in the property key list*/
 static void
 prop_key_list_op_gc_scan (RJS_Runtime *rt, void *ptr)
 {
@@ -859,6 +859,24 @@ validate_and_apply_property (RJS_Runtime *rt, RJS_Value *v, RJS_PropertyName *pn
 }
 
 /**
+ * Validate and try to apply the property descriptor.
+ * \param rt The current runtime.
+ * \param v The object value.
+ * \param pn The property name.
+ * \param ext The object is extensiable.
+ * \param desc The new property description.
+ * \param curr Current property description.
+ * \retval RJS_OK On success.
+ * \retval RJS_ERR On error.
+ */
+RJS_Result
+rjs_validate_and_apply_property (RJS_Runtime *rt, RJS_Value *v, RJS_PropertyName *pn, RJS_Bool ext,
+        RJS_PropertyDesc *desc, RJS_PropertyDesc *curr)
+{
+    return validate_and_apply_property(rt, v, pn, ext, desc, curr);
+}
+
+/**
  * Check if the value is a regular expression.
  * \param rt The current runtime.
  * \param v The value.
@@ -1413,7 +1431,8 @@ rjs_object_new (RJS_Runtime *rt, RJS_Value *v, RJS_Value *proto)
     if (!proto)
         proto = rjs_o_Object_prototype(rjs_realm_current(rt));
 
-    return rjs_object_init(rt, v, o, proto, &ordinary_object_ops);
+    rjs_object_init(rt, v, o, proto, &ordinary_object_ops);
+    return RJS_OK;
 }
 
 /**
@@ -1534,5 +1553,62 @@ rjs_object_to_number (RJS_Runtime *rt, RJS_Value *v, RJS_Number *pn)
 
     rjs_value_stack_restore(rt, top);
 
+    return r;
+}
+
+/**
+ * Assign the properies of destination object to the source.
+ * \param rt The current runtime.
+ * \param dst The destination object.
+ * \param src The source object.
+ * \retval RJS_OK On success.
+ * \retval RJS_ERR On error.
+ */
+RJS_Result
+rjs_object_assign (RJS_Runtime *rt, RJS_Value *dst, RJS_Value *src)
+{
+    size_t           top  = rjs_value_stack_save(rt);
+    RJS_Value       *kv   = rjs_value_stack_push(rt);
+    RJS_Value       *keys = rjs_value_stack_push(rt);
+    RJS_Value       *from = rjs_value_stack_push(rt);
+    RJS_PropertyDesc pd;
+    RJS_Result       r;
+
+    rjs_property_desc_init(rt, &pd);
+
+    if (!rjs_value_is_undefined(rt, src) && !rjs_value_is_null(rt, src)) {
+        RJS_PropertyKeyList *pkl;
+        size_t               kid;
+
+        if ((r = rjs_to_object(rt, src, from)) == RJS_ERR)
+            goto end;
+
+        if ((r = rjs_object_own_property_keys(rt, from, keys)) == RJS_ERR)
+            goto end;
+
+        pkl = rjs_value_get_gc_thing(rt, keys);
+        for (kid = 0; kid < pkl->keys.item_num; kid ++) {
+            RJS_PropertyName pn;
+            RJS_Value       *key = &pkl->keys.items[kid];
+
+            rjs_property_name_init(rt, &pn, key);
+            r = rjs_object_get_own_property(rt, from, &pn, &pd);
+
+            if ((r == RJS_OK) && (pd.flags & RJS_PROP_FL_ENUMERABLE)) {
+                if ((r = rjs_get(rt, from, &pn, kv)) == RJS_OK) {
+                    r = rjs_set(rt, dst, &pn, kv, RJS_TRUE);
+                }
+            }
+            rjs_property_name_deinit(rt, &pn);
+
+            if (r == RJS_ERR)
+                goto end;
+        }
+    }
+
+    r = RJS_OK;
+end:
+    rjs_property_desc_deinit(rt, &pd);
+    rjs_value_stack_restore(rt, top);
     return r;
 }

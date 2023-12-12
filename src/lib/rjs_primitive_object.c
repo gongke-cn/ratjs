@@ -231,8 +231,7 @@ rjs_primitive_object_new (RJS_Runtime *rt, RJS_Value *v, RJS_Value *nt, int dp_i
     else
         ops = &primitive_object_ops;
 
-    if ((r = rjs_object_init(rt, v, &po->object, proto, ops)) == RJS_ERR)
-        goto end;
+    rjs_object_init(rt, v, &po->object, proto, ops);
 
     if (ops == &string_object_ops) {
         RJS_PropertyDesc pd;

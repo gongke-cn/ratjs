@@ -59,7 +59,6 @@ realm_ops = {
 /*Function prototype native function.*/
 static RJS_NF(function_prototype_func)
 {
-    rjs_value_set_undefined(rt, rv);
     return RJS_OK;
 }
 
@@ -115,4 +114,15 @@ RJS_Value*
 rjs_realm_iterator_prototype (RJS_Realm *realm)
 {
     return rjs_o_IteratorPrototype(realm);
+}
+
+/**
+ * Get the "Function.prototype" object of the realm.
+ * \param realm The realm.
+ * \return "Function.prototype" value's pointer.
+ */
+RJS_Value*
+rjs_realm_function_prototype (RJS_Realm *realm)
+{
+    return rjs_o_Function_prototype(realm);
 }

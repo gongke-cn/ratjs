@@ -285,9 +285,7 @@ static RJS_NF(TypedArray_prototype_at)
     else
         k = iio->array_length + rel_index;
 
-    if ((k < 0) || (k >= iio->array_length))
-        rjs_value_set_undefined(rt, rv);
-    else
+    if ((k >= 0) && (k < iio->array_length))
         rjs_get_index(rt, thiz, k, rv);
 
     r = RJS_OK;
@@ -700,7 +698,6 @@ static RJS_NF(TypedArray_prototype_find)
         }
     }
 
-    rjs_value_set_undefined(rt, rv);
     r = RJS_OK;
 end:
     rjs_value_stack_restore(rt, top);
@@ -794,7 +791,6 @@ static RJS_NF(TypedArray_prototype_findLast)
         }
     }
 
-    rjs_value_set_undefined(rt, rv);
     r = RJS_OK;
 end:
     rjs_value_stack_restore(rt, top);
@@ -883,7 +879,6 @@ static RJS_NF(TypedArray_prototype_forEach)
             goto end;
     }
 
-    rjs_value_set_undefined(rt, rv);
     r = RJS_OK;
 end:
     rjs_value_stack_restore(rt, top);
@@ -1530,8 +1525,6 @@ static RJS_NF(TypedArray_prototype_set)
         r = set_typed_array_from_array_like(rt, thiz, target_offset, source);
     }
 
-    if (r == RJS_OK)
-        rjs_value_set_undefined(rt, rv);
 end:
     return r;
 }
@@ -1757,6 +1750,7 @@ static RJS_NF(TypedArray_prototype_sort)
     RJS_Value              *cmp_fn = rjs_argument_get(rt, args, argc, 0);
     RJS_IntIndexedObject   *iio;
     RJS_ArrayBuffer        *ab;
+    RJS_DataBlock          *db;
     size_t                  esize;
     RJS_TypedArrayCmpParams params; 
     RJS_Result              r;
@@ -1778,8 +1772,14 @@ static RJS_NF(TypedArray_prototype_sort)
     params.type  = iio->type;
     params.cmp   = cmp_fn;
 
-    r = rjs_sort(rjs_data_block_get_buffer(ab->data_block) + iio->byte_offset,
+    db = ab->data_block;
+
+    rjs_data_block_ref(db);
+
+    r = rjs_sort(rjs_data_block_get_buffer(db) + iio->byte_offset,
             iio->array_length, esize, typed_array_element_cmp, &params);
+
+    rjs_data_block_unref(db);
 
     if (r == RJS_OK)
         rjs_value_copy(rt, rv, thiz);
@@ -2316,10 +2316,8 @@ static RJS_NF(TypedArray_prototype_toStringTag_get)
     RJS_IntIndexedObject *iio;
     char                 *name;
 
-    if (rjs_value_get_gc_thing_type(rt, thiz) != RJS_GC_THING_INT_INDEXED_OBJECT) {
-        rjs_value_set_undefined(rt, rv);
+    if (rjs_value_get_gc_thing_type(rt, thiz) != RJS_GC_THING_INT_INDEXED_OBJECT)
         return RJS_OK;
-    }
 
     iio = (RJS_IntIndexedObject*)rjs_value_get_object(rt, thiz);
 
@@ -2579,11 +2577,12 @@ initialize_typed_array_from_array_buffer (RJS_Runtime *rt, RJS_Value *o, RJS_Val
 
         new_blen = buf_blen - off;
         if (new_blen < 0) {
-            r = rjs_throw_range_error(rt, _("array buffer length mute >= 0"));
+            r = rjs_throw_range_error(rt, _("array buffer length must >= 0"));
             goto end;
         }
     } else {
         new_blen = nlen * esize;
+
         if (off + new_blen > buf_blen) {
             r = rjs_throw_range_error(rt, _("array buffer length overflow"));
             goto end;

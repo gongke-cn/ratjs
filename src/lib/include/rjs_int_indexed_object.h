@@ -43,7 +43,57 @@ typedef struct {
     size_t               byte_offset;  /**< Start offset in bytes.*/
     size_t               byte_length;  /**< Byte length.*/
     size_t               array_length; /**< The array length.*/
+#if ENABLE_CTYPE
+    RJS_CPtr            *cptr;         /**< C pointer.*/
+#endif /*ENABLE_CTYPE*/
 } RJS_IntIndexedObject;
+
+/**
+ * Check if the number is a valid integer index.
+ * \param rt The current runtime.
+ * \param o The integer index object.
+ * \param n The number value.
+ * \param[out] pidx Return the index value.
+ * \retval RJS_TRUE The value is a valid index.
+ * \retval RJS_FALSE The value is not a valid index.
+ */
+extern RJS_Bool
+rjs_is_valid_int_index (RJS_Runtime *rt, RJS_Value *o, RJS_Number n, size_t *pidx);
+
+/**
+ * Create a new integer indexed object.
+ * \param rt The current runtime.
+ * \param proto The prototype.
+ * \param[out] v Return the new object.
+ * \retval RJS_OK On success.
+ * \retval RJS_ERR On error.
+ */
+extern RJS_Result
+rjs_int_indexed_object_create (RJS_Runtime *rt, RJS_Value *proto, RJS_Value *v);
+
+/**
+ * Get the integer indexed element.
+ * \param rt The current runtime.
+ * \param o The integer indexed object.
+ * \param n The index number.
+ * \param[out] v Return the element value.
+ * \retval RJS_OK On success.
+ * \retval RJS_ERR On error.
+ */
+extern RJS_Result
+rjs_int_indexed_element_get (RJS_Runtime *rt, RJS_Value *o, RJS_Number n, RJS_Value *v);
+
+/**
+ * Set the integer indexed element.
+ * \param rt The current runtime.
+ * \param o The integer indexed object.
+ * \param n The index number.
+ * \param v The new element value.
+ * \retval RJS_OK On success.
+ * \retval RJS_ERR On error.
+ */
+extern RJS_Result
+rjs_int_indexed_element_set (RJS_Runtime *rt, RJS_Value *o, RJS_Number n, RJS_Value *v);
 
 #ifdef __cplusplus
 }

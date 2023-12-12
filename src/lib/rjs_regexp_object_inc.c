@@ -293,7 +293,6 @@ regexp_str_iter_new (RJS_Runtime *rt, RJS_Value *iter, RJS_Value *re, RJS_Value 
 {
     RJS_Realm                *realm = rjs_realm_current(rt);
     RJS_RegExpStringIterator *resi;
-    RJS_Result                r;
 
     RJS_NEW(rt, resi);
 
@@ -304,12 +303,10 @@ regexp_str_iter_new (RJS_Runtime *rt, RJS_Value *iter, RJS_Value *re, RJS_Value 
     resi->unicode = unicode;
     resi->done    = RJS_FALSE;
 
-    r = rjs_object_init(rt, iter, &resi->object, rjs_o_RegExpStringIteratorPrototype(realm),
+    rjs_object_init(rt, iter, &resi->object, rjs_o_RegExpStringIteratorPrototype(realm),
             &regexp_str_iter_ops);
-    if (r == RJS_ERR)
-        RJS_DEL(rt, resi);
 
-    return r;
+    return RJS_OK;
 }
 
 /*RegExp.prototype[@@matchAll]*/

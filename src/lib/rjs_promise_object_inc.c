@@ -179,10 +179,8 @@ static RJS_NF(promise_all_resolve)
     RJS_PromiseAllRemaining *remain = rjs_value_get_gc_thing(rt, &paf->remaining);
     RJS_Result               r;
 
-    if (paf->called) {
-        rjs_value_set_undefined(rt, rv);
+    if (paf->called)
         return RJS_OK;
-    }
 
     paf->called = RJS_TRUE;
     remain->left --;
@@ -192,7 +190,6 @@ static RJS_NF(promise_all_resolve)
     if (remain->left == 0) {
         r = rjs_call(rt, paf->capability.resolve, rjs_v_undefined(rt), &paf->values, 1, rv);
     } else {
-        rjs_value_set_undefined(rt, rv);
         r = RJS_OK;
     }
 
@@ -362,7 +359,6 @@ static RJS_NF(promise_all_settled_resolve)
     RJS_Result               r;
 
     if (paf->called) {
-        rjs_value_set_undefined(rt, rv);
         r = RJS_OK;
         goto end;
     }
@@ -380,7 +376,6 @@ static RJS_NF(promise_all_settled_resolve)
     if (remain->left == 0) {
         r = rjs_call(rt, paf->capability.resolve, rjs_v_undefined(rt), &paf->values, 1, rv);
     } else {
-        rjs_value_set_undefined(rt, rv);
         r = RJS_OK;
     }
 
@@ -401,7 +396,6 @@ static RJS_NF(promise_all_settled_reject)
     RJS_Result               r;
 
     if (paf->called) {
-        rjs_value_set_undefined(rt, rv);
         r = RJS_OK;
         goto end;
     }
@@ -419,7 +413,6 @@ static RJS_NF(promise_all_settled_reject)
     if (remain->left == 0) {
         r = rjs_call(rt, paf->capability.resolve, rjs_v_undefined(rt), &paf->values, 1, rv);
     } else {
-        rjs_value_set_undefined(rt, rv);
         r = RJS_OK;
     }
 
@@ -560,7 +553,6 @@ static RJS_NF(promise_any_reject)
     RJS_Result               r;
 
     if (paf->called) {
-        rjs_value_set_undefined(rt, rv);
         r = RJS_OK;
         goto end;
     }
@@ -577,7 +569,6 @@ static RJS_NF(promise_any_reject)
 
         r = rjs_call(rt, paf->capability.reject, rjs_v_undefined(rt), error, 1, rv);
     } else {
-        rjs_value_set_undefined(rt, rv);
         r = RJS_OK;
     }
 

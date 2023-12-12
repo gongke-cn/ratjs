@@ -35,7 +35,7 @@ AR := $(CROSS_COMPILE)ar
 RANLIB := $(CROSS_COMPILE)ranlib
 
 # Compiling flags
-CFLAGS += -Wall -Iinclude -I$(O)/include -I$(O)/src/lib
+CFLAGS += -Wall -Iinclude -I$(O)/include -I$(O)/src/lib -DINSTALL_PREFIX=\"${INSTALL_PREFIX}\"
 # Linked libraries and flags
 LIBS += -lm
 
@@ -161,6 +161,10 @@ else
 endif
 endif
 
+ifeq ($(ENABLE_CTYPE),1)
+	LIBS += -lffi
+endif
+
 ENABLE_BIG_INT_DEFAULT := internal
 ENABLE_BIG_INT_DESC    := big integer. use internal big integer implement, link with libgmp or disable big integer feature
 ENABLE_BIG_INT_ENUM    := internal|gmp|0
@@ -177,7 +181,7 @@ $(eval $(call bool_config,ENABLE_ARROW_FUNC,1,enable arrow function))
 $(eval $(call bool_config,ENABLE_BOUND_FUNC,1,enable bound function object,src/lib/rjs_bound_func_object_opt.c))
 $(eval $(call bool_config,ENABLE_ARRAY_BUFFER,1,enable array buffer object,src/lib/rjs_array_buffer_opt.c src/lib/rjs_data_block_opt.c))
 $(eval $(call bool_config,ENABLE_SHARED_ARRAY_BUFFER,1,enable shared array buffer object))
-$(eval $(call bool_config,ENABLE_INT_INDEXED_OBJECT,1,enable integer indexed object,src/lib/rjs_int_indexed_object_opt.c))
+$(eval $(call bool_config,ENABLE_INT_INDEXED_OBJECT,1,enable integer indexed object,src/lib/rjs_int_indexed_object_opt.c src/lib/rjs_typed_array_opt.c))
 $(eval $(call bool_config,ENABLE_PROXY,1,enable proxy object,src/lib/rjs_proxy_object_opt.c))
 $(eval $(call bool_config,ENABLE_EVAL,1,enable function "eval",src/lib/rjs_eval_opt.c))
 $(eval $(call bool_config,ENABLE_MATH,1,enable object "Math"))
@@ -200,6 +204,7 @@ $(eval $(call bool_config,ENABLE_COLOR_CONSOLE,1,enable color terminal output))
 $(eval $(call bool_config,ENABLE_FUNC_SOURCE,1,enable function source))
 $(eval $(call bool_config,ENABLE_NATIVE_MODULE,1,enable native module))
 $(eval $(call bool_config,ENABLE_EXTENSION,1,enable extension functions,src/lib/rjs_extension_opt.c))
+$(eval $(call bool_config,ENABLE_CTYPE,1,enable C type,src/lib/rjs_ctype_opt.c))
 $(eval $(call bool_config,STATIC_LIBRARY_ONLY,0,do not generate the dynamic library))
 $(eval $(call bool_config,OPTIMIZE_FOR_SIZE,0,optimize to reduce size))
 
@@ -287,6 +292,15 @@ RATJS_SRCS := $(wildcard src/exe/*.c)
 TEST262 := $(O)/test262$(EXE_SUFFIX)
 TEST262_SRCS := $(wildcard test/test262/*.c)
 
+# Native javascript module
+NJS_JSON := $(wildcard njs/*.json)
+NJS_C := njs/GI.c
+NJS_MODULES_FROM_JSON := $(patsubst %.json,$(O)/%.njs,$(NJS_JSON))
+
+# SDL cflags and ldflags
+SDL_CFLAGS := -I/usr/include/SDL -D_GNU_SOURCE=1 -D_REENTRANT
+SDL_LIBS := -lSDL
+
 # Targets
 TARGETS := $(LIBRATJS) $(RATJS)
 
@@ -321,7 +335,7 @@ DEPS += $$(patsubst %.c,$(O)/%.d,$(1))
 $$(patsubst %.c,$(O)/%.o,$(1)): $(1)
 	$$(info CC $$< -> $$@)
 	$(Q)$(MKDIR) $$(dir $$@)
-	$(Q)$(CC) -c -o $$@ $$< $(CFLAGS) -MMD -MF $$(patsubst %.c,$(O)/%.d,$(1))
+	$(Q)$(CC) -c -o $$@ $$< $(2) $(CFLAGS) -MMD -MF $$(patsubst %.c,$(O)/%.d,$(1))
 endef
 
 # Compile C source files
@@ -431,6 +445,25 @@ endef
 define save_config_h =
 $(Q)$(RM) $(1)
 $(foreach i,$(CONFIG_H_ITEMS),$(call save_config_h_item,$(1),$i))
+endef
+
+# Build njs module from C
+define build_njs_from_c =
+$(1): $$(patsubst %.njs,%.o,$(1))
+	$$(info CC $$^ -> $$@)
+	$(Q)$(CC) -o $$@ $$^ -shared $$($$(patsubst $(O)/njs/%.njs,%_LIBS,$(1))) $(LIBS)
+
+$$(eval $$(call compile_o,$$(patsubst $(O)/%.njs,%.c,$(1)),$$($$(patsubst $(O)/njs/%.njs,%_CFLAGS,$(1)))))
+endef
+
+# Build njs module from JSON
+define build_njs_from_json =
+$$(eval $$(call build_njs_from_c,$(1)))
+
+$$(patsubst $(O)/%.njs,%.c,$(1)): $$(patsubst $(O)/%.njs,%.json,$(1))
+	$$(info GEN $$@)
+	$(Q)mkdir -p $$(dir $$@)
+	$(Q)ratjs -m module module/njsgen/njsgen.js -v -o $$@ $$^
 endef
 
 all: $(TARGETS)
@@ -576,6 +609,17 @@ demo-clean:
 		make -C $$dir clean;\
 	done
 
+njs: $(NJS_MODULES_FROM_JSON) $(NJS_MODULES_FROM_C)
+
+$(foreach mod,$(NJS_MODULES_FROM_JSON),$(eval $(call build_njs_from_json,$(mod))))
+$(foreach mod,$(NJS_MODULES_FROM_C),$(eval $(call build_njs_from_c,$(mod))))
+
+INSTALL_NJS := $(filter-out $(O)/njs/njsgen.njs,$(wildcard $(O)/njs/*.njs))
+
+ifneq ($(INSTALL_NJS),)
+	INSTALL_NJS_CMD := install -m 644 -s ${INSTALL_NJS} ${INSTALL_PREFIX}/lib/ratjs/module
+endif
+
 install: uninstall
 	$(info INSTALL)
 	$(Q)install -m 644 $(LIBRATJS_SLIB) $(INSTALL_PREFIX)/lib
@@ -585,14 +629,22 @@ install: uninstall
 	$(Q)mkdir -m 755 $(INSTALL_PREFIX)/include/ratjs
 	$(Q)install -m 644 include/ratjs/*.h $(INSTALL_PREFIX)/include/ratjs
 	$(Q)install -m 644 $(O)/include/ratjs/rjs_config.h $(INSTALL_PREFIX)/include/ratjs
+	$(Q)O=${O} INSTALL_PREFIX=${INSTALL_PREFIX} ./build/install_njsgen_${ARCH}.sh $(INSTALL_PREFIX)/bin
+	$(Q)mkdir -p -m 755 ${INSTALL_PREFIX}/lib/ratjs/module
+	$(Q)install -m 644 module/*.js ${INSTALL_PREFIX}/lib/ratjs/module
+	$(Q)${INSTALL_NJS_CMD}
+	$(Q)mkdir -m 755 ${INSTALL_PREFIX}/lib/ratjs/module/njsgen
+	$(Q)install -m 644 module/njsgen/* ${INSTALL_PREFIX}/lib/ratjs/module/njsgen
 
 uninstall:
 	$(info UNINSTALL)
 	$(Q)$(RM) $(INSTALL_PREFIX)/lib/libratjs$(SLIB_SUFFIX)
 	$(Q)SO_MAJOR_VERSION=$(SO_MAJOR_VERSION) SO_MINOR_VERSION=$(SO_MINOR_VERSION) SO_MICRO_VERSION=$(SO_MICRO_VERSION) INSTALL_PREFIX=$(INSTALL_PREFIX) ./build/install_dlib_$(ARCH).sh -u
 	$(Q)$(RM) $(INSTALL_PREFIX)/bin/ratjs$(EXE_SUFFIX)
+	$(Q)$(RM) $(INSTALL_PREFIX)/bin/njsgen
 	$(Q)$(RMDIR) $(INSTALL_PREFIX)/include/ratjs
 	$(Q)$(RM) $(INSTALL_PREFIX)/include/ratjs.h
+	$(Q)$(RMDIR) $(INSTALL_PREFIX)/lib/ratjs
 
 clean:
 	$(info CLEAN $(TARGETS) $(OBJS))

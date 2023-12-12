@@ -289,7 +289,6 @@ static RJS_NF(addModuleDirectory)
 
     module_dir_add(cstr);
 
-    rjs_value_set_undefined(rt, rv);
     r = RJS_OK;
 end:
     rjs_value_stack_restore(rt, top);
@@ -325,7 +324,6 @@ static RJS_NF(on_module_eval_ok)
     RJS_Value *arg = rjs_argument_get(rt, args, argc, 0);
 
     rjs_value_copy(rt, module_eval_rv, arg);
-    rjs_value_set_undefined(rt, rv);
     module_eval_result = RJS_OK;
     return RJS_OK;
 }
@@ -336,7 +334,6 @@ static RJS_NF(on_module_eval_error)
     RJS_Value *arg = rjs_argument_get(rt, args, argc, 0);
 
     rjs_value_copy(rt, module_eval_rv, arg);
-    rjs_value_set_undefined(rt, rv);
     module_eval_result = RJS_ERR;
     return RJS_OK;
 }
@@ -383,6 +380,40 @@ module_load (const char *name)
 end:
     rjs_value_stack_restore(rt, top);
     return r;
+}
+
+/*Add default module directory.*/
+static void
+module_dir_default (const char *cmd)
+{
+    char *v;
+
+    v = getenv("RJS_MODULE_DIRS");
+    if (v) {
+        char path[PATH_MAX];
+        char *b, *e;
+
+        snprintf(path, sizeof(path), "%s", v);
+
+        b = path;
+        while (*b) {
+            e = strchr(b, ':');
+            if (!e) {
+                module_dir_add(b);
+                break;
+            } else {
+                *e = 0;
+                module_dir_add(b);
+                b = e + 1;
+            }
+        }
+    } else {
+        char path[PATH_MAX];
+
+        snprintf(path, sizeof(path), "%s/lib/ratjs/module", INSTALL_PREFIX);
+
+        module_dir_add(path);
+    }
 }
 
 #endif /*ENABLE_MODULE*/
@@ -545,7 +576,6 @@ static RJS_NF(on_main_ok)
     RJS_Value *arg = rjs_argument_get(rt, args, argc, 0);
 
     rjs_value_copy(rt, main_rv, arg);
-    rjs_value_set_undefined(rt, rv);
     main_result = RJS_OK;
     return RJS_OK;
 }
@@ -556,7 +586,6 @@ static RJS_NF(on_main_error)
     RJS_Value *arg = rjs_argument_get(rt, args, argc, 0);
 
     rjs_value_copy(rt, main_rv, arg);
-    rjs_value_set_undefined(rt, rv);
     main_result = RJS_ERR;
     return RJS_OK;
 }
@@ -614,6 +643,8 @@ main (int argc, char **argv)
     module_dir_list_init();
 
     module_dir_function();
+
+    module_dir_default(argv[0]);
 #endif /*ENABLE_MODULE*/
 
     /*Parse options.*/

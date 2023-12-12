@@ -23,78 +23,64 @@
  * USE OR OTHER DEALINGS IN THE SOFTWARE.                                    *
  *****************************************************************************/
 
-/**
- * \file
- * Integer indexed object.
- */
-
-#ifndef _RJS_INT_INDEXED_OBJECT_H_
-#define _RJS_INT_INDEXED_OBJECT_H_
-
-#ifdef __cplusplus
-extern "C" {
-#endif
+#include "ratjs_internal.h"
 
 /**
- * \defgroup iio Integer indexed object
- * The object managed elements by integer index
- * @{
- */
-
-/**
- * Check if the number is a valid integer index.
- * \param rt The current runtime.
- * \param o The integer index object.
- * \param n The number value.
- * \param[out] pidx Return the index value.
- * \retval RJS_TRUE The value is a valid index.
- * \retval RJS_FALSE The value is not a valid index.
- */
-extern RJS_Bool
-rjs_is_valid_int_index (RJS_Runtime *rt, RJS_Value *o, RJS_Number n, size_t *pidx);
-
-/**
- * Create a new integer indexed object.
- * \param rt The current runtime.
- * \param proto The prototype.
- * \param[out] v Return the new object.
+ * Create a typed array.
+ * \param rt The runtime.
+ * \param type The element type of the typed array.
+ * \param args The arguments.
+ * \param argc The arguments' count.
+ * \param[out] ta Return the typed array.
  * \retval RJS_OK On success.
  * \retval RJS_ERR On error.
  */
-extern RJS_Result
-rjs_int_indexed_object_create (RJS_Runtime *rt, RJS_Value *proto, RJS_Value *v);
+RJS_Result
+rjs_create_typed_array (RJS_Runtime *rt, RJS_ArrayElementType type,
+        RJS_Value *args, size_t argc, RJS_Value *ta)
+{
+    RJS_Realm *realm = rjs_realm_current(rt);
+    RJS_Value *c;
 
-/**
- * Get the integer indexed element.
- * \param rt The current runtime.
- * \param o The integer indexed object.
- * \param n The index number.
- * \param[out] v Return the element value.
- * \retval RJS_OK On success.
- * \retval RJS_ERR On error.
- */
-extern RJS_Result
-rjs_int_indexed_element_get (RJS_Runtime *rt, RJS_Value *o, RJS_Number n, RJS_Value *v);
+    switch (type) {
+    case RJS_ARRAY_ELEMENT_UINT8:
+        c = rjs_o_Uint8Array(realm);
+        break;
+    case RJS_ARRAY_ELEMENT_INT8:
+        c = rjs_o_Int8Array(realm);
+        break;
+    case RJS_ARRAY_ELEMENT_UINT8C:
+        c = rjs_o_Uint8ClampedArray(realm);
+        break;
+    case RJS_ARRAY_ELEMENT_UINT16:
+        c = rjs_o_Uint16Array(realm);
+        break;
+    case RJS_ARRAY_ELEMENT_INT16:
+        c = rjs_o_Int16Array(realm);
+        break;
+    case RJS_ARRAY_ELEMENT_UINT32:
+        c = rjs_o_Uint32Array(realm);
+        break;
+    case RJS_ARRAY_ELEMENT_INT32:
+        c = rjs_o_Int32Array(realm);
+        break;
+    case RJS_ARRAY_ELEMENT_FLOAT32:
+        c = rjs_o_Float32Array(realm);
+        break;
+    case RJS_ARRAY_ELEMENT_FLOAT64:
+        c = rjs_o_Float64Array(realm);
+        break;
+#if ENABLE_BIG_INT
+    case RJS_ARRAY_ELEMENT_BIGUINT64:
+        c = rjs_o_BigUint64Array(realm);
+        break;
+    case RJS_ARRAY_ELEMENT_BIGINT64:
+        c = rjs_o_BigInt64Array(realm);
+        break;
+#endif /*ENABLE_BIG_INT*/
+    default:
+        assert(0);
+    }
 
-/**
- * Set the integer indexed element.
- * \param rt The current runtime.
- * \param o The integer indexed object.
- * \param n The index number.
- * \param v The new element value.
- * \retval RJS_OK On success.
- * \retval RJS_ERR On error.
- */
-extern RJS_Result
-rjs_int_indexed_element_set (RJS_Runtime *rt, RJS_Value *o, RJS_Number n, RJS_Value *v);
-
-/**
- * @}
- */
-
-#ifdef __cplusplus
+    return rjs_construct(rt, c, args, argc, c, ta);
 }
-#endif
-
-#endif
-

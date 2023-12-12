@@ -90,8 +90,6 @@ static RJS_NF(Map_prototype_clear)
     }
 
     r = hash_clear(rt, thiz, sizeof(RJS_MapEntry));
-
-    rjs_value_set_undefined(rt, rv);
 end:
     return r;
 }
@@ -188,7 +186,6 @@ static RJS_NF(Map_prototype_forEach)
     }
 
     rjs_list_remove(&hi.ln);
-    rjs_value_set_undefined(rt, rv);
 end:
     rjs_value_stack_restore(rt, top);
     return r;
@@ -209,8 +206,6 @@ static RJS_NF(Map_prototype_get)
     me = (RJS_MapEntry*)hash_get(rt, thiz, key);
     if (me) {
         rjs_value_copy(rt, rv, &me->value);
-    } else {
-        rjs_value_set_undefined(rt, rv);
     }
 
     r = RJS_OK;

@@ -75,6 +75,11 @@ rjs_base_func_object_op_gc_scan (RJS_Runtime *rt, RJS_BaseFuncObject *bfo)
 
     if (bfo->clazz)
         script_class_gc_scan(rt, bfo->clazz);
+
+#if ENABLE_CTYPE
+    if (bfo->cptr)
+        rjs_gc_mark(rt, bfo->cptr);
+#endif /*ENABLE_CTYPE*/
 }
 
 /**
@@ -107,7 +112,9 @@ rjs_initialize_instance_elements (RJS_Runtime *rt, RJS_Value *o, RJS_Value *f)
     RJS_Result          r = RJS_OK;
 
     gtt = rjs_value_get_gc_thing_type(rt, f);
-    assert((gtt == RJS_GC_THING_SCRIPT_FUNC) || (gtt == RJS_GC_THING_BUILTIN_FUNC));
+    assert((gtt == RJS_GC_THING_SCRIPT_FUNC)
+            || (gtt == RJS_GC_THING_BUILTIN_FUNC)
+            || (gtt == RJS_GC_THING_NATIVE_FUNCTION));
 
     bfo = (RJS_BaseFuncObject*)rjs_value_get_object(rt, f);
 

@@ -111,7 +111,6 @@ static RJS_NF(Set_prototype_clear)
     if ((r = hash_clear(rt, thiz, sizeof(RJS_SetEntry))) == RJS_ERR)
         goto end;
 
-    rjs_value_set_undefined(rt, rv);
     r = RJS_OK;
 end:
     return r;
@@ -209,7 +208,6 @@ static RJS_NF(Set_prototype_forEach)
     }
 
     rjs_list_remove(&hi.ln);
-    rjs_value_set_undefined(rt, rv);
 end:
     rjs_value_stack_restore(rt, top);
     return r;

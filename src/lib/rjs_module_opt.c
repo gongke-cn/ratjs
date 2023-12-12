@@ -753,8 +753,6 @@ async_module_execution_fulfilled_nf (RJS_Runtime *rt, RJS_Value *f, RJS_Value *t
 
     amf = (RJS_AsyncModuleFunc*)rjs_value_get_object(rt, f);
 
-    rjs_value_set_undefined(rt, rv);
-
     return async_module_execution_fulfilled(rt, &amf->module);
 }
 
@@ -800,8 +798,6 @@ async_module_execution_rejected_nf (RJS_Runtime *rt, RJS_Value *f, RJS_Value *th
     RJS_Value           *err = rjs_argument_get(rt, args, argc, 0);
 
     amf = (RJS_AsyncModuleFunc*)rjs_value_get_object(rt, f);
-
-    rjs_value_set_undefined(rt, rv);
 
     return async_module_execution_rejected(rt, &amf->module, err);
 }

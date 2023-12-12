@@ -264,9 +264,7 @@ static RJS_NF(Reflect_getOwnPropertyDescriptor)
     if (r == RJS_ERR)
         goto end;
 
-    if (!r)
-        rjs_value_set_undefined(rt, rv);
-    else
+    if (r)
         rjs_from_property_descriptor(rt, &pd, rv);
         
     r = RJS_OK;
