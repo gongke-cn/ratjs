@@ -1757,6 +1757,7 @@ static RJS_NF(TypedArray_prototype_sort)
     RJS_Value              *cmp_fn = rjs_argument_get(rt, args, argc, 0);
     RJS_IntIndexedObject   *iio;
     RJS_ArrayBuffer        *ab;
+    RJS_DataBlock          *db;
     size_t                  esize;
     RJS_TypedArrayCmpParams params; 
     RJS_Result              r;
@@ -1778,8 +1779,14 @@ static RJS_NF(TypedArray_prototype_sort)
     params.type  = iio->type;
     params.cmp   = cmp_fn;
 
-    r = rjs_sort(rjs_data_block_get_buffer(ab->data_block) + iio->byte_offset,
+    db = ab->data_block;
+
+    rjs_data_block_ref(db);
+
+    r = rjs_sort(rjs_data_block_get_buffer(db) + iio->byte_offset,
             iio->array_length, esize, typed_array_element_cmp, &params);
+
+    rjs_data_block_unref(db);
 
     if (r == RJS_OK)
         rjs_value_copy(rt, rv, thiz);

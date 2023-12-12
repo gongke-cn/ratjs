@@ -42,6 +42,11 @@ extern "C" {
  */
 
 /**
+ * Char buffer initialize value.
+ */
+#define RJS_CHAR_BUFFER_INIT {NULL, 0, 0}
+
+/**
  * Initialize a character buffer.
  * \param rt The current runtime.
  * \param cb The character buffer to be initialized.

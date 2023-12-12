@@ -41,6 +41,12 @@ int_indexed_object_op_gc_free (RJS_Runtime *rt, void *ptr)
 {
     RJS_IntIndexedObject *iio = ptr;
 
+#if ENABLE_CTYPE
+    if (iio->cptr_he.key) {
+        rjs_cptr_remove(rt, &iio->cptr_info);
+    }
+#endif /*ENABLE_CTYPE*/
+
     rjs_object_deinit(rt, &iio->object);
 
     RJS_DEL(rt, iio);
@@ -354,6 +360,10 @@ rjs_int_indexed_object_create (RJS_Runtime *rt, RJS_Value *proto, RJS_Value *v)
     iio->array_length = 0;
     iio->byte_offset  = 0;
     iio->byte_length  = 0;
+
+#if ENABLE_CTYPE
+    iio->cptr_he.key = NULL;
+#endif /*ENABLE_CTYPE*/
 
     rjs_value_set_undefined(rt, &iio->buffer);
 

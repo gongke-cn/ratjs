@@ -175,7 +175,7 @@ rjs_allocate_array_buffer (RJS_Runtime *rt, RJS_Value *c, int64_t len, RJS_Value
         return r;
     }
 
-    ab->data_block = rjs_data_block_new(len, RJS_FALSE);
+    ab->data_block = rjs_data_block_new(NULL, len, 0);
     if (!ab->data_block)
         return rjs_throw_range_error(rt, _("cannot allocate %"PRIdPTR"B array buffer"), len);
 
@@ -241,7 +241,7 @@ rjs_allocate_shared_array_buffer (RJS_Runtime *rt, RJS_Value *c, int64_t len, RJ
     if (db) {
         ab->data_block = rjs_data_block_ref(db);
     } else {
-        ab->data_block = rjs_data_block_new(len, RJS_TRUE);
+        ab->data_block = rjs_data_block_new(NULL, len, RJS_DATA_BLOCK_FL_SHARED);
         if (!ab->data_block)
             return rjs_throw_range_error(rt, _("cannot allocate %"PRIdPTR"B array buffer"), len);
     }

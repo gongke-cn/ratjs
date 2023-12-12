@@ -160,6 +160,10 @@
     #include "include/rjs_weak_ref.h"
 #endif
 
+#if ENABLE_CTYPE
+    #include "include/rjs_ctype.h"
+#endif
+
 #if ENABLE_INT_INDEXED_OBJECT
     #include "include/rjs_int_indexed_object.h"
 #endif

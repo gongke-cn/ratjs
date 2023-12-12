@@ -56,9 +56,6 @@ static RJS_NF(Object_assign)
     RJS_Value  *target = rjs_argument_get(rt, args, argc, 0);
     size_t      top    = rjs_value_stack_save(rt);
     RJS_Value  *to     = rjs_value_stack_push(rt);
-    RJS_Value  *from   = rjs_value_stack_push(rt);
-    RJS_Value  *keys   = rjs_value_stack_push(rt);
-    RJS_Value  *kv     = rjs_value_stack_push(rt);
     RJS_PropertyDesc pd;
     size_t      aid;
     RJS_Result  r;
@@ -79,35 +76,8 @@ static RJS_NF(Object_assign)
 
         src = rjs_value_buffer_item(rt, args, aid);
 
-        if (!rjs_value_is_undefined(rt, src) && !rjs_value_is_null(rt, src)) {
-            RJS_PropertyKeyList *pkl;
-            size_t               kid;
-
-            if ((r = rjs_to_object(rt, src, from)) == RJS_ERR)
-                goto end;
-
-            if ((r = rjs_object_own_property_keys(rt, from, keys)) == RJS_ERR)
-                goto end;
-
-            pkl = rjs_value_get_gc_thing(rt, keys);
-            for (kid = 0; kid < pkl->keys.item_num; kid ++) {
-                RJS_PropertyName pn;
-                RJS_Value       *key = &pkl->keys.items[kid];
-
-                rjs_property_name_init(rt, &pn, key);
-                r = rjs_object_get_own_property(rt, from, &pn, &pd);
-
-                if ((r == RJS_OK) && (pd.flags & RJS_PROP_FL_ENUMERABLE)) {
-                    if ((r = rjs_get(rt, from, &pn, kv)) == RJS_OK) {
-                        r = rjs_set(rt, to, &pn, kv, RJS_TRUE);
-                    }
-                }
-                rjs_property_name_deinit(rt, &pn);
-
-                if (r == RJS_ERR)
-                    goto end;
-            }
-        }
+        if ((r = rjs_object_assign(rt, to, src)) == RJS_ERR)
+            goto end;
     }
 
     rjs_value_copy(rt, rv, to);

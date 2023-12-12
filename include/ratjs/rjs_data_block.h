@@ -41,6 +41,14 @@ extern "C" {
  * @{
  */
 
+/**The data block is shared by many array buffers.*/
+#define RJS_DATA_BLOCK_FL_SHARED 1
+/**
+ * The data block is referenced to an external buffer.
+ * The buffer is not freed when the data block is released.
+ */
+#define RJS_DATA_BLOCK_FL_EXTERN 2
+
 /**The data block.*/
 typedef struct RJS_DataBlock_s  RJS_DataBlock;
 
@@ -123,13 +131,14 @@ rjs_data_block_get_size (RJS_DataBlock *db);
 
 /**
  * Allocate a new data block.
+ * \param ptr If the data block use an external buffer, it is the buffer's pointer.
  * \param size Size of the data block.
- * \param shared The data block is used for a shared buffer.
+ * \param flags The data block's flags.
  * \return The new data block.
  * \retval NULL On error.
  */
 extern RJS_DataBlock*
-rjs_data_block_new (int64_t size, RJS_Bool shared);
+rjs_data_block_new (void *ptr, int64_t size, int flags);
 
 /**
  * Free the data block.
@@ -153,40 +162,6 @@ rjs_data_block_ref (RJS_DataBlock *db);
  */
 extern void
 rjs_data_block_unref (RJS_DataBlock *db);
-
-#if ENABLE_ATOMICS
-/**
- * Get the waiter list.
- * \param rt The current runtime.
- * \param db The data block.
- * \param pos The value position in the buffer.
- * \return The waiter list.
- */
-extern RJS_WaiterList*
-rjs_get_waiter_list (RJS_Runtime *rt, RJS_DataBlock *db, size_t pos);
-
-/**
- * Add a waiter to the waiter list.
- * \param rt The current runtime.
- * \param db The data block.
- * \param wl The waiter list.
- * \param timeout Wait timeout.
- * \retval RJS_TRUE When the waiter is notified.
- * \retval RJS_FALSE When timeout.
- */
-extern RJS_Result
-rjs_add_waiter (RJS_Runtime *rt, RJS_DataBlock *db, RJS_WaiterList *wl, RJS_Number timeout);
-
-/**
- * Notify the waiter.
- * \param rt The current runtime.
- * \param w The waiter.
- * \retval RJS_OK On success.
- * \retval RJS_ERR On error.
- */
-extern RJS_Result
-rjs_notify_waiter (RJS_Runtime *rt, RJS_Waiter *w);
-#endif /*ENABLE_ATIOMICS*/
 
 /**
  * @}

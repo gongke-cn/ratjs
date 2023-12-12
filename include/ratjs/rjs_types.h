@@ -297,6 +297,7 @@ typedef enum {
     RJS_GC_THING_ASYNC_GENERATOR,       /**< Async generator.*/
     RJS_GC_THING_ASYNC_FROM_SYNC_ITER,  /**< Async from sync iterator object.*/
     RJS_GC_THING_NATIVE_OBJECT,/**< Native object.*/
+    RJS_GC_THING_CPTR,         /**< C pointer.*/
     RJS_GC_THING_MAX           /**< The maximum GC thing type value.*/
 } RJS_GcThingType;
 

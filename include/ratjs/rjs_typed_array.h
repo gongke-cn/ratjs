@@ -25,76 +25,57 @@
 
 /**
  * \file
- * Integer indexed object internal header.
+ * Typed array.
  */
 
-#ifndef _RJS_INT_INDEXED_OBJECT_INTERNAL_H_
-#define _RJS_INT_INDEXED_OBJECT_INTERNAL_H_
+#ifndef _RJS_TYPED_ARRAY_H_
+#define _RJS_TYPED_ARRAY_H_
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-/**Integer-indexed object.*/
-typedef struct {
-    RJS_Object           object;       /**< Base object data.*/
-    RJS_ArrayElementType type;         /**< Element type.*/
-    RJS_Value            buffer;       /**< The array buffer.*/
-    size_t               byte_offset;  /**< Start offset in bytes.*/
-    size_t               byte_length;  /**< Byte length.*/
-    size_t               array_length; /**< The array length.*/
-#if ENABLE_CTYPE
-    RJS_HashEntry        cptr_he;      /**< C pointer hash table entry.*/
-    RJS_CPtrInfo         cptr_info;    /**< C pointer information.*/
-#endif /*ENABLE_CTYPE*/
-} RJS_IntIndexedObject;
-
 /**
- * Check if the number is a valid integer index.
- * \param rt The current runtime.
- * \param o The integer index object.
- * \param n The number value.
- * \param[out] pidx Return the index value.
- * \retval RJS_TRUE The value is a valid index.
- * \retval RJS_FALSE The value is not a valid index.
- */
-extern RJS_Bool
-rjs_is_valid_int_index (RJS_Runtime *rt, RJS_Value *o, RJS_Number n, size_t *pidx);
-
-/**
- * Create a new integer indexed object.
- * \param rt The current runtime.
- * \param proto The prototype.
- * \param[out] v Return the new object.
+ * Create a typed array.
+ * \param rt The runtime.
+ * \param type The element type of the typed array.
+ * \param args The arguments.
+ * \param argc The arguments' count.
+ * \param[out] ta Return the typed array.
  * \retval RJS_OK On success.
  * \retval RJS_ERR On error.
  */
 extern RJS_Result
-rjs_int_indexed_object_create (RJS_Runtime *rt, RJS_Value *proto, RJS_Value *v);
+rjs_create_typed_array (RJS_Runtime *rt, RJS_ArrayElementType type,
+        RJS_Value *args, size_t argc, RJS_Value *ta);
 
 /**
- * Get the integer indexed element.
+ * Get the element type of the array type.
  * \param rt The current runtime.
- * \param o The integer indexed object.
- * \param n The index number.
- * \param[out] v Return the element value.
- * \retval RJS_OK On success.
- * \retval RJS_ERR On error.
+ * \param ta The typed array.
+ * \return The element type of the array type.
+ * \retval -1 The value is not a typed array.
  */
-extern RJS_Result
-rjs_int_indexed_element_get (RJS_Runtime *rt, RJS_Value *o, RJS_Number n, RJS_Value *v);
+extern RJS_ArrayElementType
+rjs_typed_array_get_type (RJS_Runtime *rt, RJS_Value *ta);
 
 /**
- * Set the integer indexed element.
+ * Get the typed array's buffer pointer.
  * \param rt The current runtime.
- * \param o The integer indexed object.
- * \param n The index number.
- * \param v The new element value.
- * \retval RJS_OK On success.
- * \retval RJS_ERR On error.
+ * \param ta The typed array.
+ * \return The buffer's pointer.
  */
-extern RJS_Result
-rjs_int_indexed_element_set (RJS_Runtime *rt, RJS_Value *o, RJS_Number n, RJS_Value *v);
+extern void*
+rjs_typed_array_get_buffer (RJS_Runtime *rt, RJS_Value *ta);
+
+/**
+ * Get the typed array's array length
+ * \param rt The current runtime.
+ * \param ta The typed array.
+ * \return The length of the typed array.
+ */
+extern size_t
+rjs_typed_array_get_length (RJS_Runtime *rt, RJS_Value *ta);
 
 #ifdef __cplusplus
 }

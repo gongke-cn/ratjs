@@ -42,6 +42,11 @@ extern "C" {
  */
 
 /**
+ * Unicode char buffer initialize value.
+ */
+#define RJS_UCHAR_BUFFER_INIT {NULL, 0, 0}
+
+/**
  * Initialize an unicode character buffer.
  * \param rt The current runtime.
  * \param ucb The unicode character buffer to be initialized.

@@ -59,7 +59,7 @@ rjs_data_block_get_buffer (RJS_DataBlock *db)
 RJS_Bool
 rjs_data_block_is_shared (RJS_DataBlock *db)
 {
-    return db->is_shared;
+    return db->flags & RJS_DATA_BLOCK_FL_SHARED;
 }
 
 /**
@@ -69,7 +69,7 @@ rjs_data_block_is_shared (RJS_DataBlock *db)
 void
 rjs_data_block_lock (RJS_DataBlock *db)
 {
-    if (db->is_shared)
+    if (db->flags & RJS_DATA_BLOCK_FL_SHARED)
         pthread_mutex_lock(&db->lock);
 }
 
@@ -80,7 +80,7 @@ rjs_data_block_lock (RJS_DataBlock *db)
 void
 rjs_data_block_unlock (RJS_DataBlock *db)
 {
-    if (db->is_shared)
+    if (db->flags & RJS_DATA_BLOCK_FL_SHARED)
         pthread_mutex_unlock(&db->lock);
 }
 
@@ -99,35 +99,44 @@ rjs_data_block_get_size (RJS_DataBlock *db)
 
 /**
  * Allocate a new data block.
+ * \param ptr If the data block use an external buffer, it is the buffer's pointer.
  * \param size Size of the data block.
- * \param shared The data block is used for a shared buffer.
+ * \param flags The data block's flags.
  * \return The new data block.
  * \retval NULL On error.
  */
 RJS_DataBlock*
-rjs_data_block_new (int64_t size, RJS_Bool shared)
+rjs_data_block_new (void *ptr, int64_t size, int flags)
 {
-    int64_t        alloc = size + sizeof(RJS_DataBlock);
     RJS_DataBlock *db;
 
-    if ((alloc < 0) || (alloc > LONG_MAX))
+    if ((size < 0) || (size > LONG_MAX))
         return NULL;
 
-    db = malloc(alloc);
+    db = malloc(sizeof(RJS_DataBlock));
     if (!db)
         return NULL;
 
+    if (flags & RJS_DATA_BLOCK_FL_EXTERN) {
+        db->data = ptr;
+    } else {
+        db->data = malloc(size);
+        if (!db->data) {
+            free(db);
+            return NULL;
+        }
+    }
+
     atomic_store(&db->ref, 1);
 
-    db->size = size;
+    db->size  = size;
+    db->flags = flags;
 
     if (size)
         memset(db->data, 0, size);
 
 #if ENABLE_SHARED_ARRAY_BUFFER
-    db->is_shared = shared;
-
-    if (shared)
+    if (flags & RJS_DATA_BLOCK_FL_SHARED)
         pthread_mutex_init(&db->lock, NULL);
 #endif /*ENABLE_SHARED_ARRAY_BUFFER*/
 
@@ -163,9 +172,12 @@ rjs_data_block_free (RJS_DataBlock *db)
 
 #if ENABLE_SHARED_ARRAY_BUFFER
         /*Free the mutex.*/
-        if (db->is_shared)
+        if (db->flags & RJS_DATA_BLOCK_FL_SHARED)
             pthread_mutex_destroy(&db->lock);
 #endif /*ENABLE_SHARED_ARRAY_BUFFER*/
+
+        if (db->data && !(db->flags & RJS_DATA_BLOCK_FL_EXTERN))
+            free(db->data);
 
         free(db);
     }

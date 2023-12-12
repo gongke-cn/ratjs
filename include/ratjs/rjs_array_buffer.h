@@ -169,6 +169,7 @@ extern RJS_Result
 rjs_detach_array_buffer (RJS_Runtime *rt, RJS_Value *abv);
 
 #if ENABLE_SHARED_ARRAY_BUFFER
+
 /**
  * Create a new shared array buffer.
  * \param rt The current runtime.

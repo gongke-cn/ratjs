@@ -25,72 +25,52 @@
 
 /**
  * \file
- * Integer indexed object.
+ * C type internal header.
  */
 
-#ifndef _RJS_INT_INDEXED_OBJECT_H_
-#define _RJS_INT_INDEXED_OBJECT_H_
+#ifndef _RJS_CTYPE_INTERNAL_H_
+#define _RJS_CTYPE_INTERNAL_H_
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-/**
- * \defgroup iio Integer indexed object
- * The object managed elements by integer index
- * @{
- */
+/**C pointer information.*/
+typedef struct {
+    RJS_CType   *ctype; /**< The C type of this pointer.*/
+    RJS_CPtrType ptype; /**< The pointer type.*/
+    size_t       nitem; /**< Number of items in this buffer.*/
+    void        *ptr;   /**< The pointer.*/
+} RJS_CPtrInfo;
 
 /**
- * Check if the number is a valid integer index.
+ * Remove the C pointer from the hash table.
  * \param rt The current runtime.
- * \param o The integer index object.
- * \param n The number value.
- * \param[out] pidx Return the index value.
- * \retval RJS_TRUE The value is a valid index.
- * \retval RJS_FALSE The value is not a valid index.
+ * \param info The C pointer information.
  */
-extern RJS_Bool
-rjs_is_valid_int_index (RJS_Runtime *rt, RJS_Value *o, RJS_Number n, size_t *pidx);
+extern void
+rjs_cptr_remove (RJS_Runtime *rt, RJS_CPtrInfo *info);
 
 /**
- * Create a new integer indexed object.
+ * Initialize the C type data in the runtime.
  * \param rt The current runtime.
- * \param proto The prototype.
- * \param[out] v Return the new object.
- * \retval RJS_OK On success.
- * \retval RJS_ERR On error.
  */
-extern RJS_Result
-rjs_int_indexed_object_create (RJS_Runtime *rt, RJS_Value *proto, RJS_Value *v);
+extern void
+rjs_runtime_ctype_init (RJS_Runtime *rt);
 
 /**
- * Get the integer indexed element.
+ * Release the C type data in the runtime.
  * \param rt The current runtime.
- * \param o The integer indexed object.
- * \param n The index number.
- * \param[out] v Return the element value.
- * \retval RJS_OK On success.
- * \retval RJS_ERR On error.
  */
-extern RJS_Result
-rjs_int_indexed_element_get (RJS_Runtime *rt, RJS_Value *o, RJS_Number n, RJS_Value *v);
+extern void
+rjs_runtime_ctype_deinit (RJS_Runtime *rt);
 
 /**
- * Set the integer indexed element.
+ * Scan the C types in the runtime.
  * \param rt The current runtime.
- * \param o The integer indexed object.
- * \param n The index number.
- * \param v The new element value.
- * \retval RJS_OK On success.
- * \retval RJS_ERR On error.
  */
-extern RJS_Result
-rjs_int_indexed_element_set (RJS_Runtime *rt, RJS_Value *o, RJS_Number n, RJS_Value *v);
-
-/**
- * @}
- */
+extern void
+rjs_gc_scan_ctype (RJS_Runtime *rt);
 
 #ifdef __cplusplus
 }

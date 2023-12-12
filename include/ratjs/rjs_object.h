@@ -522,6 +522,17 @@ extern RJS_Result
 rjs_object_to_number (RJS_Runtime *rt, RJS_Value *v, RJS_Number *pn);
 
 /**
+ * Assign the properies of destination object to the source.
+ * \param rt The current runtime.
+ * \param dst The destination object.
+ * \param src The source object.
+ * \retval RJS_OK On success.
+ * \retval RJS_ERR On error.
+ */
+extern RJS_Result
+rjs_object_assign (RJS_Runtime *rt, RJS_Value *dst, RJS_Value *src);
+
+/**
  * @}
  */
 

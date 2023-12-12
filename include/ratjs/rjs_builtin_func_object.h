@@ -60,6 +60,22 @@ rjs_create_builtin_function (RJS_Runtime *rt, RJS_Value *mod, RJS_NativeFunc nf,
         RJS_Value *name, RJS_Realm *realm, RJS_Value *proto, RJS_Value *prefix, RJS_Value *f);
 
 /**
+ * Create an accessor with built-in functions.
+ * \param rt The current runtime.
+ * \param mod The module contains this function.
+ * \param o The object which the accessor to be added to.
+ * \param get The getter native function.
+ * \param set The setter native function.
+ * \param name The name of the property.
+ * \param realm The realm.
+ * \retval RJS_OK On success.
+ * \retval RJS_ERR On error.
+ */
+extern RJS_Result
+rjs_create_builtin_accessor (RJS_Runtime *rt, RJS_Value *mod, RJS_Value *o,
+        RJS_NativeFunc get, RJS_NativeFunc set, RJS_Value *name, RJS_Realm *realm);
+
+/**
  * Get the module contains this function.
  * \param rt The current runtime.
  * \param func The function.
