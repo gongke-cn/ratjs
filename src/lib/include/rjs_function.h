@@ -71,6 +71,9 @@ typedef struct {
     RJS_Object       object; /**< Base object data.*/
     RJS_Script      *script; /**< The script contains this function.*/
     RJS_ScriptClass *clazz;  /**< Class information.*/
+#if ENABLE_CTYPE
+    RJS_CPtr        *cptr;   /**< C pointer.*/
+#endif /*ENABLE_CTYPE*/
 } RJS_BaseFuncObject;
 
 /**
@@ -89,6 +92,10 @@ rjs_base_func_object_init (RJS_Runtime *rt, RJS_Value *v, RJS_BaseFuncObject *bf
 {
     bfo->clazz  = NULL;
     bfo->script = script;
+
+#if ENABLE_CTYPE
+    bfo->cptr = NULL;
+#endif /*ENABLE_CTYPE*/
 
     return rjs_object_init(rt, v, &bfo->object, proto, ops);
 }

@@ -43,6 +43,39 @@ typedef struct {
     void        *ptr;   /**< The pointer.*/
 } RJS_CPtrInfo;
 
+/**C type.*/
+struct RJS_CType_s {
+    RJS_HashEntry  he;        /**< The hash table entry.*/
+    RJS_CTypeModel model;     /**< The type's module.*/
+    size_t         size;      /**< Size of the type.*/
+    union {
+        RJS_Value  prototype; /**< The prototype value.*/
+        struct {
+            ffi_cif    cif;   /**< FFI CIF data.*/
+            ffi_type **atypes;/**< Argument types buffer.*/
+            int        nargs; /**< Number of arguments.*/
+            RJS_JS2FFIFunc js2ffi; /**< Javascrip to FFI invoker.*/
+            RJS_FFI2JSFunc ffi2js; /**< FFI 2 javascript invoker.*/
+            void          *data;   /**< Data of the type.*/
+        } ffi;                /**< FFI data.*/
+    } t;                      /**< Type data.*/
+};
+
+/**C pointer.*/
+typedef struct {
+    RJS_Object     o;     /**< Base object data.*/
+    RJS_HashEntry  he;    /**< The hash table entry.*/
+    RJS_CPtrInfo   info;  /**< The pointer information.*/
+    union {
+        int           flags; /**< The flags of the pointer.*/
+        struct {
+            RJS_Runtime  *rt;      /**< The runtime contains this pointer.*/
+            RJS_Object   *fo;      /**< The function object.*/
+            ffi_closure  *closure; /**< Closure data.*/
+        } w;                       /**< Wrapper data.*/
+    } p;                  /**< Pointer data.*/
+} RJS_CPtr;
+
 /**
  * Remove the C pointer from the hash table.
  * \param rt The current runtime.

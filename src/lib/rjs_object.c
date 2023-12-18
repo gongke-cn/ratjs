@@ -25,7 +25,7 @@
 
 #include "ratjs_internal.h"
 
-/*Scan the reference things in the property key list/*/
+/*Scan the reference things in the property key list*/
 static void
 prop_key_list_op_gc_scan (RJS_Runtime *rt, void *ptr)
 {

@@ -161,6 +161,10 @@ else
 endif
 endif
 
+ifeq ($(ENABLE_CTYPE),1)
+	LIBS += -lffi
+endif
+
 ENABLE_BIG_INT_DEFAULT := internal
 ENABLE_BIG_INT_DESC    := big integer. use internal big integer implement, link with libgmp or disable big integer feature
 ENABLE_BIG_INT_ENUM    := internal|gmp|0
@@ -287,6 +291,13 @@ RATJS_SRCS := $(wildcard src/exe/*.c)
 # Test 262
 TEST262 := $(O)/test262$(EXE_SUFFIX)
 TEST262_SRCS := $(wildcard test/test262/*.c)
+
+# Native javascript module
+NJS_JSON := $(wildcard njs/*.json)
+NJS_SRCS := $(patsubst %.json,%.c,$(NJS_JSON))
+NJS_MODULES := $(patsubst %.json,$(O)/%.njs,$(NJS_JSON))
+
+SDL_LIBS := -lSDL
 
 # Targets
 TARGETS := $(LIBRATJS) $(RATJS)
@@ -434,6 +445,20 @@ $(Q)$(RM) $(1)
 $(foreach i,$(CONFIG_H_ITEMS),$(call save_config_h_item,$(1),$i))
 endef
 
+# Build njs module
+define build_njs =
+$(1): $$(patsubst %.njs,%.o,$(1))
+	$$(info CC $$^ -> $$@)
+	$(Q)$(CC) -o $$@ $$^ -shared $$($$(patsubst $(O)/njs/%.njs,%_LIBS,$(1))) $(LIBS)
+
+$$(eval $$(call compile_o,$$(patsubst $(O)/%.njs,%.c,$(1))))
+
+$$(patsubst $(O)/%.njs,%.c,$(1)): $$(patsubst $(O)/%.njs,%.json,$(1))
+	$$(info GEN $$@)
+	$(Q)mkdir -p $$(dir $$@)
+	$(Q)ratjs -m module module/njsgen/njsgen.js -v -o $$@ $$^
+endef
+
 all: $(TARGETS)
 
 # Generate config.mk and config.h
@@ -576,6 +601,10 @@ demo-clean:
 	$(Q)for dir in $(wildcard demo/*); do\
 		make -C $$dir clean;\
 	done
+
+njs: $(NJS_MODULES)
+
+$(foreach mod,$(NJS_MODULES),$(eval $(call build_njs,$(mod))))
 
 install: uninstall
 	$(info INSTALL)

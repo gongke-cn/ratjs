@@ -4,7 +4,7 @@ OBJ    := native_module.o
 
 all:
 	$(CC) -fPIC -c -o $(OBJ) native_module.c
-	$(CC) -o $(TARGET) $(OBJ) -shared -lratjs -licuuc -lm
+	$(CC) -o $(TARGET) $(OBJ) -shared -lratjs
 
 clean:
 	rm -f $(TARGET) $(OBJ)

@@ -1,0 +1,141 @@
+{
+    "numberMacros": [
+        "NUM_MACRO_0",
+        "NUM_MACRO_PI"
+    ],
+    "enumerations": {
+        "MyEnum0": [
+            "MY_ENUM0_V0",
+            "MY_ENUM0_V1",
+            "MY_ENUM0_V2"
+        ],
+        "MyEnum1": [
+            "MY_ENUM1_V2",
+            "MY_ENUM1_V3",
+            "MY_ENUM1_V4"
+        ]
+    },
+    "structures": {
+        "MyStruct1": {
+            "members": {
+                "u8": "uint8_t",
+                "u16": "uint16_t",
+                "u32": "uint32_t",
+                "u64": "uint64_t"
+            }
+        },
+        "MyStruct2": {
+            "members": {
+                "s": "char[]",
+                "u8a": "uint8_t[32]",
+                "s1a": "MyStruct1[4]",
+                "s1": "MyStruct1"
+            }
+        }
+    },
+    "unions": {
+        "MyUnion": {
+            "members": {
+                "u8": "uint8_t",
+                "u16": "uint16_t",
+                "u32": "uint32_t",
+                "u64": "uint64_t"
+            }
+        }
+    },
+    "functionTypes": {
+        "MyFuncType": {
+            "parameters": {
+                "a": "int"
+            },
+            "return": "int"
+        },
+        "MyFuncType1": {
+            "parameters": {
+                "a": "int",
+                "b": {
+                    "type": "int*",
+                    "direction": "out"
+                },
+                "c": "MyStruct1*",
+                "d": "int[256]"
+            },
+            "return": "int"
+        }
+    },
+    "functions": {
+        "MyFunc0": {
+            "parameters": {
+                "a": "int"
+            },
+            "return": "int"
+        },
+        "MyFunc1": {
+            "parameters": {
+                "a": "const char*"
+            },
+            "return": "int"
+        },
+        "MyFunc2": {
+            "return": "const char*"
+        },
+        "MyFunc3": {
+            "parameters": {
+                "a": {
+                    "type": "int*",
+                    "direction": "out"
+                }
+            }
+        },
+        "MyFunc4": {
+            "parameters": {
+                "a": {
+                    "type": "int*",
+                    "direction": "inout"
+                }
+            },
+            "return": "int"
+        },
+        "MyFunc5": {
+            "parameters": {
+                "a": "MyStruct1*"
+            }
+        },
+        "MyFunc6": {
+            "parameters": {
+                "a": "MyStruct1[2]"
+            }
+        },
+        "MyFunc7": {
+            "parameters": {
+                "a": {
+                    "type": "uint16_t*",
+                    "length": "b"
+                },
+                "b": "int"
+            }
+        },
+        "MyFunc8": {
+            "parameters": {
+                "f": "MyFuncType",
+                "a": "int"
+            },
+            "return": "int"
+        },
+        "MyFunc9": {
+            "parameters": {
+                "f": "MyFuncType1"
+            },
+            "return": "int"
+        }
+    },
+    "variables": {
+        "iv": "int",
+        "sv": "MyStruct1",
+        "csv": "const MyStruct1",
+        "fnv": {
+            "type": "MyFuncType",
+            "readonly": true
+        }
+    }
+}

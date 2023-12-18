@@ -24,34 +24,34 @@
  *****************************************************************************/
 
 /**
- * \file
- * Typed array.
+ * Assert function.
+ * @module assert
  */
 
-#ifndef _RJS_TYPED_ARRAY_H_
-#define _RJS_TYPED_ARRAY_H_
+import { Log } from "./log";
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+let log = new Log("assert");
+
+//log.enable = false;
 
 /**
- * Create a typed array.
- * \param rt The runtime.
- * \param type The element type of the typed array.
- * \param args The arguments.
- * \param argc The arguments' count.
- * \param[out] ta Return the typed array.
- * \retval RJS_OK On success.
- * \retval RJS_ERR On error.
+ * Assertion error object.
  */
-extern RJS_Result
-rjs_create_typed_array (RJS_Runtime *rt, RJS_ArrayElementType type,
-        RJS_Value *args, size_t argc, RJS_Value *ta);
+export class AssertError extends Error {
+};
 
-#ifdef __cplusplus
+/**
+ * Assertion check.
+ * When assertion value is false, throw the AssertError value.
+ * @throws {AssertError} When assertion value v is false.
+ * @param {boolean} v Assertion value.
+ * @param {string} msg Message.
+ */
+export function assert (v, msg)
+{
+    if (!v) {
+        log.fatal(`${msg} assert failed`);
+        throw new AssertError(msg);
+    }
 }
-#endif
-
-#endif
 

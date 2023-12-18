@@ -2586,11 +2586,12 @@ initialize_typed_array_from_array_buffer (RJS_Runtime *rt, RJS_Value *o, RJS_Val
 
         new_blen = buf_blen - off;
         if (new_blen < 0) {
-            r = rjs_throw_range_error(rt, _("array buffer length mute >= 0"));
+            r = rjs_throw_range_error(rt, _("array buffer length must >= 0"));
             goto end;
         }
     } else {
         new_blen = nlen * esize;
+
         if (off + new_blen > buf_blen) {
             r = rjs_throw_range_error(rt, _("array buffer length overflow"));
             goto end;

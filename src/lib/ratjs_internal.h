@@ -91,6 +91,11 @@
 #include "include/rjs_string.h"
 #include "include/rjs_symbol.h"
 #include "include/rjs_object.h"
+
+#if ENABLE_CTYPE
+    #include "include/rjs_ctype.h"
+#endif
+
 #include "include/rjs_function.h"
 #include "include/rjs_for_in_iterator.h"
 #include "include/rjs_context.h"
@@ -158,10 +163,6 @@
 
 #if ENABLE_WEAK_REF
     #include "include/rjs_weak_ref.h"
-#endif
-
-#if ENABLE_CTYPE
-    #include "include/rjs_ctype.h"
 #endif
 
 #if ENABLE_INT_INDEXED_OBJECT

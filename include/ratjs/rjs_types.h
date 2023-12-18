@@ -659,6 +659,62 @@ typedef struct {
     RJS_Realm       *bot_realm;            /**< The bottom realm.*/
 } RJS_RuntimeBase;
 
+/**
+ * \addtogroup array_buffer
+ * @{
+ */
+
+/**Array element type.*/
+typedef enum {
+    RJS_ARRAY_ELEMENT_UINT8,     /**< 8 bits unsigned integer.*/
+    RJS_ARRAY_ELEMENT_INT8,      /**< 8 bits singed integer.*/
+    RJS_ARRAY_ELEMENT_UINT8C,    /**< 8 bits unsigned integer (clamped conversion).*/
+    RJS_ARRAY_ELEMENT_UINT16,    /**< 16 bits unsigned integer.*/
+    RJS_ARRAY_ELEMENT_INT16,     /**< 16 bits signed integer.*/
+    RJS_ARRAY_ELEMENT_UINT32,    /**< 32 bits unsigned integer.*/
+    RJS_ARRAY_ELEMENT_INT32,     /**< 32 bits signed integer.*/
+    RJS_ARRAY_ELEMENT_FLOAT32,   /**< 32 bits float point number.*/
+    RJS_ARRAY_ELEMENT_FLOAT64,   /**< 64 bits float point number.*/
+    RJS_ARRAY_ELEMENT_BIGUINT64, /**< 64 bits unsigned integer.*/
+    RJS_ARRAY_ELEMENT_BIGINT64,  /**< 64 bits signed integer.*/
+    RJS_ARRAY_ELEMENT_MAX
+} RJS_ArrayElementType;
+
+#if __SIZEOF_INT__ == 8
+    #define RJS_ARRAY_ELEMENT_INT  RJS_ARRAY_ELEMENT_BIGINT64
+    #define RJS_ARRAY_ELEMENT_UINT RJS_ARRAY_ELEMENT_BIGUINT64
+#else
+    #define RJS_ARRAY_ELEMENT_INT  RJS_ARRAY_ELEMENT_INT32
+    #define RJS_ARRAY_ELEMENT_UINT RJS_ARRAY_ELEMENT_UINT32
+#endif
+
+#if __SIZEOF_LONG__ == 8
+    #define RJS_ARRAY_ELEMENT_LONG  RJS_ARRAY_ELEMENT_BIGINT64
+    #define RJS_ARRAY_ELEMENT_ULONG RJS_ARRAY_ELEMENT_BIGUINT64
+#else
+    #define RJS_ARRAY_ELEMENT_LONG  RJS_ARRAY_ELEMENT_INT32
+    #define RJS_ARRAY_ELEMENT_ULONG RJS_ARRAY_ELEMENT_UINT32
+#endif
+
+#if __SIZEOF_SIZE_T__ == 8
+    #define RJS_ARRAY_ELEMENT_SSIZE_T RJS_ARRAY_ELEMENT_BIGINT64
+    #define RJS_ARRAY_ELEMENT_SIZE_T  RJS_ARRAY_ELEMENT_BIGUINT64
+#else
+    #define RJS_ARRAY_ELEMENT_SSIZE_T RJS_ARRAY_ELEMENT_INT32
+    #define RJS_ARRAY_ELEMENT_SIZE_T  RJS_ARRAY_ELEMENT_UINT32
+#endif
+
+#define RJS_ARRAY_ELEMENT_CHAR   RJS_ARRAY_ELEMENT_INT8
+#define RJS_ARRAY_ELEMENT_UCHAR  RJS_ARRAY_ELEMENT_UINT8
+#define RJS_ARRAY_ELEMENT_SHORT  RJS_ARRAY_ELEMENT_INT16
+#define RJS_ARRAY_ELEMENT_USHORT RJS_ARRAY_ELEMENT_UINT16
+#define RJS_ARRAY_ELEMENT_LLONG  RJS_ARRAY_ELEMENT_BIGINT64
+#define RJS_ARRAY_ELEMENT_ULLONG RJS_ARRAY_ELEMENT_BIGUINT64
+
+/**
+ * @}
+ */
+
 #ifdef __cplusplus
 }
 #endif

@@ -75,6 +75,11 @@ rjs_base_func_object_op_gc_scan (RJS_Runtime *rt, RJS_BaseFuncObject *bfo)
 
     if (bfo->clazz)
         script_class_gc_scan(rt, bfo->clazz);
+
+#if ENABLE_CTYPE
+    if (bfo->cptr)
+        rjs_gc_mark(rt, bfo->cptr);
+#endif /*ENABLE_CTYPE*/
 }
 
 /**

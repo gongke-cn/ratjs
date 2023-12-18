@@ -41,22 +41,6 @@ extern "C" {
  * @{
  */
 
-/**Array element type.*/
-typedef enum {
-    RJS_ARRAY_ELEMENT_UINT8,     /**< 8 bits unsigned integer.*/
-    RJS_ARRAY_ELEMENT_INT8,      /**< 8 bits singed integer.*/
-    RJS_ARRAY_ELEMENT_UINT8C,    /**< 8 bits unsigned integer (clamped conversion).*/
-    RJS_ARRAY_ELEMENT_UINT16,    /**< 16 bits unsigned integer.*/
-    RJS_ARRAY_ELEMENT_INT16,     /**< 16 bits signed integer.*/
-    RJS_ARRAY_ELEMENT_UINT32,    /**< 32 bits unsigned integer.*/
-    RJS_ARRAY_ELEMENT_INT32,     /**< 32 bits signed integer.*/
-    RJS_ARRAY_ELEMENT_FLOAT32,   /**< 32 bits float point number.*/
-    RJS_ARRAY_ELEMENT_FLOAT64,   /**< 64 bits float point number.*/
-    RJS_ARRAY_ELEMENT_BIGUINT64, /**< 64 bits unsigned integer.*/
-    RJS_ARRAY_ELEMENT_BIGINT64,  /**< 64 bits signed integer.*/
-    RJS_ARRAY_ELEMENT_MAX
-} RJS_ArrayElementType;
-
 /**
  * Get the element size of an array buffer.
  * \param type The element data type.

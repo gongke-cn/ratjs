@@ -99,14 +99,13 @@ rjs_data_block_get_size (RJS_DataBlock *db)
 
 /**
  * Allocate a new data block.
- * \param ptr If the data block use an external buffer, it is the buffer's pointer.
  * \param size Size of the data block.
  * \param flags The data block's flags.
  * \return The new data block.
  * \retval NULL On error.
  */
 RJS_DataBlock*
-rjs_data_block_new (void *ptr, int64_t size, int flags)
+rjs_data_block_new (int64_t size, int flags)
 {
     RJS_DataBlock *db;
 
@@ -117,14 +116,14 @@ rjs_data_block_new (void *ptr, int64_t size, int flags)
     if (!db)
         return NULL;
 
-    if (flags & RJS_DATA_BLOCK_FL_EXTERN) {
-        db->data = ptr;
-    } else {
+    if (size) {
         db->data = malloc(size);
         if (!db->data) {
             free(db);
             return NULL;
         }
+    } else {
+        db->data = NULL;
     }
 
     atomic_store(&db->ref, 1);
