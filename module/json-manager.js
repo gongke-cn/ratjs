@@ -60,7 +60,7 @@ export class JSONManager {
      */
     static lookup (name) {
         for (let dir of this.dirs.values()) {
-            let path = `${dir}/name`;
+            let path = `${dir}/${name}`;
 
             if (FileState(path) != undefined)
                 return path;
