@@ -207,6 +207,7 @@ $(eval $(call bool_config,ENABLE_EXTENSION,1,enable extension functions,src/lib/
 $(eval $(call bool_config,ENABLE_CTYPE,1,enable C type,src/lib/rjs_ctype_opt.c))
 $(eval $(call bool_config,STATIC_LIBRARY_ONLY,0,do not generate the dynamic library))
 $(eval $(call bool_config,OPTIMIZE_FOR_SIZE,0,optimize to reduce size))
+$(eval $(call bool_config,ENABLE_BINDING_CACHE,1,enable the binding cache))
 
 # Host C
 HOST_CC := cc

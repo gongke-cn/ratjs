@@ -56,6 +56,8 @@ global_env_op_gc_free (RJS_Runtime *rt, void *ptr)
 
     rjs_hash_deinit(&ge->var_name_hash, &rjs_hash_size_ops, rt);
 
+    rjs_env_deinit(rt, &ge->env);
+
     RJS_DEL(rt, ge);
 }
 
@@ -260,8 +262,8 @@ rjs_global_env_new (RJS_Runtime *rt, RJS_Environment **pe, RJS_Value *g, RJS_Val
 
     rjs_value_copy(rt, &ge->global_this, thiz);
 
-    ge->env.outer       = NULL;
-    ge->env.script_decl = NULL;
+    rjs_env_init(rt, &ge->env, NULL, NULL);
+
     ge->decl_rec        = NULL;
     ge->object_rec      = NULL;
 

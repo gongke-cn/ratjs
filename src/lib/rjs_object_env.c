@@ -43,6 +43,8 @@ object_env_op_gc_free (RJS_Runtime *rt, void *ptr)
 {
     RJS_ObjectEnv *oe = ptr;
 
+    rjs_env_deinit(rt, &oe->env);
+
     RJS_DEL(rt, oe);
 }
 
@@ -271,9 +273,9 @@ rjs_object_env_new (RJS_Runtime *rt, RJS_Environment **pe, RJS_Value *o, RJS_Boo
 
     RJS_NEW(rt, oe);
 
-    oe->env.outer       = outer;
-    oe->env.script_decl = decl;
-    oe->is_with         = is_with;
+    rjs_env_init(rt, &oe->env, decl, outer);
+
+    oe->is_with = is_with;
     rjs_value_copy(rt, &oe->object, o);
 
     *pe = &oe->env;

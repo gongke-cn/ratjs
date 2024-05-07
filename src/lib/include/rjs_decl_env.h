@@ -49,21 +49,54 @@ extern "C" {
 /**Binding.*/
 typedef struct {
     RJS_HashEntry he;    /**< Hash table entry.*/
-    int           flags; /**< The flags of the binding.*/
-    union {
-        RJS_Value       value;  /**< The value of the binding.*/
-        struct {
-            RJS_Value   module; /**< The referenced module.*/
-            RJS_Value   name;   /**< the name of the binding in the referened module.*/
-        } import;               /**< Imported binding.*/
-    } b;
+    uint16_t      flags; /**< The flags of the binding.*/
+#if ENABLE_BINDING_CACHE
+    uint16_t      idx;   /**< The index of the binding.*/
+#endif /*ENABLE_BINDING_CACHE*/
 } RJS_Binding;
+
+/**The value binding.*/
+typedef struct {
+    RJS_Binding b;     /**< Base binding data.*/
+    RJS_Value   value; /**< The value of the binding.*/
+} RJS_ValueBinding;
+
+/**Import binding.*/
+typedef struct {
+    RJS_Binding     b;      /**< Base binding data.*/
+    RJS_Value       module; /**< The referenced module.*/
+    RJS_Value       name;   /**< The name of the binding.*/
+    RJS_BindingName bn;     /**< The binding name.*/
+} RJS_ImportBinding;
 
 /**Declarative environment.*/
 typedef struct {
     RJS_Environment env;          /**< Base environment data.*/
     RJS_Hash        binding_hash; /**< The binding hash table.*/
+#if ENABLE_BINDING_CACHE
+    RJS_VECTOR_DECL(RJS_Binding*) binding_vec; /**< The binding vector.*/
+#endif /*ENABLE_BINDING_CACHE*/
 } RJS_DeclEnv;
+
+/**
+ * Free the binding.
+ * \param rt The current runtime.
+ * \param b The binding to be freed.
+ */
+static inline void
+rjs_binding_free (RJS_Runtime *rt, RJS_Binding *b)
+{
+    if (b->flags & RJS_BINDING_FL_IMPORT) {
+        RJS_ImportBinding *ib = (RJS_ImportBinding*)b;
+
+        rjs_binding_name_deinit(rt, &ib->bn);
+        RJS_DEL(rt, ib);
+    } else {
+        RJS_ValueBinding *vb = (RJS_ValueBinding*)b;
+
+        RJS_DEL(rt, vb);
+    }
+}
 
 /**
  * Create a new declarative environment.
@@ -228,6 +261,32 @@ rjs_decl_env_op_with_base_object (RJS_Runtime *rt, RJS_Environment *env, RJS_Val
  */
 RJS_INTERNAL RJS_Result
 rjs_decl_env_clear (RJS_Runtime *rt, RJS_Environment *env);
+
+/**
+ * Lookup the binding in the declaration environment by its name.
+ * \param rt The current runtime.
+ * \param env The environment.
+ * \param bn The binding's name.
+ * \param[out] b Return the binding.
+ * \param[out] pe Return the previous hast table entry.
+ * \retval RJS_TRUE On success.
+ * \retval RJS_FALSE Cannot find the binding.
+ */
+RJS_INTERNAL RJS_Result
+rjs_decl_env_lookup_binding (RJS_Runtime *rt, RJS_Environment *env, RJS_BindingName *bn,
+        RJS_Binding **b, RJS_HashEntry ***pe);
+
+/**
+ * Add a binding to the declaration environment.
+ * \param rt The current runtime.
+ * \param env The environment.
+ * \param bn The binding name.
+ * \param b The binding to be added.
+ * \param pe The previous hash table entry pointer.
+ */
+RJS_INTERNAL void
+rjs_decl_env_add_binding (RJS_Runtime *rt, RJS_Environment *env, RJS_BindingName *bn,
+        RJS_Binding *b, RJS_HashEntry **pe);
 
 #ifdef __cplusplus
 }

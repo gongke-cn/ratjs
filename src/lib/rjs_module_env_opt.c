@@ -47,43 +47,33 @@ module_env_op_gc_free (RJS_Runtime *rt, void *ptr)
 static RJS_Result
 module_env_op_get_binding_value (RJS_Runtime *rt, RJS_Environment *env, RJS_BindingName *n, RJS_Bool strict, RJS_Value *v)
 {
-    RJS_ModuleEnv *me = (RJS_ModuleEnv*)env;
-    RJS_String    *str;
-    RJS_HashEntry *he;
-    RJS_Binding   *b;
-    RJS_Result     r;
+    RJS_Binding      *b;
+    RJS_ValueBinding *vb;
+    RJS_Result        r;
 
     assert(strict);
 
-    rjs_string_to_property_key(rt, n->name);
-    str = rjs_value_get_string(rt, n->name);
-
-    r = rjs_hash_lookup(&me->decl_env.binding_hash, str, &he, NULL, &rjs_hash_size_ops, rt);
+    r = rjs_decl_env_lookup_binding(rt, env, n, &b, NULL);
     assert(r);
 
-    b = RJS_CONTAINER_OF(he, RJS_Binding, he);
     if (b->flags & RJS_BINDING_FL_IMPORT) {
-        RJS_Module     *mod;
-        RJS_BindingName bn;
+        RJS_ImportBinding *ib = (RJS_ImportBinding*)b;
+        RJS_Module        *mod;
 
-        mod = rjs_value_get_gc_thing(rt, &b->b.import.module);
+        mod = rjs_value_get_gc_thing(rt, &ib->module);
         if (!mod->env)
             return rjs_throw_reference_error(rt, _("module environment is not created"));
 
-        rjs_binding_name_init(rt, &bn, &b->b.import.name);
-
-        r = rjs_env_get_binding_value(rt, mod->env, &bn, strict, v);
-
-        rjs_binding_name_deinit(rt, &bn);
-
-        return r;
+        return rjs_env_get_binding_value(rt, mod->env, &ib->bn, strict, v);
     }
+
+    vb = (RJS_ValueBinding*)b;
 
     if (!(b->flags & RJS_BINDING_FL_INITIALIZED))
         return rjs_throw_reference_error(rt, _("binding \"%s\" is not initialized"),
                 rjs_string_to_enc_chars(rt, n->name, NULL, NULL));
 
-    rjs_value_copy(rt, v, &b->b.value);
+    rjs_value_copy(rt, v, &vb->value);
     return RJS_OK;
 }
 
@@ -171,9 +161,9 @@ rjs_env_create_import_binding (RJS_Runtime *rt, RJS_Environment *env, RJS_Value 
 {
     RJS_ModuleEnv *me;
     RJS_HashEntry *he, **phe;
-    RJS_Binding   *b;
     RJS_Result     r;
     RJS_String    *str;
+    RJS_ImportBinding *ib;
 
     assert(env->gc_thing.ops == &module_env_ops.gc_thing_ops);
     me = (RJS_ModuleEnv*)env;
@@ -182,17 +172,37 @@ rjs_env_create_import_binding (RJS_Runtime *rt, RJS_Environment *env, RJS_Value 
     str = rjs_value_get_string(rt, n);
 
     r = rjs_hash_lookup(&me->decl_env.binding_hash, str, &he, &phe, &rjs_hash_size_ops, rt);
-    if (r == RJS_FALSE) {
-        RJS_NEW(rt, b);
+    if (r == RJS_TRUE) {
+        RJS_Binding *b;
 
-        b->flags = RJS_BINDING_FL_IMPORT|RJS_BINDING_FL_INITIALIZED|RJS_BINDING_FL_IMMUTABLE;
-        rjs_hash_insert(&me->decl_env.binding_hash, str, &b->he, phe, &rjs_hash_size_ops, rt);
-    } else {
         b = RJS_CONTAINER_OF(he, RJS_Binding, he);
+
+        if (!(b->flags & RJS_BINDING_FL_IMPORT)) {
+            rjs_hash_remove(&me->decl_env.binding_hash, phe, rt);
+            rjs_binding_free(rt, b);
+            r = RJS_FALSE;
+        }
     }
 
-    rjs_value_copy(rt, &b->b.import.module, mod);
-    rjs_value_copy(rt, &b->b.import.name, n2);
+    if (r == RJS_FALSE) {
+        RJS_BindingName bn;
+
+        RJS_NEW(rt, ib);
+
+        ib->b.flags = RJS_BINDING_FL_IMPORT|RJS_BINDING_FL_INITIALIZED|RJS_BINDING_FL_IMMUTABLE;
+        
+        rjs_value_set_undefined(rt, &ib->name);
+        rjs_binding_name_init(rt, &ib->bn, &ib->name);
+
+        rjs_binding_name_init(rt, &bn, n);
+        rjs_decl_env_add_binding(rt, env, &bn, &ib->b, phe);
+        rjs_binding_name_deinit(rt, &bn);
+    } else {
+        ib = RJS_CONTAINER_OF(he, RJS_ImportBinding, b.he);
+    }
+
+    rjs_value_copy(rt, &ib->module, mod);
+    rjs_value_copy(rt, &ib->name, n2);
 
     return RJS_OK;
 }

@@ -2064,13 +2064,55 @@ rjs_resolve_binding (RJS_Runtime *rt, RJS_BindingName *bn, RJS_Environment **pe)
     RJS_Environment *env = rjs_lex_env_running(rt);
     RJS_Result       r;
 
-    while (env) {
-        if ((r = rjs_env_has_binding(rt, env, bn)) == RJS_ERR)
-            return r;
-        if (r)
-            break;
+#if ENABLE_BINDING_CACHE
+    if ((bn->env_idx != 0xffff) && env->cache_enable) {
+        /*The outer environment is already in cache.*/
+        if (bn->env_idx) {
+            RJS_EnvStackEntry *ent;
 
-        env = env->outer;
+            /*Build the outer environment stack.*/
+            if (!env->outer_stack)
+                rjs_env_build_outer_stack(rt, env);
+
+            /*Get the outer environment from the stack directly.*/
+            ent = &env->outer_stack[bn->env_idx - 1];
+            env = ent->env;
+        }
+    } else
+#endif /*ENABLE_BINDING_CACHE*/
+    {
+        RJS_Environment *bot        = env;
+#if ENABLE_BINDING_CACHE
+        RJS_Bool         need_cache = env->cache_enable;
+#endif /*ENABLE_BINDING_CACHE*/
+
+        while (env) {
+#if ENABLE_BINDING_CACHE
+            /*Do not cache the binding if go through the "with" block.*/
+            if (env->gc_thing.ops->type ==  RJS_GC_THING_OBJECT_ENV)
+                need_cache = RJS_FALSE;
+#endif /*ENABLE_BINDING_CACHE*/
+
+            if ((r = rjs_env_has_binding(rt, env, bn)) == RJS_ERR)
+                return r;
+            if (r)
+                break;
+
+            env = env->outer;
+        }
+
+#if ENABLE_BINDING_CACHE
+        if (env) {
+            /*Store the outer environment's stack pointer.*/
+            if (need_cache) {
+                bn->env_idx = bot->depth - env->depth;
+
+                /*Build the outer environment stack.*/
+                if (!bot->outer_stack)
+                    rjs_env_build_outer_stack(rt, bot);
+            }
+        }
+#endif /*ENABLE_BINDING_CACHE*/
     }
 
     if (pe)
@@ -2149,6 +2191,11 @@ rjs_delete_binding (RJS_Runtime *rt, RJS_Environment *env, RJS_BindingName *bn, 
     if (strict)
         return rjs_throw_reference_error(rt, _("cannot find binding \"%s\""),
                 rjs_string_to_enc_chars(rt, bn->name, NULL, NULL));
+
+#if ENABLE_BINDING_CACHE
+    if (env)
+        rjs_env_disable_cache(env);
+#endif /*ENABLE_BINDING_CACHE*/
 
     return RJS_TRUE;
 }

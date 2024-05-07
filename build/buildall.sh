@@ -54,6 +54,7 @@ if [ "x$1" = "xclean" ]; then
     clean out_no_extension
     clean out_no_native_module
     clean out_no_ctype
+    clean out_no_binding_cache
     clean out_clang
     clean out_m32
     clean out_mingw_32
@@ -95,6 +96,7 @@ else
     build out_no_extension ENABLE_EXTENSION=0
     build out_no_native_module ENABLE_NATIVE_MODULE=0
     build out_no_ctype ENABLE_CTYPE=0
+    build out_no_binding_cache ENABLE_BINDING_CACHE=0
     build out_clang CLANG=1
     build out_m32 M=32
     build out_mingw_32 ARCH=win CROSS_COMPILE=i686-w64-mingw32-

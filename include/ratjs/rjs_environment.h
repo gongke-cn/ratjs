@@ -51,6 +51,11 @@ static inline void
 rjs_binding_name_init (RJS_Runtime *rt, RJS_BindingName *bn, RJS_Value *n)
 {
     bn->name = n;
+
+#if ENABLE_BINDING_CACHE
+    bn->env_idx     = 0xffff;
+    bn->binding_idx = 0xffff;
+#endif /*ENABLE_BINDING_CACHE*/
 }
 
 /**

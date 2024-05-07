@@ -92,10 +92,12 @@ rjs_decl_env_new (RJS_Runtime *rt, RJS_Environment **pe, RJS_ScriptDecl *decl, R
 void
 rjs_decl_env_init (RJS_Runtime *rt, RJS_DeclEnv *de, RJS_ScriptDecl *decl, RJS_Environment *outer)
 {
-    de->env.outer       = outer;
-    de->env.script_decl = decl;
-
+    rjs_env_init(rt, &de->env, decl, outer);
     rjs_hash_init(&de->binding_hash);
+
+#if ENABLE_BINDING_CACHE
+    rjs_vector_init(&de->binding_vec);
+#endif /*ENABLE_BINDING_CACHE*/
 }
 
 /**
@@ -114,6 +116,12 @@ rjs_decl_env_deinit (RJS_Runtime *rt, RJS_DeclEnv *de)
     }
 
     rjs_hash_deinit(&de->binding_hash, &rjs_hash_size_ops, rt);
+
+#if ENABLE_BINDING_CACHE
+    rjs_vector_deinit(&de->binding_vec, rt);
+#endif /*ENABLE_BINDING_CACHE*/
+
+    rjs_env_deinit(rt, &de->env);
 }
 
 /**
@@ -135,10 +143,14 @@ rjs_decl_env_op_gc_scan (RJS_Runtime *rt, void *ptr)
         rjs_gc_mark(rt, b->he.key);
 
         if (b->flags & RJS_BINDING_FL_IMPORT) {
-            rjs_gc_scan_value(rt, &b->b.import.module);
-            rjs_gc_scan_value(rt, &b->b.import.name);
+            RJS_ImportBinding *ib = (RJS_ImportBinding*)b;
+
+            rjs_gc_scan_value(rt, &ib->module);
+            rjs_gc_scan_value(rt, &ib->name);
         } else {
-            rjs_gc_scan_value(rt, &b->b.value);
+            RJS_ValueBinding *vb = (RJS_ValueBinding*)b;
+
+            rjs_gc_scan_value(rt, &vb->value);
         }
     }
 }
@@ -163,11 +175,9 @@ binding_name_get_string (RJS_Runtime *rt, RJS_BindingName *n)
 RJS_Result
 rjs_decl_env_op_has_binding (RJS_Runtime *rt, RJS_Environment *env, RJS_BindingName *n)
 {
-    RJS_DeclEnv   *de  = (RJS_DeclEnv*)env;
-    RJS_String    *str = binding_name_get_string(rt, n);
-    RJS_HashEntry *he;
+    RJS_Binding *b;
 
-    return rjs_hash_lookup(&de->binding_hash, str, &he, NULL, &rjs_hash_size_ops, rt);
+    return rjs_decl_env_lookup_binding(rt, env, n, &b, NULL);
 }
 
 /**
@@ -182,21 +192,19 @@ rjs_decl_env_op_has_binding (RJS_Runtime *rt, RJS_Environment *env, RJS_BindingN
 RJS_Result
 rjs_decl_env_op_create_mutable_binding (RJS_Runtime *rt, RJS_Environment *env, RJS_BindingName *n, RJS_Bool del)
 {
-    RJS_DeclEnv   *de  = (RJS_DeclEnv*)env;
-    RJS_String    *str = binding_name_get_string(rt, n);
-    RJS_HashEntry *he, **phe;
-    RJS_Binding   *b;
-    RJS_Result     r;
+    RJS_HashEntry   **phe;
+    RJS_ValueBinding *vb;
+    RJS_Result        r;
 
-    r = rjs_hash_lookup(&de->binding_hash, str, &he, &phe, &rjs_hash_size_ops, rt);
+    r = rjs_decl_env_lookup_binding(rt, env, n, (RJS_Binding**)&vb, &phe);
     assert(r == RJS_FALSE);
 
-    RJS_NEW(rt, b);
+    RJS_NEW(rt, vb);
 
-    b->flags = del ? RJS_BINDING_FL_DELETABLE : 0;
-    rjs_value_set_undefined(rt, &b->b.value);
+    vb->b.flags = del ? RJS_BINDING_FL_DELETABLE : 0;
+    rjs_value_set_undefined(rt, &vb->value);
 
-    rjs_hash_insert(&de->binding_hash, str, &b->he, phe, &rjs_hash_size_ops, rt);
+    rjs_decl_env_add_binding(rt, env, n, &vb->b, phe);
 
     return RJS_OK;
 }
@@ -213,24 +221,22 @@ rjs_decl_env_op_create_mutable_binding (RJS_Runtime *rt, RJS_Environment *env, R
 RJS_Result
 rjs_decl_env_op_create_immutable_binding (RJS_Runtime *rt, RJS_Environment *env, RJS_BindingName *n, RJS_Bool strict)
 {
-    RJS_DeclEnv   *de  = (RJS_DeclEnv*)env;
-    RJS_String    *str = binding_name_get_string(rt, n);
-    RJS_HashEntry *he, **phe;
-    RJS_Binding   *b;
-    RJS_Result     r;
+    RJS_HashEntry    **phe;
+    RJS_ValueBinding  *vb;
+    RJS_Result         r;
 
-    r = rjs_hash_lookup(&de->binding_hash, str, &he, &phe, &rjs_hash_size_ops, rt);
+    r = rjs_decl_env_lookup_binding(rt, env, n, (RJS_Binding**)&vb, &phe);
     assert(r == RJS_FALSE);
 
-    RJS_NEW(rt, b);
+    RJS_NEW(rt, vb);
 
-    b->flags = RJS_BINDING_FL_IMMUTABLE;
+    vb->b.flags = RJS_BINDING_FL_IMMUTABLE;
     if (strict)
-        b->flags |= RJS_BINDING_FL_STRICT;
+        vb->b.flags |= RJS_BINDING_FL_STRICT;
 
-    rjs_value_set_undefined(rt, &b->b.value);
+    rjs_value_set_undefined(rt, &vb->value);
 
-    rjs_hash_insert(&de->binding_hash, str, &b->he, phe, &rjs_hash_size_ops, rt);
+    rjs_decl_env_add_binding(rt, env, n, &vb->b, phe);
 
     return RJS_OK;
 }
@@ -247,20 +253,16 @@ rjs_decl_env_op_create_immutable_binding (RJS_Runtime *rt, RJS_Environment *env,
 RJS_Result
 rjs_decl_env_op_initialize_binding (RJS_Runtime *rt, RJS_Environment *env, RJS_BindingName *n, RJS_Value *v)
 {
-    RJS_DeclEnv   *de  = (RJS_DeclEnv*)env;
-    RJS_String    *str = binding_name_get_string(rt, n);
-    RJS_HashEntry *he;
-    RJS_Binding   *b;
-    RJS_Result     r;
+    RJS_ValueBinding *vb;
+    RJS_Result        r;
 
-    r = rjs_hash_lookup(&de->binding_hash, str, &he, NULL, &rjs_hash_size_ops, rt);
+    r = rjs_decl_env_lookup_binding(rt, env, n, (RJS_Binding**)&vb, NULL);
     assert(r == RJS_TRUE);
 
-    b = RJS_CONTAINER_OF(he, RJS_Binding, he);
-    assert(!(b->flags & RJS_BINDING_FL_INITIALIZED));
+    assert(!(vb->b.flags & RJS_BINDING_FL_INITIALIZED));
 
-    rjs_value_copy(rt, &b->b.value, v);
-    b->flags |= RJS_BINDING_FL_INITIALIZED;
+    rjs_value_copy(rt, &vb->value, v);
+    vb->b.flags |= RJS_BINDING_FL_INITIALIZED;
 
     return RJS_OK;
 }
@@ -278,13 +280,10 @@ rjs_decl_env_op_initialize_binding (RJS_Runtime *rt, RJS_Environment *env, RJS_B
 RJS_Result
 rjs_decl_env_op_set_mutable_binding (RJS_Runtime *rt, RJS_Environment *env, RJS_BindingName *n, RJS_Value *v, RJS_Bool strict)
 {
-    RJS_DeclEnv   *de  = (RJS_DeclEnv*)env;
-    RJS_String    *str = binding_name_get_string(rt, n);
-    RJS_HashEntry *he;
-    RJS_Binding   *b;
-    RJS_Result     r;
+    RJS_ValueBinding *vb;
+    RJS_Result        r;
 
-    r = rjs_hash_lookup(&de->binding_hash, str, &he, NULL, &rjs_hash_size_ops, rt);
+    r = rjs_decl_env_lookup_binding(rt, env, n, (RJS_Binding**)&vb, NULL);
     if (r == RJS_FALSE) {
         if (strict)
             return rjs_throw_reference_error(rt, _("binding cannot be created automatically in strict mode"));
@@ -294,21 +293,20 @@ rjs_decl_env_op_set_mutable_binding (RJS_Runtime *rt, RJS_Environment *env, RJS_
         return RJS_OK;
     }
 
-    b = RJS_CONTAINER_OF(he, RJS_Binding, he);
-    if (b->flags & RJS_BINDING_FL_STRICT)
+    if (vb->b.flags & RJS_BINDING_FL_STRICT)
         strict = RJS_TRUE;
 
-    if (!(b->flags & RJS_BINDING_FL_INITIALIZED))
+    if (!(vb->b.flags & RJS_BINDING_FL_INITIALIZED))
         return rjs_throw_reference_error(rt, _("binding \"%s\" is not initialized"),
                 rjs_string_to_enc_chars(rt, n->name, NULL, NULL));
 
-    if (b->flags & RJS_BINDING_FL_IMMUTABLE) {
+    if (vb->b.flags & RJS_BINDING_FL_IMMUTABLE) {
         if (strict) {
             return rjs_throw_type_error(rt, _("binding \"%s\" is immutable"),
                     rjs_string_to_enc_chars(rt, n->name, NULL, NULL));
         }
     } else {
-        rjs_value_copy(rt, &b->b.value, v);
+        rjs_value_copy(rt, &vb->value, v);
     }
 
     return RJS_OK;
@@ -328,22 +326,17 @@ rjs_decl_env_op_set_mutable_binding (RJS_Runtime *rt, RJS_Environment *env, RJS_
 RJS_Result
 rjs_decl_env_op_get_binding_value (RJS_Runtime *rt, RJS_Environment *env, RJS_BindingName *n, RJS_Bool strict, RJS_Value *v)
 {
-    RJS_DeclEnv   *de  = (RJS_DeclEnv*)env;
-    RJS_String    *str = binding_name_get_string(rt, n);
-    RJS_HashEntry *he;
-    RJS_Binding   *b;
-    RJS_Result     r;
+    RJS_ValueBinding *vb;
+    RJS_Result        r;
 
-    r = rjs_hash_lookup(&de->binding_hash, str, &he, NULL, &rjs_hash_size_ops, rt);
+    r = rjs_decl_env_lookup_binding(rt, env, n, (RJS_Binding**)&vb, NULL);
     assert(r == RJS_TRUE);
 
-    b = RJS_CONTAINER_OF(he, RJS_Binding, he);
-
-    if (!(b->flags & RJS_BINDING_FL_INITIALIZED))
+    if (!(vb->b.flags & RJS_BINDING_FL_INITIALIZED))
         return rjs_throw_reference_error(rt, _("binding \"%s\" is not initialized"),
                 rjs_string_to_enc_chars(rt, n->name, NULL, NULL));
 
-    rjs_value_copy(rt, v, &b->b.value);
+    rjs_value_copy(rt, v, &vb->value);
     return RJS_OK;
 }
 
@@ -358,16 +351,13 @@ rjs_decl_env_op_get_binding_value (RJS_Runtime *rt, RJS_Environment *env, RJS_Bi
 RJS_Result
 rjs_decl_env_op_delete_binding (RJS_Runtime *rt, RJS_Environment *env, RJS_BindingName *n)
 {
-    RJS_DeclEnv   *de  = (RJS_DeclEnv*)env;
-    RJS_String    *str = binding_name_get_string(rt, n);
-    RJS_HashEntry *he, **phe;
-    RJS_Binding   *b;
-    RJS_Result     r;
+    RJS_DeclEnv    *de  = (RJS_DeclEnv*)env;
+    RJS_HashEntry **phe;
+    RJS_Binding    *b;
+    RJS_Result      r;
 
-    r = rjs_hash_lookup(&de->binding_hash, str, &he, &phe, &rjs_hash_size_ops, rt);
+    r = rjs_decl_env_lookup_binding(rt, env, n, &b, &phe);
     assert(r == RJS_TRUE);
-
-    b = RJS_CONTAINER_OF(he, RJS_Binding, he);
 
     if (!(b->flags & RJS_BINDING_FL_DELETABLE))
         return RJS_FALSE;
@@ -429,10 +419,79 @@ rjs_decl_env_op_with_base_object (RJS_Runtime *rt, RJS_Environment *env, RJS_Val
 RJS_Result
 rjs_decl_env_clear (RJS_Runtime *rt, RJS_Environment *env)
 {
-    RJS_DeclEnv *de = (RJS_DeclEnv*)env;
+    RJS_DeclEnv     *de    = (RJS_DeclEnv*)env;
+    RJS_ScriptDecl  *decl  = env->script_decl;
+    RJS_Environment *outer = env->outer;
 
     rjs_decl_env_deinit(rt, de);
-    rjs_hash_init(&de->binding_hash);
+    rjs_decl_env_init(rt, de, decl, outer);
 
     return RJS_OK;
+}
+
+/**
+ * Lookup the binding in the declaration environment by its name.
+ * \param rt The current runtime.
+ * \param env The environment.
+ * \param bn The binding's name.
+ * \param[out] b Return the binding.
+ * \param[out] pe Return the previous hast table entry.
+ * \retval RJS_TRUE On success.
+ * \retval RJS_FALSE Cannot find the binding.
+ */
+RJS_Result
+rjs_decl_env_lookup_binding (RJS_Runtime *rt, RJS_Environment *env, RJS_BindingName *bn,
+        RJS_Binding **b, RJS_HashEntry ***pe)
+{
+    RJS_DeclEnv   *de = (RJS_DeclEnv*)env;
+    RJS_String    *str;
+    RJS_HashEntry *he;
+    RJS_Result     r;
+
+#if ENABLE_BINDING_CACHE
+    if (env->cache_enable && !pe && (bn->binding_idx != 0xffff)) {
+        *b = de->binding_vec.items[bn->binding_idx];
+        return RJS_TRUE;
+    }
+#endif /*ENABLE_BINDING_CACHE*/
+
+    str = binding_name_get_string(rt, bn);
+
+    r = rjs_hash_lookup(&de->binding_hash, str, &he, pe, &rjs_hash_size_ops, rt);
+    if (r) {
+        *b = RJS_CONTAINER_OF(he, RJS_Binding, he);
+
+#if ENABLE_BINDING_CACHE
+        if (env->cache_enable && (bn->env_idx != 0xffff))
+            bn->binding_idx = (*b)->idx;
+#endif /*ENABLE_BINDING_CACHE*/
+    }
+
+    return r;
+}
+
+/**
+ * Add a binding to the declaration environment.
+ * \param rt The current runtime.
+ * \param env The environment.
+ * \param bn The binding name.
+ * \param b The binding to be added.
+ * \param pe The previous hash table entry pointer.
+ */
+void
+rjs_decl_env_add_binding (RJS_Runtime *rt, RJS_Environment *env, RJS_BindingName *bn,
+        RJS_Binding *b, RJS_HashEntry **pe)
+{
+    RJS_DeclEnv *de  = (RJS_DeclEnv*)env;
+    RJS_String  *str = rjs_value_get_string(rt, bn->name);
+
+    rjs_hash_insert(&de->binding_hash, str, &b->he, pe, &rjs_hash_size_ops, rt);
+
+#if ENABLE_BINDING_CACHE
+    if (env->cache_enable) {
+        b->idx = de->binding_vec.item_num;
+
+        rjs_vector_append(&de->binding_vec, b, rt);
+    }
+#endif /*ENABLE_BINDING_CACHE*/
 }

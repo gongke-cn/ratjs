@@ -527,6 +527,10 @@ typedef struct {
 /**Binding name.*/
 struct RJS_BindingName_s {
     RJS_Value *name; /**< The name of the binding.*/
+#if ENABLE_BINDING_CACHE
+    uint16_t   env_idx;     /**< The environment index in the stack.*/
+    uint16_t   binding_idx; /**< The binding's index.*/
+#endif /*ENABLE_BINDING_CACHE*/
 };
 
 /**

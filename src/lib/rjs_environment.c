@@ -26,6 +26,114 @@
 #include "ratjs_internal.h"
 
 /**
+ * Initialize the environment.
+ * \param rt The current runtime.
+ * \param env The environment to be initialized.
+ * \param decl The script declaration.
+ * \param outer The outer environment.
+ */
+void
+rjs_env_init (RJS_Runtime *rt, RJS_Environment *env, RJS_ScriptDecl *decl, RJS_Environment *outer)
+{
+    env->outer       = outer;
+    env->script_decl = decl;
+
+#if ENABLE_BINDING_CACHE
+    env->outer_stack  = NULL;
+    env->depth        = outer ? outer->depth + 1 : 0;
+    env->cache_enable = RJS_TRUE;
+
+    rjs_list_init(&env->back_refs);
+#endif /*ENABLE_BINDING_CACHE*/
+}
+
+/**
+ * Release the environment.
+ * \param rt The current runtime.
+ * \param env The environment to be released.
+ */
+void
+rjs_env_deinit (RJS_Runtime *rt, RJS_Environment *env)
+{
+#if ENABLE_BINDING_CACHE
+    RJS_EnvBackRef *br, *nbr;
+
+    if (env->outer_stack) {
+        RJS_EnvStackEntry *e, *le;
+
+        e  = env->outer_stack;
+        le = e + env->depth;
+
+        while (e < le) {
+            rjs_list_remove(&e->back_ref.ln);
+            e ++;
+        }
+
+        RJS_DEL_N(rt, env->outer_stack, env->depth);
+    }
+
+    rjs_list_foreach_safe_c(&env->back_refs, br, nbr, RJS_EnvBackRef, ln) {
+        rjs_list_remove(&br->ln);
+        rjs_list_init(&br->ln);
+    }
+#endif /*ENABLE_BINDING_CACHE*/
+}
+
+#if ENABLE_BINDING_CACHE
+
+/**
+ * Build the outer environment stack.
+ * \param rt The current runtime.
+ * \param env The environment
+ */
+void
+rjs_env_build_outer_stack (RJS_Runtime *rt, RJS_Environment *env)
+{
+    assert(!env->outer_stack);
+
+    if (env->depth) {
+        RJS_EnvStackEntry *e, *le;
+        RJS_Environment   *outer;
+
+        RJS_NEW_N(rt, env->outer_stack, env->depth);
+
+        e  = env->outer_stack;
+        le = e + env->depth;
+        outer = env->outer;
+
+        /*Add back references.*/
+        do {
+            rjs_list_append(&outer->back_refs, &e->back_ref.ln);
+            e->back_ref.env = env;
+            e->env = outer;
+
+            e ++;
+            outer = outer->outer;
+        } while (e < le);
+    }
+}
+
+/**
+ * Disable the environment's cache.
+ * \param env The environment.
+ */
+void
+rjs_env_disable_cache (RJS_Environment *env)
+{
+    RJS_EnvBackRef *br;
+
+    env->cache_enable = RJS_FALSE;
+
+    rjs_list_foreach_c(&env->back_refs, br, RJS_EnvBackRef, ln) {
+        RJS_Environment *er = br->env;
+
+        er->cache_enable = RJS_FALSE;
+    }
+}
+
+#endif /*ENABLE_BINDING_CACHE*/
+
+/**
  * Add the arguments object to the environment.
  * \param rt The current runtime.
  * \param env The environment.

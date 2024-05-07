@@ -182,6 +182,8 @@ rjs_eval_declaration_instantiation (RJS_Runtime *rt,
     }
 
     if (var_grp) {
+        RJS_Bool update = RJS_FALSE;
+
         for (id = var_grp->binding_start;
                 id < var_grp->binding_start + var_grp->binding_num;
                 id ++) {
@@ -201,9 +203,16 @@ rjs_eval_declaration_instantiation (RJS_Runtime *rt,
                 if (!r) {
                     rjs_env_create_mutable_binding(rt, var_env, &sbr->binding_name, RJS_TRUE);
                     rjs_env_initialize_binding(rt, var_env, &sbr->binding_name, rjs_v_undefined(rt));
+
+                    update = RJS_TRUE;
                 }
             }
         }
+
+#if ENABLE_BINDING_CACHE
+        if (update)
+            rjs_env_disable_cache(var_env);
+#endif /*ENABLE_BINDING_CACHE*/
     }
 
     r = RJS_OK;
