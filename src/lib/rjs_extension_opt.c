@@ -396,6 +396,8 @@ static RJS_NF(ext_solveJobs)
     return RJS_OK;
 }
 
+#if ENABLE_ARRAY_BUFFER
+
 /*Encode a string to a text buffer.*/
 static RJS_NF(ext_encodeText)
 {
@@ -571,6 +573,8 @@ end:
     return r;
 }
 
+#endif /*ENABLE_ARRAY_BUFFER*/
+
 #if ENABLE_MODULE
 
 /*Get all the modules loaded.*/
@@ -680,6 +684,7 @@ ext_function_descs[] = {
         0,
         ext_scriptPath
     },
+#if ENABLE_ARRAY_BUFFER
     {
         "encodeText",
         1,
@@ -690,6 +695,7 @@ ext_function_descs[] = {
         1,
         ext_decodeText
     },
+#endif /*ENABLE_ARRAY_BUFFER*/
 #if ENABLE_MODULE
     {
         "modules",
