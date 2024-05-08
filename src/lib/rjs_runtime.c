@@ -107,6 +107,10 @@ rjs_runtime_new (void)
     rjs_list_init(&rt->gen_ctxt_list);
 #endif /*ENABLE_GENERATOR || ENABLE_ASYNC*/
 
+#if ENABLE_PROPERTY_CACHE
+    rjs_type_tree_init(rt);
+#endif /*ENABLE_PROPERTY_CACHE*/
+
 #if ENABLE_FINALIZATION_REGISTRY
     rjs_runtime_finalization_registry_init(rt);
 #endif /*ENABLE_FINALIZATION_REGISTRY*/
@@ -179,6 +183,10 @@ rjs_runtime_free (RJS_Runtime *rt)
 #if ENABLE_CTYPE
     rjs_runtime_ctype_deinit(rt);
 #endif /*ENABLE_CTYPE*/
+
+#if ENABLE_PROPERTY_CACHE
+    rjs_type_tree_deinit(rt);
+#endif /*ENABLE_PROPERTY_CACHE*/
 
     rjs_native_data_free(rt, &rt->native_data);
 

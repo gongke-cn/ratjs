@@ -59,9 +59,9 @@ rjs_hash_get_size (RJS_Hash *hash)
 static inline void
 rjs_hash_init (RJS_Hash *hash)
 {
-    hash->lists     = NULL;
+    hash->e.list    = NULL;
     hash->entry_num = 0;
-    hash->list_num  = 0;
+    hash->list_num  = 1;
 }
 
 /**
@@ -173,24 +173,32 @@ rjs_hash_string_ops;
 /**Traverse the entries of the hash table.*/
 #define rjs_hash_foreach(_h, _i, _e)\
     for ((_i) = 0; (_i) < (_h)->list_num; (_i) ++)\
-        for ((_e) = (_h)->lists[_i]; (_e); (_e) = (_e)->next)
+        for ((_e) = ((_h)->list_num == 1) ? (_h)->e.list : (_h)->e.lists[_i];\
+                (_e);\
+                (_e) = (_e)->next)
 
 /**Traverse the entries' container pointers of the hash table.*/
 #define rjs_hash_foreach_c(_h, _i, _e, _s, _m)\
     for ((_i) = 0; (_i) < (_h)->list_num; (_i) ++)\
-        for ((_e) = (_h)->lists[_i] ? RJS_CONTAINER_OF((_h)->lists[_i], _s, _m) : NULL;\
+        for ((_e) = ((_h)->list_num == 1)\
+                ? ((_h)->e.list ? RJS_CONTAINER_OF((_h)->e.list, _s, _m) : NULL)\
+                : ((_h)->e.lists[_i] ? RJS_CONTAINER_OF((_h)->e.lists[_i], _s, _m) : NULL);\
                 (_e);\
                 (_e) = (_e)->_m.next ? RJS_CONTAINER_OF((_e)->_m.next, _s, _m) : NULL)
 
 /**Traverse the entries of the hash table safely.*/
 #define rjs_hash_foreach_safe(_h, _i, _e, _t)\
     for ((_i) = 0; (_i) < (_h)->list_num; (_i) ++)\
-        for ((_e) = (_h)->lists[_i]; (_e) ? (((_t) = (_e)->next) || 1) : 0; (_e) = (_t))
+        for ((_e) = ((_h)->list_num == 1) ? (_h)->e.list : (_h)->e.lists[_i];\
+                (_e) ? (((_t) = (_e)->next) || 1) : 0;\
+                (_e) = (_t))
 
 /**Traverse the entries' container pointers of the hash table safely.*/
 #define rjs_hash_foreach_safe_c(_h, _i, _e, _t, _s, _m)\
     for ((_i) = 0; (_i) < (_h)->list_num; (_i) ++)\
-        for ((_e) = (_h)->lists[_i] ? RJS_CONTAINER_OF((_h)->lists[_i], _s, _m) : NULL;\
+        for ((_e) = ((_h)->list_num == 1)\
+                ? ((_h)->e.list ? RJS_CONTAINER_OF((_h)->e.list, _s, _m) : NULL)\
+                : ((_h)->e.lists[_i] ? RJS_CONTAINER_OF((_h)->e.lists[_i], _s, _m) : NULL);\
                 (_e) ? (((_t) = (_e)->_m.next ? RJS_CONTAINER_OF((_e)->_m.next, _s, _m) : NULL) || 1) : 0;\
                 (_e) = (_t))
 

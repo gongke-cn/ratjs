@@ -96,6 +96,10 @@ gc_scan_root (RJS_Runtime *rt)
     rjs_gc_scan_ctype(rt);
 #endif /*ENABLE_CTYPE*/
 
+#if ENABLE_PROPERTY_CACHE
+    rjs_gc_scan_type_tree(rt);
+#endif /*ENABLE_PROPERTY_CACHE*/
+
     /*Scan the runtime's native data.*/
     rjs_native_data_scan(rt, &rt->native_data);
 }

@@ -125,7 +125,8 @@ rjs_property_desc_deinit (RJS_Runtime *rt, RJS_PropertyDesc *pd)
 static inline void
 rjs_property_name_init (RJS_Runtime *rt, RJS_PropertyName *pn, RJS_Value *v)
 {
-    pn->name = v;
+    pn->name  = v;
+    pn->flags = 0;
 }
 
 /**
@@ -136,6 +137,14 @@ rjs_property_name_init (RJS_Runtime *rt, RJS_PropertyName *pn, RJS_Value *v)
 static inline void
 rjs_property_name_deinit (RJS_Runtime *rt, RJS_PropertyName *pn)
 {
+#if ENABLE_PROPERTY_CACHE
+    if ((pn->flags & (RJS_PROP_NAME_FL_RESOLVED|RJS_PROP_NAME_FL_IS_INDEX))
+            == RJS_PROP_NAME_FL_RESOLVED) {
+        RJS_RuntimeBase *rb = (RJS_RuntimeBase*)rt;
+
+        rjs_list_join(&rb->prop_cache_list, &pn->n.p.cache_list);
+    }
+#endif /*ENABLE_PROPERTY_CACHE*/
 }
 
 /**
@@ -345,19 +354,8 @@ rjs_object_has_property (RJS_Runtime *rt, RJS_Value *o, RJS_PropertyName *pn)
  * \retval RJS_OK On success.
  * \retval RJS_ERR On error.
  */
-static inline RJS_Result
-rjs_object_get (RJS_Runtime *rt, RJS_Value *o, RJS_PropertyName *pn, RJS_Value *receiver, RJS_Value *pv)
-{
-    RJS_GcThing   *gt;
-    RJS_ObjectOps *ops;
-
-    assert(rjs_value_is_object(rt, o));
-
-    gt  = rjs_value_get_gc_thing(rt, o);
-    ops = (RJS_ObjectOps*) gt->ops;
-
-    return ops->get(rt, o, pn, receiver, pv);
-}
+extern RJS_Result
+rjs_object_get (RJS_Runtime *rt, RJS_Value *o, RJS_PropertyName *pn, RJS_Value *receiver, RJS_Value *pv);
 
 /**
  * Set the property value of an object.
@@ -369,19 +367,8 @@ rjs_object_get (RJS_Runtime *rt, RJS_Value *o, RJS_PropertyName *pn, RJS_Value *
  * \retval RJS_OK On success.
  * \retval RJS_ERR On error.
  */
-static inline RJS_Result
-rjs_object_set (RJS_Runtime *rt, RJS_Value *o, RJS_PropertyName *pn, RJS_Value *pv, RJS_Value *receiver)
-{
-    RJS_GcThing   *gt;
-    RJS_ObjectOps *ops;
-
-    assert(rjs_value_is_object(rt, o));
-
-    gt  = rjs_value_get_gc_thing(rt, o);
-    ops = (RJS_ObjectOps*) gt->ops;
-
-    return ops->set(rt, o, pn, pv, receiver);
-}
+extern RJS_Result
+rjs_object_set (RJS_Runtime *rt, RJS_Value *o, RJS_PropertyName *pn, RJS_Value *pv, RJS_Value *receiver);
 
 /**
  * Delete a property of an object.

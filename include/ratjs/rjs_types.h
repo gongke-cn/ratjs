@@ -346,7 +346,10 @@ struct RJS_HashEntry_s {
 
 /**Hash table.*/
 struct RJS_Hash_s {
-    RJS_HashEntry **lists;     /**< The entries lists array.*/
+    union {
+        RJS_HashEntry **lists; /**< The entries lists array.*/
+        RJS_HashEntry  *list;  /**< The entries list.*/
+    } e;                       /**< Entries data.*/
     size_t          entry_num; /**< Entries number in the hash table.*/
     size_t          list_num;  /**< Lists number in the hash table.*/
 };
@@ -413,9 +416,38 @@ typedef struct {
     RJS_Value *value; /**< The value of the property.*/
 } RJS_PropertyDesc;
 
+/**The property name has been resolved.*/
+#define RJS_PROP_NAME_FL_RESOLVED 1
+/**The property name is an index.*/
+#define RJS_PROP_NAME_FL_IS_INDEX 2
+
+#if ENABLE_PROPERTY_CACHE
+/**Type class.*/
+typedef struct RJS_TypeClass_s RJS_TypeClass;
+/**Type property.*/
+typedef struct RJS_TypeProperty_s RJS_TypeProperty;
+/**Proeprty cache entry.*/
+typedef struct {
+    RJS_List       ln;        /**< List node data.*/
+    RJS_TypeClass *clazz;     /**< The type class.*/
+    uint16_t       proto_idx; /**< The prototype stack pointer.*/
+    uint16_t       prop_idx;  /**< The property's index.*/
+} RJS_PropertyCache;
+#endif /*ENABLE_PROPERTY_CACHE*/
+
 /**Property name.*/
 typedef struct {
-    RJS_Value *name; /**< The name value.*/
+    RJS_Value *name;  /**< The name value.*/
+    int        flags; /**< The property name's flags.*/
+    union {
+        uint32_t    index; /**< The index value is the name is an index string.*/
+#if ENABLE_PROPERTY_CACHE
+        struct {
+            RJS_Object *o;          /**< The base object's pointer.*/
+            RJS_List    cache_list; /**< Property cache list.*/
+        } p;
+#endif /*ENABLE_PROPERTY_CACHE*/
+    } n;                /**< The property name data.*/
 } RJS_PropertyName;
 
 /**Object's operation functions.*/
@@ -661,6 +693,9 @@ typedef struct {
     RJS_NativeStack *curr_native_stack;    /**< The current native stack.*/
     RJS_Context     *ctxt_stack;           /**< The context stack.*/
     RJS_Realm       *bot_realm;            /**< The bottom realm.*/
+#if ENABLE_PROPERTY_CACHE
+    RJS_List         prop_cache_list;      /**< Free property cache list.*/
+#endif /*ENABLE_PROPERTY_CACHE*/
 } RJS_RuntimeBase;
 
 /**

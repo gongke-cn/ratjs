@@ -73,6 +73,10 @@
 #include <rjs_string_table.h>
 #include <rjs_object_table.h>
 
+#if ENABLE_PROPERTY_CACHE
+    #include "include/rjs_type_tree.h"
+#endif
+
 #include "include/rjs_native_data.h"
 #include "include/rjs_runtime.h"
 #include "include/rjs_realm.h"

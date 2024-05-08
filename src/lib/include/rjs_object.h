@@ -56,6 +56,9 @@ typedef struct {
 typedef struct {
     RJS_List      ln;   /**< List node data.*/
     RJS_HashEntry he;   /**< Hash table entry.*/
+#if ENABLE_PROPERTY_CACHE
+    int           idx;  /**< The property's index.*/
+#endif /*ENABLE_PROPERTY_CACHE*/
     RJS_Property  prop; /**< Property.*/
 } RJS_PropertyNode;
 
@@ -66,12 +69,14 @@ typedef struct {
     RJS_Property prop;  /**< Property.*/
 } RJS_PropertyRbt;
 
-/**Property key.*/
+#if ENABLE_PROPERTY_CACHE
+/**The prototype's reference.*/
 typedef struct {
-    RJS_Bool  is_index; /**< Is array index.*/
-    void     *key;      /**< The key value.*/
-    uint32_t  index;    /**< The index value.*/
-} RJS_PropertyKey;
+    RJS_List    ln; /**< Base list node data.*/
+    RJS_Object *o;  /**< The object has reference to the type class.*/
+    RJS_Object *p;  /**< The prototype object.*/
+} RJS_PrototypeRef;
+#endif /*ENABLE_PROPERTY_CACHE*/
 
 /**Object.*/
 struct RJS_Object_s {
@@ -87,6 +92,12 @@ struct RJS_Object_s {
     uint32_t     array_item_num; /**< Properties' number in the array.*/
     uint32_t     array_item_max; /**< The maximum array item index.*/
     uint32_t     array_item_cap; /**< The capacity of the array vector.*/
+#if ENABLE_PROPERTY_CACHE
+    RJS_TypeTreeNode *type_node; /**< The type tree node of the object.*/
+    RJS_TypeClass    *type_class;/**< The type class of the object.*/
+    RJS_PrototypeRef *prototypes;/**< The prototype's array.*/
+    RJS_VECTOR_DECL(RJS_PropertyNode*) prop_vec; /**< The properties vector.*/
+#endif /*ENABLE_PROPERTY_CACHE*/
 };
 
 /**String property entry.*/
@@ -98,11 +109,10 @@ typedef struct {
 /**
  * Convert the value to property key.
  * \param rt The current runtime.
- * \param p The property key value.
- * \param[out] pk Return the property key.
+ * \param pn The property name.
  */
 RJS_INTERNAL void
-rjs_property_key_get (RJS_Runtime *rt, RJS_Value *p, RJS_PropertyKey *pk);
+rjs_property_key_get (RJS_Runtime *rt, RJS_PropertyName *pn);
 
 /**
  * Scan the reference things in the ordinary object.

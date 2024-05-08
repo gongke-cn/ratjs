@@ -82,6 +82,10 @@ struct RJS_Runtime_s {
     RJS_Hash         ctype_hash;           /**< C type hash table.*/
     RJS_Hash         cptr_hash;            /**< C pointer hash table.*/
 #endif /*ENABLE_CTYPE*/
+#if ENABLE_PROPERTY_CACHE
+    RJS_TypeTreeNode *type_tree_root;      /**< The root node of the type tree.*/
+    RJS_TypeTreeNode *type_tree_nodes;     /**< The type tree node lists.*/
+#endif /*ENABLE_PROPERTY_CACHE*/
 };
 
 #ifdef __cplusplus

@@ -55,6 +55,7 @@ if [ "x$1" = "xclean" ]; then
     clean out_no_native_module
     clean out_no_ctype
     clean out_no_binding_cache
+    clean out_no_property_cache
     clean out_clang
     clean out_m32
     clean out_mingw_32
@@ -97,10 +98,11 @@ else
     build out_no_native_module ENABLE_NATIVE_MODULE=0
     build out_no_ctype ENABLE_CTYPE=0
     build out_no_binding_cache ENABLE_BINDING_CACHE=0
+    build out_no_property_cache ENABLE_PROPERTY_CACHE=0
     build out_clang CLANG=1
-    build out_m32 M=32
-    build out_mingw_32 ARCH=win CROSS_COMPILE=i686-w64-mingw32-
-    build out_mingw_64 ARCH=win CROSS_COMPILE=x86_64-w64-mingw32-
+    #build out_m32 M=32
+    #build out_mingw_32 ARCH=win CROSS_COMPILE=i686-w64-mingw32-
+    #build out_mingw_64 ARCH=win CROSS_COMPILE=x86_64-w64-mingw32-
     build out_osize OPTIMIZE_FOR_SIZE=1
     build out_static_only STATIC_LIBRARY_ONLY=1
 fi
