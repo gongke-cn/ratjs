@@ -42,7 +42,7 @@ hash_expand (RJS_Hash *hash, const RJS_HashOps *ops, void *data)
         RJS_HashEntry *e, *ne;
         size_t         p;
 
-        e = hash->lists[i];
+        e = (hash->list_num == 1) ? hash->e.list : hash->e.lists[i];
 
         while (e) {
             ne = e->next;
@@ -56,10 +56,10 @@ hash_expand (RJS_Hash *hash, const RJS_HashOps *ops, void *data)
         }
     }
 
-    if (hash->lists)
-        ops->realloc(data, hash->lists, sizeof(RJS_HashEntry*) * hash->list_num, 0);
+    if (hash->list_num > 1)
+        ops->realloc(data, hash->e.lists, sizeof(RJS_HashEntry*) * hash->list_num, 0);
 
-    hash->lists    = nb;
+    hash->e.lists  = nb;
     hash->list_num = ns;
 }
 
@@ -72,8 +72,8 @@ hash_expand (RJS_Hash *hash, const RJS_HashOps *ops, void *data)
 void
 rjs_hash_deinit (RJS_Hash *hash, const RJS_HashOps *ops, void *data)
 {
-    if (hash->lists) {
-        ops->realloc(data, hash->lists, sizeof(RJS_HashEntry*) * hash->list_num, 0);
+    if (hash->list_num > 1) {
+        ops->realloc(data, hash->e.lists, sizeof(RJS_HashEntry*) * hash->list_num, 0);
     }
 }
 
@@ -100,9 +100,14 @@ rjs_hash_lookup (RJS_Hash *hash, void *key, RJS_HashEntry **re,
         e  = NULL;
         pe = NULL;
     } else {
-        size_t kv = ops->key(data, key);
+        if (hash->list_num == 1) {
+            pe = &hash->e.list;
+        } else {
+            size_t kv = ops->key(data, key);
 
-        pe = &hash->lists[kv % hash->list_num];
+            pe = &hash->e.lists[kv % hash->list_num];
+        }
+
         while ((e = *pe)) {
             if (ops->equal(data, e->key, key)) {
                 r = RJS_TRUE;
@@ -140,9 +145,13 @@ rjs_hash_insert (RJS_Hash *hash, void *key, RJS_HashEntry *e,
     }
 
     if (!pe) {
-        size_t p = ops->key(data, key) % hash->list_num;
+        if (hash->list_num == 1) {
+            pe = &hash->e.list;
+        } else {
+            size_t p = ops->key(data, key) % hash->list_num;
 
-        pe = &hash->lists[p];
+            pe = &hash->e.lists[p];
+        }
     }
 
     e->key  = key;
