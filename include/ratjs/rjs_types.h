@@ -348,7 +348,7 @@ struct RJS_HashEntry_s {
 struct RJS_Hash_s {
     union {
         RJS_HashEntry **lists; /**< The entries lists array.*/
-        RJS_HashEntry  *list;  /**< The entries list.*/
+        RJS_HashEntry  *list;  /**< The entries list used when list_num == 1.*/
     } e;                       /**< Entries data.*/
     size_t          entry_num; /**< Entries number in the hash table.*/
     size_t          list_num;  /**< Lists number in the hash table.*/
