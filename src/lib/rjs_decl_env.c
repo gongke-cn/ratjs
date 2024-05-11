@@ -112,7 +112,7 @@ rjs_decl_env_deinit (RJS_Runtime *rt, RJS_DeclEnv *de)
     size_t       i;
 
     rjs_hash_foreach_safe_c(&de->binding_hash, i, b, nb, RJS_Binding, he) {
-        RJS_DEL(rt, b);
+        rjs_binding_free(rt, b);
     }
 
     rjs_hash_deinit(&de->binding_hash, &rjs_hash_size_ops, rt);
@@ -363,7 +363,8 @@ rjs_decl_env_op_delete_binding (RJS_Runtime *rt, RJS_Environment *env, RJS_Bindi
         return RJS_FALSE;
 
     rjs_hash_remove(&de->binding_hash, phe, rt);
-    RJS_DEL(rt, b);
+
+    rjs_binding_free(rt, b);
     
     return RJS_TRUE;
 }

@@ -163,7 +163,7 @@ gc_run (RJS_Runtime *rt)
 {
     size_t old = rt->mem_size;
 
-    RJS_LOGD("gc start");
+    RJS_LOGD("gc start, allocated %"PRIdPTR"B", old);
 
     rt->rb.gc_running         = RJS_TRUE;
     rt->rb.gc_mark_stack_full = RJS_FALSE;

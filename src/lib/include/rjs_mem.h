@@ -49,7 +49,31 @@ rjs_realloc (RJS_Runtime *rt, void *old_ptr, size_t old_size, size_t new_size)
 {
     void *new_ptr;
 
+#if 0
+    if (old_ptr) {
+        void *ret_ptr;
+
+        old_ptr = ((uint8_t*)old_ptr) - sizeof(size_t);
+        assert(*(size_t*)old_ptr == old_size);
+
+        if (new_size) {
+            ret_ptr = realloc(old_ptr, new_size + sizeof(size_t));
+            *(size_t*)ret_ptr = new_size;
+            new_ptr = ((uint8_t*)ret_ptr) + sizeof(size_t);
+        } else {
+            free(old_ptr);
+            new_ptr = NULL;
+        }
+    } else {
+        void *ret_ptr;
+
+        ret_ptr = realloc(NULL, new_size + sizeof(size_t));
+        *(size_t*)ret_ptr = new_size;
+        new_ptr = ((uint8_t*)ret_ptr) + sizeof(size_t);
+    }
+#else
     new_ptr = realloc(old_ptr, new_size);
+#endif
     if (new_ptr || !new_size) {
         rt->mem_size += new_size - old_size;
         rt->mem_max_size = RJS_MAX(rt->mem_max_size, rt->mem_size);
