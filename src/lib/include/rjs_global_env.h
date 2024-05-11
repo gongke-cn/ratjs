@@ -37,9 +37,8 @@ extern "C" {
 
 /**Global environemnt.*/
 typedef struct {
-    RJS_Environment  env;           /**< Base environment data.*/
+    RJS_DeclEnv      decl_env;      /**< Base declaration environment data.*/
     RJS_Environment *object_rec;    /**< The object environment record.*/
-    RJS_Environment *decl_rec;      /**< The declarative environment record.*/
     RJS_Value        global_this;   /**< Global this value.*/
     RJS_Hash         var_name_hash; /**< Variable names hash table.*/
 } RJS_GlobalEnv;

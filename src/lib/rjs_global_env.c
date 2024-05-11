@@ -35,11 +35,12 @@ global_env_op_gc_scan (RJS_Runtime *rt, void *ptr)
 
     rjs_gc_scan_value(rt, &ge->global_this);
     rjs_gc_mark(rt, ge->object_rec);
-    rjs_gc_mark(rt, ge->decl_rec);
 
     rjs_hash_foreach(&ge->var_name_hash, i, he) {
         rjs_gc_mark(rt, he->key);
     }
+
+    rjs_decl_env_op_gc_scan(rt, &ge->decl_env);
 }
 
 /*Free the global environment.*/
@@ -56,7 +57,7 @@ global_env_op_gc_free (RJS_Runtime *rt, void *ptr)
 
     rjs_hash_deinit(&ge->var_name_hash, &rjs_hash_size_ops, rt);
 
-    rjs_env_deinit(rt, &ge->env);
+    rjs_decl_env_deinit(rt, &ge->decl_env);
 
     RJS_DEL(rt, ge);
 }
@@ -68,7 +69,7 @@ global_env_op_has_binding (RJS_Runtime *rt, RJS_Environment *env, RJS_BindingNam
     RJS_GlobalEnv *ge = (RJS_GlobalEnv*)env;
     RJS_Result     r;
 
-    if ((r = rjs_env_has_binding(rt, ge->decl_rec, n)))
+    if ((r = rjs_decl_env_op_has_binding(rt, env, n)))
         return r;
 
     return rjs_env_has_binding(rt, ge->object_rec, n);
@@ -78,28 +79,26 @@ global_env_op_has_binding (RJS_Runtime *rt, RJS_Environment *env, RJS_BindingNam
 static RJS_Result
 global_env_op_create_mutable_binding (RJS_Runtime *rt, RJS_Environment *env, RJS_BindingName *n, RJS_Bool del)
 {
-    RJS_GlobalEnv *ge = (RJS_GlobalEnv*)env;
-    RJS_Result     r;
+    RJS_Result r;
 
-    if ((r = rjs_env_has_binding(rt, ge->decl_rec, n)))
+    if ((r = rjs_decl_env_op_has_binding(rt, env, n)))
         return rjs_throw_reference_error(rt, _("global binding \"%s\" is not declared"),
                 rjs_string_to_enc_chars(rt, n->name, NULL, NULL));
 
-    return rjs_env_create_mutable_binding(rt, ge->decl_rec, n, del);
+    return rjs_decl_env_op_create_mutable_binding(rt, env, n, del);
 }
 
 /*Create an immutable binding in the global environment.*/
 static RJS_Result
 global_env_op_create_immutable_binding (RJS_Runtime *rt, RJS_Environment *env, RJS_BindingName *n, RJS_Bool strict)
 {
-    RJS_GlobalEnv *ge = (RJS_GlobalEnv*)env;
-    RJS_Result     r;
+    RJS_Result r;
 
-    if ((r = rjs_env_has_binding(rt, ge->decl_rec, n)))
+    if ((r = rjs_decl_env_op_has_binding(rt, env, n)))
         return rjs_throw_reference_error(rt, _("global binding \"%s\" is not declared"),
                 rjs_string_to_enc_chars(rt, n->name, NULL, NULL));
 
-    return rjs_env_create_immutable_binding(rt, ge->decl_rec, n, strict);
+    return rjs_decl_env_op_create_immutable_binding(rt, env, n, strict);
 }
 
 /*Initialize the binding in the global environment.*/
@@ -109,8 +108,8 @@ global_env_op_initialize_binding (RJS_Runtime *rt, RJS_Environment *env, RJS_Bin
     RJS_GlobalEnv *ge = (RJS_GlobalEnv*)env;
     RJS_Result     r;
 
-    if ((r = rjs_env_has_binding(rt, ge->decl_rec, n)))
-        return rjs_env_initialize_binding(rt, ge->decl_rec, n, v);
+    if ((r = rjs_decl_env_op_has_binding(rt, env, n)))
+        return rjs_decl_env_op_initialize_binding(rt, env, n, v);
 
     return rjs_env_initialize_binding(rt, ge->object_rec, n, v);
 }
@@ -122,8 +121,8 @@ global_env_op_set_mutable_binding (RJS_Runtime *rt, RJS_Environment *env, RJS_Bi
     RJS_GlobalEnv *ge = (RJS_GlobalEnv*)env;
     RJS_Result     r;
 
-    if ((r = rjs_env_has_binding(rt, ge->decl_rec, n)))
-        return rjs_env_set_mutable_binding(rt, ge->decl_rec, n, v, strict);
+    if ((r = rjs_decl_env_op_has_binding(rt, env, n)))
+        return rjs_decl_env_op_set_mutable_binding(rt, env, n, v, strict);
 
     return rjs_env_set_mutable_binding(rt, ge->object_rec, n, v, strict);
 }
@@ -135,8 +134,8 @@ global_env_op_get_binding_value (RJS_Runtime *rt, RJS_Environment *env, RJS_Bind
     RJS_GlobalEnv *ge = (RJS_GlobalEnv*)env;
     RJS_Result     r;
 
-    if ((r = rjs_env_has_binding(rt, ge->decl_rec, n)))
-        return rjs_env_get_binding_value(rt, ge->decl_rec, n, strict, v);
+    if ((r = rjs_decl_env_op_has_binding(rt, env, n)))
+        return rjs_decl_env_op_get_binding_value(rt, env, n, strict, v);
 
     return rjs_env_get_binding_value(rt, ge->object_rec, n, strict, v);
 }
@@ -150,8 +149,8 @@ global_env_op_delete_binding (RJS_Runtime *rt, RJS_Environment *env, RJS_Binding
     RJS_Result       r;
     RJS_PropertyName pn;
 
-    if ((r = rjs_env_has_binding(rt, ge->decl_rec, n)))
-        return rjs_env_delete_binding(rt, ge->decl_rec, n);
+    if ((r = rjs_decl_env_op_has_binding(rt, env, n)))
+        return rjs_decl_env_op_delete_binding(rt, env, n);
 
     oe = (RJS_ObjectEnv*)ge->object_rec;
 
@@ -262,19 +261,17 @@ rjs_global_env_new (RJS_Runtime *rt, RJS_Environment **pe, RJS_Value *g, RJS_Val
 
     rjs_value_copy(rt, &ge->global_this, thiz);
 
-    rjs_env_init(rt, &ge->env, NULL, NULL);
+    rjs_decl_env_init(rt, &ge->decl_env, NULL, NULL);
 
-    ge->decl_rec        = NULL;
-    ge->object_rec      = NULL;
+    ge->object_rec = NULL;
 
     rjs_hash_init(&ge->var_name_hash);
 
-    *pe = &ge->env;
+    *pe = &ge->decl_env.env;
 
     rjs_gc_add(rt, ge, &global_env_ops.gc_thing_ops);
 
     rjs_object_env_new(rt, &ge->object_rec, g, RJS_FALSE, NULL, NULL);
-    rjs_decl_env_new(rt, &ge->decl_rec, NULL, NULL);
 
     return RJS_OK;
 }
@@ -314,9 +311,7 @@ rjs_env_has_var_declaration (RJS_Runtime *rt, RJS_Environment *env, RJS_BindingN
 RJS_Result
 rjs_env_has_lexical_declaration (RJS_Runtime *rt, RJS_Environment *env, RJS_BindingName *bn)
 {
-    RJS_GlobalEnv *ge = global_env_get(env);
-
-    return rjs_env_has_binding(rt, ge->decl_rec, bn);
+    return rjs_decl_env_op_has_binding(rt, env, bn);
 }
 
 /**
