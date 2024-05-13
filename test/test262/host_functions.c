@@ -645,6 +645,7 @@ load_host_functions (RJS_Runtime *rt, RJS_Realm *realm)
 
     rjs_string_from_chars(rt, str, "global", -1);
     rjs_property_name_init(rt, &pn, str);
+
     rjs_create_data_property_or_throw(rt, o262, &pn, rjs_global_object(realm));
     rjs_property_name_deinit(rt, &pn);
 

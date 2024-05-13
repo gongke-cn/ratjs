@@ -416,9 +416,16 @@ typedef struct {
     RJS_Value *value; /**< The value of the property.*/
 } RJS_PropertyDesc;
 
+/**The property name is resolved.*/
+#define RJS_PROP_NAME_FL_RESOLVED 1
+/**The property name is an index.*/
+#define RJS_PROP_NAME_FL_INDEX    2
+
 /**Property name.*/
 typedef struct {
-    RJS_Value *name; /**< The name value.*/
+    RJS_Value *name;  /**< The name value.*/
+    int        flags; /**< The flags of the property name.*/
+    uint32_t   index; /**< The index value.*/
 } RJS_PropertyName;
 
 /**Object's operation functions.*/

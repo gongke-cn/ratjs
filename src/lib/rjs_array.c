@@ -132,7 +132,7 @@ end:
 
 /*Set an array's item.*/
 static RJS_Result
-array_set_item (RJS_Runtime *rt, RJS_Value *v, RJS_PropertyName *pn, RJS_PropertyKey *pk, RJS_PropertyDesc *pd)
+array_set_item (RJS_Runtime *rt, RJS_Value *v, RJS_PropertyName *pn, RJS_PropertyDesc *pd)
 {
     RJS_PropertyDesc old;
     RJS_Result       r;
@@ -145,7 +145,7 @@ array_set_item (RJS_Runtime *rt, RJS_Value *v, RJS_PropertyName *pn, RJS_Propert
 
     olen = rjs_value_get_number(rt, old.value);
 
-    if ((pk->index >= olen) && !(old.flags & RJS_PROP_FL_WRITABLE)) {
+    if ((pn->index >= olen) && !(old.flags & RJS_PROP_FL_WRITABLE)) {
         r = RJS_FALSE;
         goto end;
     }
@@ -154,8 +154,8 @@ array_set_item (RJS_Runtime *rt, RJS_Value *v, RJS_PropertyName *pn, RJS_Propert
     if (!r)
         goto end;
 
-    if (pk->index >= olen) {
-        RJS_Number n = ((RJS_Number)pk->index) + 1;
+    if (pn->index >= olen) {
+        RJS_Number n = ((RJS_Number)pn->index) + 1;
 
         rjs_value_set_number(rt, old.value, n);
         rjs_ordinary_object_op_define_own_property(rt, v, rjs_pn_length(rt), &old);
@@ -172,13 +172,12 @@ end:
 extern RJS_Result
 array_op_define_own_property (RJS_Runtime *rt, RJS_Value *o, RJS_PropertyName *pn, RJS_PropertyDesc *pd)
 {
-    RJS_PropertyKey pk;
-    RJS_Result      r;
+    RJS_Result r;
 
-    rjs_property_key_get(rt, pn->name, &pk);
+    rjs_property_name_resolve(rt, pn);
 
-    if (pk.is_index) {
-        r = array_set_item(rt, o, pn, &pk, pd);
+    if (pn->flags & RJS_PROP_NAME_FL_INDEX) {
+        r = array_set_item(rt, o, pn, pd);
     } else if (rjs_value_is_string(rt, pn->name)
             && rjs_string_equal(rt, pn->name, rjs_s_length(rt))) {
         r = array_set_length(rt, o, pd);

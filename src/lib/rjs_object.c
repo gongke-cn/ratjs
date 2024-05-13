@@ -189,84 +189,71 @@ prop_vec_to_rbt (RJS_Runtime *rt, RJS_Property *vec, uint32_t max, size_t cap, R
     RJS_DEL_N(rt, vec, cap);
 }
 
-/*Get the property key.*/
+/*Resolve the property name.*/
 static void
-prop_key_get (RJS_Runtime *rt, RJS_Value *v, RJS_PropertyKey *pk)
+prop_resolve (RJS_Runtime *rt, RJS_PropertyName *n)
 {
-    switch (rjs_value_get_type(rt, v)) {
+    switch (rjs_value_get_type(rt, n->name)) {
     case RJS_VALUE_STRING:
-        if (rjs_value_is_index_string(rt, v)) {
-            pk->is_index = RJS_TRUE;
-            pk->index    = rjs_value_get_index_string(rt, v);
+        if (rjs_value_is_index_string(rt, n->name)) {
+            n->flags |= RJS_PROP_NAME_FL_INDEX;
+            n->index  = rjs_value_get_index_string(rt, n->name);
         } else {
             int64_t idx;
 
-            pk->is_index = rjs_string_to_index(rt, v, &idx);
-
-            if (!pk->is_index) {
-                rjs_string_to_property_key(rt, v);
-                pk->key = rjs_value_get_string(rt, v);
+            if (rjs_string_to_index(rt, n->name, &idx)) {
+                n->flags |= RJS_PROP_NAME_FL_INDEX;
+                n->index  = idx;
             } else {
-                pk->index = idx;
+                rjs_string_to_property_key(rt, n->name);
             }
         }
         break;
-    case RJS_VALUE_SYMBOL:
-        pk->is_index = RJS_FALSE;
-        pk->key      = rjs_value_get_symbol(rt, v);
-        break;
     default:
-#if ENABLE_PRIV_NAME
-        if (rjs_value_is_private_name(rt, v)) {
-            pk->is_index = RJS_FALSE;
-            pk->key      = rjs_value_get_gc_thing(rt, v);
-        } else
-#endif /*ENABLE_PRIV_NAME*/
-        {
-            assert(0);
-        }
+        break;
     }
+
+    n->flags |= RJS_PROP_NAME_FL_RESOLVED;
 }
 
 /**
  * Convert the value to property key.
  * \param rt The current runtime.
- * \param p The property key value.
- * \param[out] pk Return the property key.
+ * \param pn The property name to be resolved.
  */
 void
-rjs_property_key_get (RJS_Runtime *rt, RJS_Value *p, RJS_PropertyKey *pk)
+rjs_property_name_resolve_real (RJS_Runtime *rt, RJS_PropertyName *pn)
 {
-    prop_key_get(rt, p, pk);
+    prop_resolve(rt, pn);
 }
 
 /*Lookup the property.*/
 static RJS_Property*
-prop_lookup (RJS_Runtime *rt, RJS_Value *v, RJS_PropertyKey *pk)
+prop_lookup (RJS_Runtime *rt, RJS_Value *v, RJS_PropertyName *n)
 {
     RJS_Object *o = rjs_value_get_object(rt, v);
 
-    if (pk->is_index) {
+    if (n->flags & RJS_PROP_NAME_FL_INDEX) {
         if (o->flags & RJS_OBJECT_FL_RBT) {
-            RJS_PropertyRbt **pn = (RJS_PropertyRbt**)&o->prop_array.rbt;
-            RJS_PropertyRbt  *n;
+            RJS_PropertyRbt **pnode = (RJS_PropertyRbt**)&o->prop_array.rbt;
+            RJS_PropertyRbt  *node;
 
-            while ((n = *pn)) {
-                if (n->index == pk->index)
-                    return &n->prop;
+            while ((node = *pnode)) {
+                if (node->index == n->index)
+                    return &node->prop;
 
-                if (pk->index < n->index)
-                    pn = (RJS_PropertyRbt**)&n->rbt.left;
+                if (n->index < node->index)
+                    pnode = (RJS_PropertyRbt**)&node->rbt.left;
                 else
-                    pn = (RJS_PropertyRbt**)&n->rbt.right;
+                    pnode = (RJS_PropertyRbt**)&node->rbt.right;
             }
         } else if (o->array_item_cap) {
             RJS_Property *prop;
 
-            if (pk->index > o->array_item_max)
+            if (n->index > o->array_item_max)
                 return NULL;
 
-            prop = &o->prop_array.vec[pk->index];
+            prop = &o->prop_array.vec[n->index];
 
             if (prop->attrs & RJS_PROP_ATTR_DELETED)
                 return NULL;
@@ -279,8 +266,9 @@ prop_lookup (RJS_Runtime *rt, RJS_Value *v, RJS_PropertyKey *pk)
         RJS_HashEntry    *he;
         RJS_Result        r;
         RJS_PropertyNode *pn;
+        void             *key = rjs_value_get_gc_thing(rt, n->name);
 
-        r = rjs_hash_lookup(&o->prop_hash, pk->key, &he, NULL, &rjs_hash_size_ops, rt);
+        r = rjs_hash_lookup(&o->prop_hash, key, &he, NULL, &rjs_hash_size_ops, rt);
         if (!r)
             return NULL;
 
@@ -370,15 +358,15 @@ prop_array_fixup (RJS_Runtime *rt, RJS_Value *v, uint32_t num, uint32_t max)
 
 /*Add a new property.*/
 static RJS_Property*
-prop_add (RJS_Runtime *rt, RJS_Value *v, RJS_PropertyKey *pk)
+prop_add (RJS_Runtime *rt, RJS_Value *v, RJS_PropertyName *n)
 {
     RJS_Object   *o = rjs_value_get_object(rt, v);
     RJS_Property *prop;
 
     /*Add the new property.*/
-    if (pk->is_index) {
+    if (n->flags & RJS_PROP_NAME_FL_INDEX) {
         prop_array_fixup(rt, v, o->array_item_num + 1,
-                RJS_MAX(pk->index, o->array_item_max));
+                RJS_MAX(n->index, o->array_item_max));
 
         if (o->flags & RJS_OBJECT_FL_RBT) {
             RJS_Rbt        **pos = &o->prop_array.rbt;
@@ -392,7 +380,7 @@ prop_add (RJS_Runtime *rt, RJS_Value *v, RJS_PropertyKey *pk)
 
                 p = (RJS_Rbt*)pr;
 
-                if (pk->index < pr->index)
+                if (n->index < pr->index)
                     pos = &pr->rbt.left;
                 else
                     pos = &pr->rbt.right;
@@ -400,22 +388,23 @@ prop_add (RJS_Runtime *rt, RJS_Value *v, RJS_PropertyKey *pk)
 
             RJS_NEW(rt, pr);
 
-            pr->index = pk->index;
+            pr->index = n->index;
 
             rjs_rbt_link(&pr->rbt, p, pos);
             rjs_rbt_insert(&o->prop_array.rbt, &pr->rbt);
 
             prop = &pr->prop;
         } else {
-            prop = &o->prop_array.vec[pk->index];
+            prop = &o->prop_array.vec[n->index];
         }
     } else {
         /*String or symbol key.*/
         RJS_PropertyNode *pn;
+        void             *key = rjs_value_get_gc_thing(rt, n->name);
 
         RJS_NEW(rt, pn);
 
-        rjs_hash_insert(&o->prop_hash, pk->key, &pn->he, NULL, &rjs_hash_size_ops, rt);
+        rjs_hash_insert(&o->prop_hash, key, &pn->he, NULL, &rjs_hash_size_ops, rt);
         rjs_list_append(&o->prop_list, &pn->ln);
 
         prop = &pn->prop;
@@ -426,12 +415,12 @@ prop_add (RJS_Runtime *rt, RJS_Value *v, RJS_PropertyKey *pk)
 
 /*Delete a property.*/
 static void
-prop_delete (RJS_Runtime *rt, RJS_Value *v, RJS_PropertyKey *pk)
+prop_delete (RJS_Runtime *rt, RJS_Value *v, RJS_PropertyName *n)
 {
     RJS_Object *o = rjs_value_get_object(rt, v);
 
     /*Delete the property.*/
-    if (pk->is_index) {
+    if (n->flags & RJS_PROP_NAME_FL_INDEX) {
         if (o->flags & RJS_OBJECT_FL_RBT) {
             RJS_Rbt        **pos = &o->prop_array.rbt;
             RJS_PropertyRbt *pr;
@@ -439,10 +428,10 @@ prop_delete (RJS_Runtime *rt, RJS_Value *v, RJS_PropertyKey *pk)
             while (1) {
                 pr = (RJS_PropertyRbt*)*pos;
 
-                if (pr->index == pk->index)
+                if (pr->index == n->index)
                     break;
 
-                if (pk->index < pr->index)
+                if (n->index < pr->index)
                     pos = &pr->rbt.left;
                 else
                     pos = &pr->rbt.right;
@@ -454,12 +443,12 @@ prop_delete (RJS_Runtime *rt, RJS_Value *v, RJS_PropertyKey *pk)
         } else {
             RJS_Property *prop;
 
-            prop = &o->prop_array.vec[pk->index];
+            prop = &o->prop_array.vec[n->index];
 
             prop->attrs |= RJS_PROP_ATTR_DELETED;
         }
 
-        if (pk->index == o->array_item_max)
+        if (n->index == o->array_item_max)
             update_array_item_max(rt, v);
 
         prop_array_fixup(rt, v, o->array_item_num - 1, o->array_item_max);
@@ -467,8 +456,9 @@ prop_delete (RJS_Runtime *rt, RJS_Value *v, RJS_PropertyKey *pk)
         RJS_PropertyNode *pn;
         RJS_HashEntry    *he, **phe;
         RJS_Result        r;
+        void             *key = rjs_value_get_gc_thing(rt, n->name);
 
-        r = rjs_hash_lookup(&o->prop_hash, pk->key, &he, &phe, &rjs_hash_size_ops, rt);
+        r = rjs_hash_lookup(&o->prop_hash, key, &he, &phe, &rjs_hash_size_ops, rt);
         assert(r);
 
         pn = RJS_CONTAINER_OF(he, RJS_PropertyNode, he);
@@ -680,12 +670,11 @@ rjs_ordinary_object_op_prevent_extensions (RJS_Runtime *rt, RJS_Value *v)
 RJS_Result
 rjs_ordinary_object_op_get_own_property (RJS_Runtime *rt, RJS_Value *v, RJS_PropertyName *pn, RJS_PropertyDesc *pd)
 {
-    RJS_PropertyKey  pk;
-    RJS_Property    *prop;
+    RJS_Property *prop;
 
-    prop_key_get(rt, pn->name, &pk);
+    prop_resolve(rt, pn);
 
-    prop = prop_lookup(rt, v, &pk);
+    prop = prop_lookup(rt, v, pn);
     if (!prop)
         return RJS_FALSE;
 
@@ -718,8 +707,7 @@ static RJS_Result
 validate_and_apply_property (RJS_Runtime *rt, RJS_Value *v, RJS_PropertyName *pn, RJS_Bool ext,
         RJS_PropertyDesc *desc, RJS_PropertyDesc *curr)
 {
-    RJS_PropertyKey   pk;
-    RJS_Property     *prop;
+    RJS_Property *prop;
 
     if (pn)
         assert(rjs_is_property_key(rt, pn->name));
@@ -731,9 +719,9 @@ validate_and_apply_property (RJS_Runtime *rt, RJS_Value *v, RJS_PropertyName *pn
         if (rjs_value_is_undefined(rt, v))
             return RJS_TRUE;
 
-        prop_key_get(rt, pn->name, &pk);
+        prop_resolve(rt, pn);
 
-        prop = prop_add(rt, v, &pk);
+        prop = prop_add(rt, v, pn);
 
         prop->attrs = 0;
 
@@ -791,9 +779,9 @@ validate_and_apply_property (RJS_Runtime *rt, RJS_Value *v, RJS_PropertyName *pn
     }
 
     if (!rjs_value_is_undefined(rt, v)) {
-        prop_key_get(rt, pn->name, &pk);
+        prop_resolve(rt, pn);
 
-        prop = prop_lookup(rt, v, &pk);
+        prop = prop_lookup(rt, v, pn);
         assert(prop);
 
         if (desc->flags & RJS_PROP_FL_HAS_CONFIGURABLE) {
@@ -1160,10 +1148,8 @@ rjs_ordinary_object_op_delete (RJS_Runtime *rt, RJS_Value *v, RJS_PropertyName *
     }
 
     if (pd.flags & RJS_PROP_FL_CONFIGURABLE) {
-        RJS_PropertyKey pk;
-
-        prop_key_get(rt, pn->name, &pk);
-        prop_delete(rt, v, &pk);
+        prop_resolve(rt, pn);
+        prop_delete(rt, v, pn);
 
         r = RJS_TRUE;
     } else {

@@ -66,13 +66,6 @@ typedef struct {
     RJS_Property prop;  /**< Property.*/
 } RJS_PropertyRbt;
 
-/**Property key.*/
-typedef struct {
-    RJS_Bool  is_index; /**< Is array index.*/
-    void     *key;      /**< The key value.*/
-    uint32_t  index;    /**< The index value.*/
-} RJS_PropertyKey;
-
 /**Object.*/
 struct RJS_Object_s {
     RJS_GcThing  gc_thing;  /**< Base Gc thing data.*/
@@ -98,11 +91,23 @@ typedef struct {
 /**
  * Convert the value to property key.
  * \param rt The current runtime.
- * \param p The property key value.
- * \param[out] pk Return the property key.
+ * \param pn The property name to be resolved.
  */
 RJS_INTERNAL void
-rjs_property_key_get (RJS_Runtime *rt, RJS_Value *p, RJS_PropertyKey *pk);
+rjs_property_name_resolve_real (RJS_Runtime *rt, RJS_PropertyName *pn);
+
+/**
+ * Convert the value to property key.
+ * \param rt The current runtime.
+ * \param pn The property name to be resolved.
+ */
+static inline void
+rjs_property_name_resolve (RJS_Runtime *rt, RJS_PropertyName *pn)
+{
+    if (!(pn->flags & RJS_PROP_NAME_FL_RESOLVED)) {
+        rjs_property_name_resolve_real(rt, pn);
+    }
+}
 
 /**
  * Scan the reference things in the ordinary object.

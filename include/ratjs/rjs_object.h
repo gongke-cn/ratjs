@@ -125,7 +125,8 @@ rjs_property_desc_deinit (RJS_Runtime *rt, RJS_PropertyDesc *pd)
 static inline void
 rjs_property_name_init (RJS_Runtime *rt, RJS_PropertyName *pn, RJS_Value *v)
 {
-    pn->name = v;
+    pn->name  = v;
+    pn->flags = 0;
 }
 
 /**
