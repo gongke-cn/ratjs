@@ -80,6 +80,10 @@
 #include <rjs_string_table_function.h>
 #include <rjs_object_table_function.h>
 
+#if ENABLE_TYPE_TREE
+    #include "include/rjs_type_tree.h"
+#endif
+
 #include "include/rjs_rbt.h"
 #include "include/rjs_mem.h"
 #include "include/rjs_gc.h"
