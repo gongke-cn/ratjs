@@ -33,7 +33,7 @@ $gcc -o my_module.njs my_module -shared -lratjs
 
 njsgen是一个用javascript编写的程序，可以帮助你快速针对已有的C语言开发库生成对应的javascript原生模块。
 
-比如你有一个C语言开发的库,你希望通过javascript调用库中的函数。通过njsgen可以快速生成原生模块对应的头文件。
+比如你有一个C语言开发的库,你希望通过javascript调用库中的函数。通过njsgen可以快速生成原生模块对应的源文件。
 具体操作步骤如下：
 
 1. 创建接口描述JSON文件
@@ -293,7 +293,7 @@ typedef union {
 在对应描述文件"my_module"中定义：
 
 ```
-"structures": {
+"unions": {
     "MyUnion": {
         "members": {
             "u8": "uint8_t",
@@ -481,6 +481,6 @@ print(JSON.stringify(my_func(123, 321), null, "  "));
   "pinout": -123
 }
 ```
-可以看到，在javascript的函数调用中，只需要传入输入参数和输出参数。而返回值是一个对象，其中包括属性"return"对应C函数返回值，还有所有输入输出参数的返回值。
+可以看到，在javascript的函数调用中，只需要传入输入参数和输出参数。而返回值是一个对象，其中包括属性"return"对应C函数返回值，还有所有输出参数和输入输出参数的返回值。
 
 注意，在C语言中有时会用一个数组或缓冲区存放输出数据，此时njsgen不会将其放到输入对象的属性中，仍然需要在调用函数前分配对象，将其作为参数传给函数。
