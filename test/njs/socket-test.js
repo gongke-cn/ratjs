@@ -29,7 +29,7 @@ function main ()
 
     let ab = new ArrayBuffer(1024);
 
-    let len = encodeText("GET / HTTP:1.1\r\n\r\n", null, ab);
+    let len = encodeText("GET / HTTP/1.1\r\nHost: 10.8.9.5\r\nAccept: */*\r\n\r\n", null, ab);
 
     r = write(s, ab, len);
     if (r != len) {

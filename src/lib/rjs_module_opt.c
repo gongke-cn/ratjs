@@ -25,6 +25,10 @@
 
 #include "ratjs_internal.h"
 
+/*Resolve the imported module.*/
+static RJS_Result
+resolve_imported_module (RJS_Runtime *rt, RJS_Value *script, RJS_Value *name, RJS_Value *rmod);
+
 /*Scan the referneced things in the module.*/
 static void
 mod_op_gc_scan (RJS_Runtime *rt, void *ptr)
@@ -369,12 +373,7 @@ module_init_env (RJS_Runtime *rt, RJS_Value *modv)
         ie = &mod->import_entries[i];
         mr = &mod->module_requests[ie->module_request_idx];
 
-        if (rjs_value_is_undefined(rt, &mr->module)) {
-            RJS_Value *name = &script->value_table[mr->module_name_idx];
-
-            if ((r = rjs_resolve_imported_module(rt, modv, name, &mr->module)) == RJS_ERR)
-                goto end;
-        }
+        assert(!rjs_value_is_undefined(rt, &mr->module));
 
         if (ie->import_name_idx == RJS_INVALID_VALUE_INDEX) {
             if ((r = rjs_module_get_namespace(rt, &mr->module, v)) == RJS_ERR)
@@ -470,7 +469,7 @@ inner_module_link (RJS_Runtime *rt, RJS_Value *modv, RJS_List *stack, int index)
             RJS_Value  *name = &script->value_table[mr->module_name_idx];
             RJS_Module *rmod;
 
-            if ((r = rjs_resolve_imported_module(rt, modv, name, &mr->module)) == RJS_ERR)
+            if ((r = resolve_imported_module(rt, modv, name, &mr->module)) == RJS_ERR)
                 return r;
 
             if ((r = inner_module_link(rt, &mr->module, stack, index)) == RJS_ERR)
@@ -841,12 +840,10 @@ static RJS_Result
 inner_module_evaluation (RJS_Runtime *rt, RJS_Value *modv, RJS_List *stack, int index)
 {
     RJS_Module *mod;
-    RJS_Script *script;
     RJS_Result  r;
     size_t      i;
 
-    mod    = rjs_value_get_gc_thing(rt, modv);
-    script = &mod->script;
+    mod = rjs_value_get_gc_thing(rt, modv);
 
     if ((mod->status == RJS_MODULE_STATUS_EVALUATING_ASYNC)
             || (mod->status == RJS_MODULE_STATUS_EVALUATED)) {
@@ -874,12 +871,7 @@ inner_module_evaluation (RJS_Runtime *rt, RJS_Value *modv, RJS_List *stack, int 
         RJS_ModuleRequest *mr = &mod->module_requests[i];
         RJS_Module        *rmod;
 
-        if (rjs_value_is_undefined(rt, &mr->module)) {
-            RJS_Value *name = &script->value_table[mr->module_name_idx];
-
-            if ((r = rjs_resolve_imported_module(rt, modv, name, &mr->module)) == RJS_ERR)
-                return r;
-        }
+        assert(!rjs_value_is_undefined(rt, &mr->module));
 
         if ((r = inner_module_evaluation(rt, &mr->module, stack, index)) == RJS_ERR)
             return r;
@@ -1471,12 +1463,7 @@ resolve_export (RJS_Runtime *rt, RJS_Value *mod, RJS_Value *name, ResolveBinding
         } else {
             RJS_ModuleRequest *mr = &m->module_requests[ee->module_request_idx];
 
-            if (rjs_value_is_undefined(rt, &mr->module)) {
-                RJS_Value *name = &script->value_table[mr->module_name_idx];
-
-                if ((r = rjs_resolve_imported_module(rt, mod, name, &mr->module)) == RJS_ERR)
-                    goto end;
-            }
+            assert(!rjs_value_is_undefined(rt, &mr->module));
 
             if (ee->import_name_idx == RJS_INVALID_VALUE_INDEX) {
                 rjs_value_copy(rt, rb->module, &mr->module);
@@ -1504,12 +1491,7 @@ resolve_export (RJS_Runtime *rt, RJS_Value *mod, RJS_Value *name, ResolveBinding
     for (i = 0; i < m->star_export_entry_num; i ++, ee ++) {
         RJS_ModuleRequest *mr = &m->module_requests[ee->module_request_idx];
 
-        if (rjs_value_is_undefined(rt, &mr->module)) {
-            RJS_Value *name = &script->value_table[mr->module_name_idx];
-
-            if ((r = rjs_resolve_imported_module(rt, mod, name, &mr->module)) == RJS_ERR)
-                goto end;
-        }
+        assert(!rjs_value_is_undefined(rt, &mr->module));
 
         if ((r = resolve_export(rt, &mr->module, name, rb_set, &star_rb)) == RJS_ERR)
             goto end;

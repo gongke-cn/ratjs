@@ -426,13 +426,7 @@ get_export_names (RJS_Runtime *rt, RJS_Value *mod, RJS_Hash *hash, RJS_List *lis
         } else {
             RJS_ModuleRequest *mr = &m->module_requests[ee->module_request_idx];
 
-            if (rjs_value_is_undefined(rt, &mr->module)) {
-                RJS_Value *name = &script->value_table[mr->module_name_idx];
-
-                r = rjs_resolve_imported_module(rt, mod, name, &mr->module);
-                if (r == RJS_ERR)
-                    goto end;
-            }
+            assert(!rjs_value_is_undefined(rt, &mr->module));
 
             if ((r = get_export_names(rt, &mr->module, hash, list, star_set)) == RJS_ERR)
                 goto end;
