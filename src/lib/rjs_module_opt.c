@@ -27,7 +27,7 @@
 
 /*Resolve the imported module.*/
 static RJS_Result
-resolve_imported_module (RJS_Runtime *rt, RJS_Value *script, RJS_Value *name, RJS_Value *rmod);
+resolve_imported_module (RJS_Runtime *rt, RJS_Value *script, RJS_Value *name, RJS_Value *rmod, RJS_Bool dynamic);
 
 /*Scan the referneced things in the module.*/
 static void
@@ -469,8 +469,8 @@ inner_module_link (RJS_Runtime *rt, RJS_Value *modv, RJS_List *stack, int index)
             RJS_Value  *name = &script->value_table[mr->module_name_idx];
             RJS_Module *rmod;
 
-            if ((r = resolve_imported_module(rt, modv, name, &mr->module)) == RJS_ERR)
-                return r;
+            if ((r = resolve_imported_module(rt, modv, name, &mr->module, RJS_FALSE)) == RJS_ERR)
+                return RJS_ERR;
 
             if ((r = inner_module_link(rt, &mr->module, stack, index)) == RJS_ERR)
                 return r;
@@ -1339,7 +1339,7 @@ module_from_file (RJS_Runtime *rt, RJS_Value *mod, const char *path, RJS_Realm *
 
 /*Resolve the imported module.*/
 static RJS_Result
-resolve_imported_module (RJS_Runtime *rt, RJS_Value *script, RJS_Value *name, RJS_Value *rmod)
+resolve_imported_module (RJS_Runtime *rt, RJS_Value *script, RJS_Value *name, RJS_Value *rmod, RJS_Bool dynamic)
 {
     const char *nstr, *bstr;
     char        path[PATH_MAX];
@@ -1357,13 +1357,22 @@ resolve_imported_module (RJS_Runtime *rt, RJS_Value *script, RJS_Value *name, RJ
 
     nstr = rjs_string_to_enc_chars(rt, name, NULL, NULL);
 
-    if (rt->mod_path_func) {
-        if ((r = rt->mod_path_func(rt, bstr, nstr, path, sizeof(path))) == RJS_OK) {
-            RJS_Realm  *realm = rjs_realm_current(rt);
+    if (rt->mod_path_func
+            && (r = rt->mod_path_func(rt, bstr, nstr, path, sizeof(path))) == RJS_OK) {
+        RJS_Realm *realm = rjs_realm_current(rt);
 
-            if ((r = module_from_file(rt, rmod, path, realm)) == RJS_ERR)
-                rjs_throw_syntax_error(rt, _("load module \"%s\" failed"), path);
-        }
+        nstr = path;
+
+        if ((r = module_from_file(rt, rmod, path, realm)) == RJS_ERR)
+            rjs_throw_syntax_error(rt, _("load module \"%s\" failed"), path);
+    }
+
+    if (r == RJS_FALSE) {
+        if (dynamic)
+            rjs_throw_type_error(rt, _("cannot resolve the module \"%s\""), nstr);
+        else
+            rjs_throw_reference_error(rt, _("cannot resolve the module \"%s\""), nstr);
+        r = RJS_ERR;
     }
 
     return r;
@@ -1603,17 +1612,7 @@ rjs_module_get_env (RJS_Runtime *rt, RJS_Value *modv)
 RJS_Result
 rjs_resolve_imported_module (RJS_Runtime *rt, RJS_Value *script, RJS_Value *name, RJS_Value *imod)
 {
-    RJS_Result r;
-
-    r = resolve_imported_module(rt, script, name, imod);
-    if (r == RJS_FALSE) {
-        const char *nstr = rjs_string_to_enc_chars(rt, name, NULL, NULL);
-
-        RJS_LOGE("cannot find module \"%s\"", nstr);
-        r = rjs_throw_reference_error(rt, _("cannot find module \"%s\""), nstr);
-    }
-
-    return r;
+    return resolve_imported_module(rt, script, name, imod, RJS_FALSE);
 }
 
 /**
@@ -1734,13 +1733,8 @@ module_import_dynamically (RJS_Runtime *rt, RJS_Value *ref, RJS_Value *spec, RJS
     if ((r = rjs_to_string(rt, spec, str)) == RJS_ERR)
         goto end;
 
-    if ((r = resolve_imported_module(rt, ref, str, mod)) == RJS_ERR)
+    if ((r = resolve_imported_module(rt, ref, str, mod, RJS_TRUE)) == RJS_ERR)
         goto end;
-    if (!r) {
-        r = rjs_throw_type_error(rt, _("cannot resolve the module \"%s\""),
-                rjs_string_to_enc_chars(rt, str, NULL, NULL));
-        goto end;
-    }
 
     m       = rjs_value_get_gc_thing(rt, mod);
     script1 = rjs_value_get_gc_thing(rt, ref);
