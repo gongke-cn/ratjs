@@ -74,123 +74,130 @@ if_abrupt_reject_promise (RJS_Runtime *rt, RJS_Result r, RJS_PromiseCapability *
     return r;
 }
 
-/**Promise all remaining elements count.*/
+/**Promise all task data.*/
 typedef struct {
-    RJS_GcThing gc_thing; /**< Base GC thing data.*/
-    size_t      left;     /**< Left promise number.*/
-} RJS_PromiseAllRemaining;
+    int                   ref;     /**< Reference counter.*/
+    size_t                left;    /**< Left promise number.*/
+    RJS_PromiseCapability pc;      /**< The promise capability.*/
+    RJS_Value             promise; /**< Promise value buffer.*/
+    RJS_Value             resolve; /**< Resolve value buffer.*/
+    RJS_Value             reject;  /**< Reject value buffer.*/
+    RJS_Value             values;  /**< Result values array.*/
+} RJS_PromiseAll;
 
-/**Promise all resolve function.*/
+/**Promise single task data.*/
 typedef struct {
-    RJS_BuiltinFuncObject bfo;        /**< Base built-in function object.*/
-    RJS_PromiseCapability capability; /**< The promise capability.*/
-    RJS_Value             promise;    /**< Promise value buffer.*/
-    RJS_Value             resolve;    /**< Resolve value buffer.*/
-    RJS_Value             reject;     /**< Reject value buffer.*/
-    RJS_Value             values;     /**< Result values array.*/
-    RJS_Value             remaining;  /**< Remaining elements count.*/
-    size_t                left;       /**< Left promise number.*/
-    size_t                index;      /**< The current promise index.*/
-    RJS_Bool              called;     /**< The function is already called.*/
-} RJS_PromiseAllFunc;
+    RJS_PromiseAll *all;    /**< All reference*/
+    size_t          index;  /**< The current promise index.*/
+    RJS_Bool        called; /**< The function is already called.*/
+} RJS_PromiseSingle;
 
-/*Scan reference things in promise all remaining data.*/
+/*Scan reference things in promise all task data.*/
 static void
-promise_all_remaining_op_gc_scan (RJS_Runtime *rt, void *ptr)
+promise_all_scan (RJS_Runtime *rt, void *ptr)
 {
+    RJS_PromiseAll *all = ptr;
+
+    rjs_gc_scan_value(rt, &all->promise);
+    rjs_gc_scan_value(rt, &all->resolve);
+    rjs_gc_scan_value(rt, &all->reject);
+    rjs_gc_scan_value(rt, &all->values);
 }
 
-/*Free the promise all remaining data.*/
+/*Free the promise all task data.*/
 static void
-promise_all_remaining_op_gc_free (RJS_Runtime *rt, void *ptr)
+promise_all_free (RJS_Runtime *rt, void *ptr)
 {
-    RJS_PromiseAllRemaining *par = ptr;
+    RJS_PromiseAll *all = ptr;
 
-    RJS_DEL(rt, par);
+    all->ref --;
+
+    if (all->ref == 0)
+        RJS_DEL(rt, all);
 }
 
-/*Promise all remaining element count operation functions.*/
-static const RJS_GcThingOps
-promise_all_remaining_ops = {
-    RJS_GC_THING_INT,
-    promise_all_remaining_op_gc_scan,
-    promise_all_remaining_op_gc_free
-};
-
-/*Scan reference thing in the promise all built-in function.*/
-static void
-promise_all_func_op_gc_scan (RJS_Runtime *rt, void *ptr)
+/*Allocate a new promise all task data.*/
+static RJS_PromiseAll*
+promise_all_new (RJS_Runtime *rt, RJS_PromiseCapability *pc, RJS_Value *values, size_t left)
 {
-    RJS_PromiseAllFunc *func = ptr;
+    RJS_PromiseAll *all;
 
-    rjs_builtin_func_object_op_gc_scan(rt, &func->bfo);
+    RJS_NEW(rt, all);
 
-    rjs_gc_scan_value(rt, &func->promise);
-    rjs_gc_scan_value(rt, &func->resolve);
-    rjs_gc_scan_value(rt, &func->reject);
-    rjs_gc_scan_value(rt, &func->values);
-    rjs_gc_scan_value(rt, &func->remaining);
+    all->ref  = 1;
+    all->left = left;
+
+    rjs_value_set_undefined(rt, &all->promise);
+    rjs_value_set_undefined(rt, &all->resolve);
+    rjs_value_set_undefined(rt, &all->reject);
+
+    rjs_promise_capability_init_vp(rt, &all->pc, &all->promise, &all->resolve, &all->reject);
+    rjs_promise_capability_copy(rt, &all->pc, pc);
+
+    rjs_value_copy(rt, &all->values, values);
+
+    return all;
 }
 
-/*Free the promise all built-in function.*/
+/*Scan reference things in promise single task data.*/
 static void
-promise_all_func_op_gc_free (RJS_Runtime *rt, void *ptr)
+promise_single_scan (RJS_Runtime *rt, void *ptr)
 {
-    RJS_PromiseAllFunc *func = ptr;
+    RJS_PromiseSingle *s = ptr;
 
-    rjs_promise_capability_deinit(rt, &func->capability);
-    rjs_builtin_func_object_deinit(rt, &func->bfo);
-
-    RJS_DEL(rt, func);
+    if (s->all)
+        promise_all_scan(rt, s->all);
 }
 
-/*Promise all built-in function operation functions.*/
-static const RJS_ObjectOps
-promise_all_func_ops = {
-    {
-        RJS_GC_THING_BUILTIN_FUNC,
-        promise_all_func_op_gc_scan,
-        promise_all_func_op_gc_free
-    },
-    RJS_BUILTIN_FUNCTION_OBJECT_OPS
-};
-
-/*Create a new promise all remaining data.*/
-static RJS_PromiseAllRemaining*
-promise_all_remaining_new (RJS_Runtime *rt, RJS_Value *v, size_t num)
+/*Free the promise single task data.*/
+static void
+promise_single_free (RJS_Runtime *rt, void *ptr)
 {
-    RJS_PromiseAllRemaining *par;
+    RJS_PromiseSingle *s = ptr;
 
-    RJS_NEW(rt, par);
+    if (s->all)
+        promise_all_free(rt, s->all);
 
-    par->left = num;
+    RJS_DEL(rt, s);
+}
 
-    rjs_value_set_gc_thing(rt, v, par);
-    rjs_gc_add(rt, par, &promise_all_remaining_ops);
+/*Allocate a new promise single task data.*/
+static RJS_PromiseSingle*
+promise_single_new (RJS_Runtime *rt, RJS_PromiseAll *all, size_t index)
+{
+    RJS_PromiseSingle *s;
 
-    return par;
+    RJS_NEW(rt, s);
+
+    s->called = RJS_FALSE;
+    s->index  = index;
+
+    s->all = all;
+    all->ref ++;
+
+    return s;
 }
 
 /*Promise all resolve element function.*/
 static RJS_NF(promise_all_resolve)
 {
-    RJS_Value               *x      = rjs_argument_get(rt, args, argc, 0);
-    RJS_PromiseAllFunc      *paf    = (RJS_PromiseAllFunc*)rjs_value_get_object(rt, f);
-    RJS_PromiseAllRemaining *remain = rjs_value_get_gc_thing(rt, &paf->remaining);
-    RJS_Result               r;
+    RJS_Value         *x      = rjs_argument_get(rt, args, argc, 0);
+    RJS_PromiseSingle *single = rjs_native_object_get_data(rt, f);
+    RJS_PromiseAll    *all    = single->all;
+    RJS_Result         r;
 
-    if (paf->called) {
+    if (single->called) {
         rjs_value_set_undefined(rt, rv);
         return RJS_OK;
     }
 
-    paf->called = RJS_TRUE;
-    remain->left --;
+    single->called = RJS_TRUE;
+    all->left --;
 
-    rjs_set_index(rt, &paf->values, paf->index, x, RJS_TRUE);
+    rjs_set_index(rt, &all->values, single->index, x, RJS_TRUE);
 
-    if (remain->left == 0) {
-        r = rjs_call(rt, paf->capability.resolve, rjs_v_undefined(rt), &paf->values, 1, rv);
+    if (all->left == 0) {
+        r = rjs_call(rt, all->pc.resolve, rjs_v_undefined(rt), &all->values, 1, rv);
     } else {
         rjs_value_set_undefined(rt, rv);
         r = RJS_OK;
@@ -201,36 +208,20 @@ static RJS_NF(promise_all_resolve)
 
 /*Create a new promise all built-in function.*/
 static RJS_Result
-promise_all_func_new (RJS_Runtime *rt, RJS_Value *v, RJS_NativeFunc nf, size_t index,
-        RJS_Value *values, RJS_PromiseCapability *pc, RJS_Value *remaining)
+promise_all_func_new (RJS_Runtime *rt, RJS_Value *v, RJS_NativeFunc nf, size_t index, RJS_PromiseAll *all)
 {
-    RJS_Realm          *realm = rjs_realm_current(rt);
-    RJS_PromiseAllFunc *func;
-    RJS_Result          r;
+    RJS_Realm         *realm = rjs_realm_current(rt);
+    RJS_PromiseSingle *single;
+    RJS_Result         r;
 
-    RJS_NEW(rt, func);
+    r = rjs_create_native_function(rt, NULL, nf, 1, rjs_s_empty(rt), realm, NULL, NULL, v);
+    if (r == RJS_ERR)
+        return r;
 
-    func->called = RJS_FALSE;
-    func->index  = index;
+    single = promise_single_new(rt, all, index);
+    rjs_native_object_set_data(rt, v, NULL, single, promise_single_scan, promise_single_free);
 
-    rjs_value_set_undefined(rt, &func->promise);
-    rjs_value_set_undefined(rt, &func->resolve);
-    rjs_value_set_undefined(rt, &func->reject);
-
-    rjs_promise_capability_init_vp(rt, &func->capability, &func->promise, &func->resolve, &func->reject);
-    rjs_promise_capability_copy(rt, &func->capability, pc);
-
-    rjs_value_copy(rt, &func->values, values);
-    rjs_value_copy(rt, &func->remaining, remaining);
-
-    r = rjs_init_builtin_function(rt, &func->bfo, nf, 0, &promise_all_func_ops,
-            1, rjs_s_empty(rt), realm, NULL, NULL, NULL, v);
-    if (r == RJS_ERR) {
-        rjs_promise_capability_deinit(rt, &func->capability);
-        RJS_DEL(rt, func);
-    }
-
-    return r;
+    return RJS_OK;
 }
 
 /*Perform promise all operation.*/
@@ -238,23 +229,22 @@ static RJS_Result
 perform_promise_all (RJS_Runtime *rt, RJS_Iterator *iter, RJS_Value *constr,
         RJS_PromiseCapability *pc, RJS_Value *resolve, RJS_Value *rv)
 {
-    size_t                   top     = rjs_value_stack_save(rt);
-    RJS_Value               *next    = rjs_value_stack_push(rt);
-    RJS_Value               *nextv   = rjs_value_stack_push(rt);
-    RJS_Value               *nextp   = rjs_value_stack_push(rt);
-    RJS_Value               *values  = rjs_value_stack_push(rt);
-    RJS_Value               *fulfill = rjs_value_stack_push(rt);
-    RJS_Value               *reject  = rjs_value_stack_push(rt);
-    RJS_Value               *remain  = rjs_value_stack_push(rt);
-    size_t                   index   = 0;
-    RJS_PromiseAllRemaining *par;
-    RJS_Result               r;
-
-    par = promise_all_remaining_new(rt, remain, 1);
-
-    rjs_value_copy(rt, reject, pc->reject);
+    size_t          top     = rjs_value_stack_save(rt);
+    RJS_Value      *next    = rjs_value_stack_push(rt);
+    RJS_Value      *nextv   = rjs_value_stack_push(rt);
+    RJS_Value      *nextp   = rjs_value_stack_push(rt);
+    RJS_Value      *values  = rjs_value_stack_push(rt);
+    RJS_Value      *fulfill = rjs_value_stack_push(rt);
+    RJS_Value      *reject  = rjs_value_stack_push(rt);
+    size_t          index   = 0;
+    RJS_PromiseAll *all;
+    RJS_Result      r;
 
     rjs_array_new(rt, values, 0, NULL);
+
+    all = promise_all_new(rt, pc, values, 1);
+
+    rjs_value_copy(rt, reject, pc->reject);
 
     while (1) {
         r = rjs_iterator_step(rt, iter, next);
@@ -266,9 +256,9 @@ perform_promise_all (RJS_Runtime *rt, RJS_Iterator *iter, RJS_Value *constr,
         if (!r) {
             iter->done = RJS_TRUE;
 
-            par->left --;
+            all->left --;
 
-            if (par->left == 0) {
+            if (all->left == 0) {
                 if ((r = rjs_call(rt, pc->resolve, rjs_v_undefined(rt), values, 1, NULL)) == RJS_ERR)
                     goto end;
             }
@@ -286,10 +276,10 @@ perform_promise_all (RJS_Runtime *rt, RJS_Iterator *iter, RJS_Value *constr,
         if ((r = rjs_call(rt, resolve, constr, nextv, 1, nextp)) == RJS_ERR)
             goto end;
 
-        if ((r = promise_all_func_new(rt, fulfill, promise_all_resolve, index, values, pc, remain)) == RJS_ERR)
+        if ((r = promise_all_func_new(rt, fulfill, promise_all_resolve, index, all)) == RJS_ERR)
             goto end;
 
-        par->left ++;
+        all->left ++;
 
         if ((r = rjs_invoke(rt, nextp, rjs_pn_then(rt), fulfill, 2, NULL)) == RJS_ERR)
             goto end;
@@ -300,6 +290,7 @@ perform_promise_all (RJS_Runtime *rt, RJS_Iterator *iter, RJS_Value *constr,
     rjs_value_copy(rt, rv, pc->promise);
     r = RJS_OK;
 end:
+    promise_all_free(rt, all);
     rjs_value_stack_restore(rt, top);
     return r;
 }
@@ -354,31 +345,31 @@ end:
 /*Promise all settled resolve function.*/
 static RJS_NF(promise_all_settled_resolve)
 {
-    RJS_Value               *x      = rjs_argument_get(rt, args, argc, 0);
-    RJS_PromiseAllFunc      *paf    = (RJS_PromiseAllFunc*)rjs_value_get_object(rt, f);
-    RJS_PromiseAllRemaining *remain = rjs_value_get_gc_thing(rt, &paf->remaining);
-    size_t                   top    = rjs_value_stack_save(rt);
-    RJS_Value               *obj    = rjs_value_stack_push(rt);
-    RJS_Result               r;
+    RJS_Value          *x      = rjs_argument_get(rt, args, argc, 0);
+    RJS_PromiseSingle  *single = rjs_native_object_get_data(rt, f);
+    RJS_PromiseAll     *all    = single->all;
+    size_t              top    = rjs_value_stack_save(rt);
+    RJS_Value          *obj    = rjs_value_stack_push(rt);
+    RJS_Result          r;
 
-    if (paf->called) {
+    if (single->called) {
         rjs_value_set_undefined(rt, rv);
         r = RJS_OK;
         goto end;
     }
 
-    paf->called = RJS_TRUE;
+    single->called = RJS_TRUE;
 
     rjs_ordinary_object_create(rt, NULL, obj);
     rjs_create_data_property_or_throw(rt, obj, rjs_pn_status(rt), rjs_s_fulfilled(rt));
     rjs_create_data_property_or_throw(rt, obj, rjs_pn_value(rt), x);
 
-    rjs_set_index(rt, &paf->values, paf->index, obj, RJS_TRUE);
+    rjs_set_index(rt, &all->values, single->index, obj, RJS_TRUE);
 
-    remain->left --;
+    all->left --;
 
-    if (remain->left == 0) {
-        r = rjs_call(rt, paf->capability.resolve, rjs_v_undefined(rt), &paf->values, 1, rv);
+    if (all->left == 0) {
+        r = rjs_call(rt, all->pc.resolve, rjs_v_undefined(rt), &all->values, 1, rv);
     } else {
         rjs_value_set_undefined(rt, rv);
         r = RJS_OK;
@@ -393,31 +384,31 @@ end:
 /*Promise all settled reject function.*/
 static RJS_NF(promise_all_settled_reject)
 {
-    RJS_Value               *x      = rjs_argument_get(rt, args, argc, 0);
-    RJS_PromiseAllFunc      *paf    = (RJS_PromiseAllFunc*)rjs_value_get_object(rt, f);
-    RJS_PromiseAllRemaining *remain = rjs_value_get_gc_thing(rt, &paf->remaining);
-    size_t                   top    = rjs_value_stack_save(rt);
-    RJS_Value               *obj    = rjs_value_stack_push(rt);
-    RJS_Result               r;
+    RJS_Value         *x      = rjs_argument_get(rt, args, argc, 0);
+    RJS_PromiseSingle *single = rjs_native_object_get_data(rt, f);
+    RJS_PromiseAll    *all    = single->all;
+    size_t             top    = rjs_value_stack_save(rt);
+    RJS_Value         *obj    = rjs_value_stack_push(rt);
+    RJS_Result         r;
 
-    if (paf->called) {
+    if (single->called) {
         rjs_value_set_undefined(rt, rv);
         r = RJS_OK;
         goto end;
     }
 
-    paf->called = RJS_TRUE;
+    single->called = RJS_TRUE;
 
     rjs_ordinary_object_create(rt, NULL, obj);
     rjs_create_data_property_or_throw(rt, obj, rjs_pn_status(rt), rjs_s_rejected(rt));
     rjs_create_data_property_or_throw(rt, obj, rjs_pn_reason(rt), x);
 
-    rjs_set_index(rt, &paf->values, paf->index, obj, RJS_TRUE);
+    rjs_set_index(rt, &all->values, single->index, obj, RJS_TRUE);
 
-    remain->left --;
+    all->left --;
     
-    if (remain->left == 0) {
-        r = rjs_call(rt, paf->capability.resolve, rjs_v_undefined(rt), &paf->values, 1, rv);
+    if (all->left == 0) {
+        r = rjs_call(rt, all->pc.resolve, rjs_v_undefined(rt), &all->values, 1, rv);
     } else {
         rjs_value_set_undefined(rt, rv);
         r = RJS_OK;
@@ -441,14 +432,13 @@ perform_promise_all_settled (RJS_Runtime *rt, RJS_Iterator *iter, RJS_Value *con
     RJS_Value     *values  = rjs_value_stack_push(rt);
     RJS_Value     *fulfill = rjs_value_stack_push(rt);
     RJS_Value     *reject  = rjs_value_stack_push(rt);
-    RJS_Value     *remain  = rjs_value_stack_push(rt);
     size_t         index   = 0;
-    RJS_PromiseAllRemaining *par;
+    RJS_PromiseAll*all;
     RJS_Result     r;
 
-    par = promise_all_remaining_new(rt, remain, 1);
-
     rjs_array_new(rt, values, 0, NULL);
+
+    all = promise_all_new(rt, pc, values, 1);
 
     while (1) {
         r = rjs_iterator_step(rt, iter, next);
@@ -460,9 +450,9 @@ perform_promise_all_settled (RJS_Runtime *rt, RJS_Iterator *iter, RJS_Value *con
         if (!r) {
             iter->done = RJS_TRUE;
 
-            par->left --;
+            all->left --;
 
-            if (par->left == 0) {
+            if (all->left == 0) {
                 if ((r = rjs_call(rt, pc->resolve, rjs_v_undefined(rt), values, 1, NULL)) == RJS_ERR)
                     goto end;
             }
@@ -480,13 +470,13 @@ perform_promise_all_settled (RJS_Runtime *rt, RJS_Iterator *iter, RJS_Value *con
         if ((r = rjs_call(rt, resolve, constr, nextv, 1, nextp)) == RJS_ERR)
             goto end;
 
-        if ((r = promise_all_func_new(rt, fulfill, promise_all_settled_resolve, index, values, pc, remain)) == RJS_ERR)
+        if ((r = promise_all_func_new(rt, fulfill, promise_all_settled_resolve, index, all)) == RJS_ERR)
             goto end;
 
-        if ((r = promise_all_func_new(rt, reject, promise_all_settled_reject, index, values, pc, remain)) == RJS_ERR)
+        if ((r = promise_all_func_new(rt, reject, promise_all_settled_reject, index, all)) == RJS_ERR)
             goto end;
 
-        par->left ++;
+        all->left ++;
 
         if ((r = rjs_invoke(rt, nextp, rjs_pn_then(rt), fulfill, 2, NULL)) == RJS_ERR)
             goto end;
@@ -497,6 +487,7 @@ perform_promise_all_settled (RJS_Runtime *rt, RJS_Iterator *iter, RJS_Value *con
     rjs_value_copy(rt, rv, pc->promise);
     r = RJS_OK;
 end:
+    promise_all_free(rt, all);
     rjs_value_stack_restore(rt, top);
     return r;
 }
@@ -551,31 +542,31 @@ end:
 /*Promise any reject built-in function.*/
 static RJS_NF(promise_any_reject)
 {
-    RJS_Value               *x      = rjs_argument_get(rt, args, argc, 0);
-    RJS_PromiseAllFunc      *paf    = (RJS_PromiseAllFunc*)rjs_value_get_object(rt, f);
-    RJS_PromiseAllRemaining *remain = rjs_value_get_gc_thing(rt, &paf->remaining);
-    RJS_Realm               *realm  = rjs_realm_current(rt);
-    size_t                   top    = rjs_value_stack_save(rt);
-    RJS_Value               *error  = rjs_value_stack_push(rt);
-    RJS_Result               r;
+    RJS_Value         *x      = rjs_argument_get(rt, args, argc, 0);
+    RJS_PromiseSingle *single = rjs_native_object_get_data(rt, f);
+    RJS_PromiseAll    *all    = single->all;
+    RJS_Realm         *realm  = rjs_realm_current(rt);
+    size_t             top    = rjs_value_stack_save(rt);
+    RJS_Value         *error  = rjs_value_stack_push(rt);
+    RJS_Result         r;
 
-    if (paf->called) {
+    if (single->called) {
         rjs_value_set_undefined(rt, rv);
         r = RJS_OK;
         goto end;
     }
 
-    paf->called = RJS_TRUE;
+    single->called = RJS_TRUE;
 
-    rjs_set_index(rt, &paf->values, paf->index, x, RJS_TRUE);
+    rjs_set_index(rt, &all->values, single->index, x, RJS_TRUE);
 
-    remain->left --;
+    all->left --;
 
-    if (remain->left == 0) {
-        if ((r = rjs_call(rt, rjs_o_AggregateError(realm), rjs_v_undefined(rt), &paf->values, 1, error)) == RJS_ERR)
+    if (all->left == 0) {
+        if ((r = rjs_call(rt, rjs_o_AggregateError(realm), rjs_v_undefined(rt), &all->values, 1, error)) == RJS_ERR)
             goto end;
 
-        r = rjs_call(rt, paf->capability.reject, rjs_v_undefined(rt), error, 1, rv);
+        r = rjs_call(rt, all->pc.reject, rjs_v_undefined(rt), error, 1, rv);
     } else {
         rjs_value_set_undefined(rt, rv);
         r = RJS_OK;
@@ -600,15 +591,15 @@ perform_promise_any (RJS_Runtime *rt, RJS_Iterator *iter, RJS_Value *constr,
     RJS_Value     *errors  = rjs_value_stack_push(rt);
     RJS_Value     *fulfill = rjs_value_stack_push(rt);
     RJS_Value     *reject  = rjs_value_stack_push(rt);
-    RJS_Value     *remain  = rjs_value_stack_push(rt);
     RJS_Value     *error   = rjs_value_stack_push(rt);
     size_t         index   = 0;
-    RJS_PromiseAllRemaining *par;
+    RJS_PromiseAll*all;
     RJS_Result     r;
 
-    par = promise_all_remaining_new(rt, remain, 1);
-
     rjs_array_new(rt, errors, 0, NULL);
+
+    all = promise_all_new(rt, pc, errors, 1);
+
     rjs_value_copy(rt, fulfill, pc->resolve);
 
     while (1) {
@@ -621,9 +612,9 @@ perform_promise_any (RJS_Runtime *rt, RJS_Iterator *iter, RJS_Value *constr,
         if (!r) {
             iter->done = RJS_TRUE;
 
-            par->left --;
+            all->left --;
 
-            if (par->left == 0) {
+            if (all->left == 0) {
                 if ((r = rjs_call(rt, rjs_o_AggregateError(realm), rjs_v_undefined(rt), errors, 1, error)) == RJS_ERR)
                     goto end;
 
@@ -644,10 +635,10 @@ perform_promise_any (RJS_Runtime *rt, RJS_Iterator *iter, RJS_Value *constr,
         if ((r = rjs_call(rt, resolve, constr, nextv, 1, nextp)) == RJS_ERR)
             goto end;
 
-        if ((r = promise_all_func_new(rt, reject, promise_any_reject, index, errors, pc, remain)) == RJS_ERR)
+        if ((r = promise_all_func_new(rt, reject, promise_any_reject, index, all)) == RJS_ERR)
             goto end;
 
-        par->left ++;
+        all->left ++;
 
         if ((r = rjs_invoke(rt, nextp, rjs_pn_then(rt), fulfill, 2, NULL)) == RJS_ERR)
             goto end;
@@ -658,6 +649,7 @@ perform_promise_any (RJS_Runtime *rt, RJS_Iterator *iter, RJS_Value *constr,
     rjs_value_copy(rt, rv, pc->promise);
     r = RJS_OK;
 end:
+    promise_all_free(rt, all);
     rjs_value_stack_restore(rt, top);
     return r;
 }
@@ -913,133 +905,126 @@ static RJS_NF(Promise_prototype_catch)
     return r;
 }
 
-/**Built-in promise finally function.*/
+/**Built-in promise finally data.*/
 typedef struct {
-    RJS_BuiltinFuncObject bfo;        /**< Base built-in function object data.*/
-    RJS_Value             c;          /**< The constructor.*/
-    RJS_Value             on_finally; /**< On finally function.*/
-} RJS_PromiseFinallyFunc;
+    int       ref;        /**< Reference counter.*/
+    RJS_Value c;          /**< The constructor.*/
+    RJS_Value on_finally; /**< On finally function.*/
+} RJS_PromiseFinallyData;
 
-/*Scan reference things in the promise finally function.*/
+/*Scan reference things in the promise finally data.*/
 static void
-promise_finally_func_op_gc_scan (RJS_Runtime *rt, void *ptr)
+promise_finally_data_scan (RJS_Runtime *rt, void *ptr)
 {
-    RJS_PromiseFinallyFunc *pff = ptr;
+    RJS_PromiseFinallyData *pfd = ptr;
 
-    rjs_builtin_func_object_op_gc_scan(rt, &pff->bfo);
-
-    rjs_gc_scan_value(rt, &pff->c);
-    rjs_gc_scan_value(rt, &pff->on_finally);
+    rjs_gc_scan_value(rt, &pfd->c);
+    rjs_gc_scan_value(rt, &pfd->on_finally);
 }
 
-/*Free the promise finally function.*/
+/*Free the promise finally data.*/
 static void
-promise_finally_func_op_gc_free (RJS_Runtime *rt, void *ptr)
+promise_finally_data_free (RJS_Runtime *rt, void *ptr)
 {
-    RJS_PromiseFinallyFunc *pff = ptr;
+    RJS_PromiseFinallyData *pfd = ptr;
 
-    rjs_builtin_func_object_deinit(rt, &pff->bfo);
-
-    RJS_DEL(rt, pff);
+    pfd->ref --;
+    if (pfd->ref == 0)
+        RJS_DEL(rt, pfd);
 }
 
-/*Promise finally function operation functions.*/
-static const RJS_ObjectOps
-promise_finally_func_ops = {
-    {
-        RJS_GC_THING_BUILTIN_FUNC,
-        promise_finally_func_op_gc_scan,
-        promise_finally_func_op_gc_free
-    },
-    RJS_BUILTIN_FUNCTION_OBJECT_OPS
-};
+/*Allocate a new promise finally data.*/
+static RJS_PromiseFinallyData*
+promise_finally_data_new (RJS_Runtime *rt, RJS_Value *c, RJS_Value *cb)
+{
+    RJS_PromiseFinallyData *pfd;
+
+    RJS_NEW(rt, pfd);
+
+    pfd->ref = 1;
+
+    rjs_value_copy(rt, &pfd->c, c);
+    rjs_value_copy(rt, &pfd->on_finally, cb);
+
+    return pfd;
+}
 
 /*Create a new promise finally function.*/
 static RJS_Result
-promise_finally_func_new (RJS_Runtime *rt, RJS_Value *v, RJS_NativeFunc nf, RJS_Value *c, RJS_Value *func)
+promise_finally_func_new (RJS_Runtime *rt, RJS_Value *v, RJS_NativeFunc nf, RJS_PromiseFinallyData *pfd)
 {
-    RJS_Realm              *realm = rjs_realm_current(rt);
-    RJS_PromiseFinallyFunc *pff;
-    RJS_Result              r;
+    RJS_Realm  *realm = rjs_realm_current(rt);
+    RJS_Result  r;
 
-    RJS_NEW(rt, pff);
-
-    rjs_value_copy(rt, &pff->c, c);
-    rjs_value_copy(rt, &pff->on_finally, func);
-
-    r = rjs_init_builtin_function(rt, &pff->bfo, nf, 0, &promise_finally_func_ops, 1, rjs_s_empty(rt),
-            realm, NULL, NULL, NULL, v);
+    r = rjs_create_native_function(rt, NULL, nf, 1, rjs_s_empty(rt), realm, NULL, NULL, v);
     if (r == RJS_ERR)
-        RJS_DEL(rt, pff);
+        return r;
 
-    return r;
+    rjs_native_object_set_data(rt, v, NULL, pfd, promise_finally_data_scan, promise_finally_data_free);
+    pfd->ref ++;
+
+    return RJS_OK;
 }
 
-/**Promise value function.*/
+/**Promise value data.*/
 typedef struct {
-    RJS_BuiltinFuncObject bfo; /**< Base built-in function object data.*/
-    RJS_Value             v;   /**< The value.*/
-} RJS_PromiseValueFunc;
+    RJS_Value v;   /**< The value.*/
+} RJS_PromiseValueData;
 
-/*Scan reference things in the promise value function.*/
+/*Scan reference things in the promise value data.*/
 static void
-promise_value_func_op_gc_scan (RJS_Runtime *rt, void *ptr)
+promise_value_data_scan (RJS_Runtime *rt, void *ptr)
 {
-    RJS_PromiseValueFunc *pvf = ptr;
+    RJS_PromiseValueData *pvd = ptr;
 
-    rjs_builtin_func_object_op_gc_scan(rt, &pvf->bfo);
-
-    rjs_gc_scan_value(rt, &pvf->v);
+    rjs_gc_scan_value(rt, &pvd->v);
 }
 
-/*Free the promise value function.*/
+/*Free the promise value data.*/
 static void
-promise_value_func_op_gc_free (RJS_Runtime *rt, void *ptr)
+promise_value_data_free (RJS_Runtime *rt, void *ptr)
 {
-    RJS_PromiseValueFunc *pvf = ptr;
+    RJS_PromiseValueData *pvd = ptr;
 
-    rjs_builtin_func_object_deinit(rt, &pvf->bfo);
-
-    RJS_DEL(rt, pvf);
+    RJS_DEL(rt, pvd);
 }
 
-/*Promise value function operation functions.*/
-static const RJS_ObjectOps
-promise_value_func_ops = {
-    {
-        RJS_GC_THING_BUILTIN_FUNC,
-        promise_value_func_op_gc_scan,
-        promise_value_func_op_gc_free
-    },
-    RJS_BUILTIN_FUNCTION_OBJECT_OPS
-};
+/*Allocate a new promise value data.*/
+static RJS_PromiseValueData*
+promise_value_data_new (RJS_Runtime *rt, RJS_Value *v)
+{
+    RJS_PromiseValueData *pvd;
+
+    RJS_NEW(rt, pvd);
+
+    rjs_value_copy(rt, &pvd->v, v);
+    return pvd;
+}
 
 /*Create a new promise value function.*/
 static RJS_Result
-promise_value_func_new (RJS_Runtime *rt, RJS_Value *v, RJS_NativeFunc nf, RJS_Value *pv, RJS_Value *func)
+promise_value_func_new (RJS_Runtime *rt, RJS_Value *v, RJS_NativeFunc nf, RJS_Value *pv)
 {
     RJS_Realm            *realm = rjs_realm_current(rt);
-    RJS_PromiseValueFunc *pvf;
+    RJS_PromiseValueData *pvd;
     RJS_Result            r;
 
-    RJS_NEW(rt, pvf);
-
-    rjs_value_copy(rt, &pvf->v, pv);
-
-    r = rjs_init_builtin_function(rt, &pvf->bfo, nf, 0, &promise_value_func_ops, 0, rjs_s_empty(rt),
-            realm, NULL, NULL, NULL, v);
+    r = rjs_create_native_function(rt, NULL, nf, 0, rjs_s_empty(rt), realm, NULL, NULL, v);
     if (r == RJS_ERR)
-        RJS_DEL(rt, pvf);
+        return r;
 
-    return r;
+    pvd = promise_value_data_new(rt, pv);
+    rjs_native_object_set_data(rt, v, NULL, pvd, promise_value_data_scan, promise_value_data_free);
+
+    return RJS_OK;
 }
 
 /*Return value.*/
 static RJS_NF(return_value_func)
 {
-    RJS_PromiseValueFunc *pvf = (RJS_PromiseValueFunc*)rjs_value_get_object(rt, f);
+    RJS_PromiseValueData *pvd = rjs_native_object_get_data(rt, f);
 
-    rjs_value_copy(rt, rv, &pvf->v);
+    rjs_value_copy(rt, rv, &pvd->v);
     return RJS_OK;
 }
 
@@ -1047,20 +1032,20 @@ static RJS_NF(return_value_func)
 static RJS_NF(then_finally_func)
 {
     RJS_Value              *v    = rjs_argument_get(rt, args, argc, 0);
-    RJS_PromiseFinallyFunc *pff  = (RJS_PromiseFinallyFunc*)rjs_value_get_object(rt, f);
+    RJS_PromiseFinallyData *pfd  = rjs_native_object_get_data(rt, f);
     size_t                  top  = rjs_value_stack_save(rt);
     RJS_Value              *res  = rjs_value_stack_push(rt);
     RJS_Value              *p    = rjs_value_stack_push(rt);
     RJS_Value              *func = rjs_value_stack_push(rt);
     RJS_Result              r;
 
-    if ((r = rjs_call(rt, &pff->on_finally, rjs_v_undefined(rt), NULL, 0, res)) == RJS_ERR)
+    if ((r = rjs_call(rt, &pfd->on_finally, rjs_v_undefined(rt), NULL, 0, res)) == RJS_ERR)
         goto end;
 
-    if ((r = rjs_promise_resolve(rt, &pff->c, res, p)) == RJS_ERR)
+    if ((r = rjs_promise_resolve(rt, &pfd->c, res, p)) == RJS_ERR)
         goto end;
 
-    promise_value_func_new(rt, func, return_value_func, v, func);
+    promise_value_func_new(rt, func, return_value_func, v);
 
     r = rjs_invoke(rt, p, rjs_pn_then(rt), func, 1, rv);
 end:
@@ -1071,29 +1056,29 @@ end:
 /*Throw reason function.*/
 static RJS_NF(throw_reason_func)
 {
-    RJS_PromiseValueFunc *pvf = (RJS_PromiseValueFunc*)rjs_value_get_object(rt, f);
+    RJS_PromiseValueData *pvd = rjs_native_object_get_data(rt, f);
 
-    return rjs_throw(rt, &pvf->v);
+    return rjs_throw(rt, &pvd->v);
 }
 
 /*Finally catch function.*/
 static RJS_NF(catch_finally_func)
 {
     RJS_Value              *v    = rjs_argument_get(rt, args, argc, 0);
-    RJS_PromiseFinallyFunc *pff  = (RJS_PromiseFinallyFunc*)rjs_value_get_object(rt, f);
+    RJS_PromiseFinallyData *pfd  = rjs_native_object_get_data(rt, f);
     size_t                  top  = rjs_value_stack_save(rt);
     RJS_Value              *res  = rjs_value_stack_push(rt);
     RJS_Value              *p    = rjs_value_stack_push(rt);
     RJS_Value              *func = rjs_value_stack_push(rt);
     RJS_Result              r;
 
-    if ((r = rjs_call(rt, &pff->on_finally, rjs_v_undefined(rt), NULL, 0, res)) == RJS_ERR)
+    if ((r = rjs_call(rt, &pfd->on_finally, rjs_v_undefined(rt), NULL, 0, res)) == RJS_ERR)
         goto end;
 
-    if ((r = rjs_promise_resolve(rt, &pff->c, res, p)) == RJS_ERR)
+    if ((r = rjs_promise_resolve(rt, &pfd->c, res, p)) == RJS_ERR)
         goto end;
 
-    promise_value_func_new(rt, func, throw_reason_func, v, func);
+    promise_value_func_new(rt, func, throw_reason_func, v);
 
     r = rjs_invoke(rt, p, rjs_pn_then(rt), func, 1, rv);
 end:
@@ -1110,6 +1095,7 @@ static RJS_NF(Promise_prototype_finally)
     RJS_Value *c          = rjs_value_stack_push(rt);
     RJS_Value *fulfill    = rjs_value_stack_push(rt);
     RJS_Value *reject     = rjs_value_stack_push(rt);
+    RJS_PromiseFinallyData *pfd = NULL;
     RJS_Result r;
 
     if (!rjs_value_is_object(rt, thiz)) {
@@ -1124,12 +1110,15 @@ static RJS_NF(Promise_prototype_finally)
         rjs_value_copy(rt, fulfill, on_finally);
         rjs_value_copy(rt, reject, on_finally);
     } else {
-        promise_finally_func_new(rt, fulfill, then_finally_func, c, on_finally);
-        promise_finally_func_new(rt, reject, catch_finally_func, c, on_finally);
+        pfd = promise_finally_data_new(rt, c, on_finally);
+        promise_finally_func_new(rt, fulfill, then_finally_func, pfd);
+        promise_finally_func_new(rt, reject, catch_finally_func, pfd);
     }
 
     r = rjs_invoke(rt, thiz, rjs_pn_then(rt), fulfill, 2, rv);
 end:
+    if (pfd)
+        promise_finally_data_free(rt, pfd);
     rjs_value_stack_restore(rt, top);
     return r;
 }

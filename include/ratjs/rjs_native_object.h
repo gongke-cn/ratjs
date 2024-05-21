@@ -66,6 +66,40 @@ extern RJS_Result
 rjs_native_object_from_constructor (RJS_Runtime *rt, RJS_Value *c, RJS_Value *proto, RJS_Value *o);
 
 /**
+ * Create a new native function object.
+ * \param rt The current runtime.
+ * \param[out] v Return the new native function object value.
+ * \param realm The function's realm.
+ * \param proto The prototype of the function.
+ * \param script The script contains the function.
+ * \param nf The native function pointer.
+ * \param flags The flags of the function.
+ * \retval RJS_OK On success.
+ * \retval RJS_ERR On error.
+ */
+extern RJS_Result
+rjs_native_func_object_new (RJS_Runtime *rt, RJS_Value *v, RJS_Realm *realm,
+        RJS_Value *proto, RJS_Script *script, RJS_NativeFunc nf, int flags);
+
+/**
+ * Create a new native function.
+ * \param rt The current runtime.
+ * \param mod The module contains this function.
+ * \param nf The native function.
+ * \param len The parameters length.
+ * \param name The function's name.
+ * \param realm The realm.
+ * \param proto The prototype value.
+ * \param prefix The name prefix.
+ * \param[out] f Return the new built-in function.
+ * \retval RJS_OK On success.
+ * \retval RJS_ERR On error.
+ */
+extern RJS_Result
+rjs_create_native_function (RJS_Runtime *rt, RJS_Value *mod, RJS_NativeFunc nf, size_t len,
+        RJS_Value *name, RJS_Realm *realm, RJS_Value *proto, RJS_Value *prefix, RJS_Value *f);
+
+/**
  * Set the native data of the object.
  * \param rt The current runtime.
  * \param o The native object.

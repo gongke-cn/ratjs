@@ -153,44 +153,13 @@ same_module (RJS_Runtime *rt, RJS_Value *v1, RJS_Value *v2)
 
 #if ENABLE_ASYNC
 
-/**Async module reaction function.*/
-typedef struct {
-    RJS_BuiltinFuncObject bfo;    /**< Base built-in function object data.*/
-    RJS_Value             module; /**< The module.*/
-} RJS_AsyncModuleFunc;
-
 /*Scan the referenced things in the async module function.*/
 static void
-async_module_func_op_gc_scan (RJS_Runtime *rt, void *ptr)
+async_module_scan (RJS_Runtime *rt, void *ptr)
 {
-    RJS_AsyncModuleFunc *amf = ptr;
-
-    rjs_builtin_func_object_op_gc_scan(rt, ptr);
-
-    rjs_gc_scan_value(rt, &amf->module);
+    if (ptr)
+        rjs_gc_mark(rt, ptr);
 }
-
-/*Free the async module function.*/
-static void
-async_module_func_op_gc_free (RJS_Runtime *rt, void *ptr)
-{
-    RJS_AsyncModuleFunc *amf = ptr;
-
-    rjs_builtin_func_object_deinit(rt, &amf->bfo);
-
-    RJS_DEL(rt, amf);
-}
-
-/**Async module reaction function operation functions.*/
-static const RJS_ObjectOps
-async_module_func_ops = {
-    {
-        RJS_GC_THING_BUILTIN_FUNC,
-        async_module_func_op_gc_scan,
-        async_module_func_op_gc_free
-    },
-    RJS_BUILTIN_CONSTRUCTOR_OBJECT_OPS
-};
 
 #endif /*ENABLE_ASYNC*/
 
@@ -636,16 +605,16 @@ async_module_execution_rejected (RJS_Runtime *rt, RJS_Value *modv, RJS_Value *er
 static RJS_Result
 async_module_func_new (RJS_Runtime *rt, RJS_Value *f, RJS_NativeFunc nf, RJS_Value *modv)
 {
-    RJS_AsyncModuleFunc *amf;
-    RJS_Module          *mod    = rjs_value_get_gc_thing(rt, modv);
-    RJS_Script          *script = &mod->script;
+    RJS_Module *mod    = rjs_value_get_gc_thing(rt, modv);
+    RJS_Script *script = &mod->script;
+    RJS_Result  r;
 
-    RJS_NEW(rt, amf);
+    r = rjs_create_native_function(rt, NULL, nf, 0, rjs_s_empty(rt), script->realm, NULL, NULL, f);
+    if (r == RJS_ERR)
+        return r;
 
-    rjs_value_copy(rt, &amf->module, modv);
-
-    return rjs_init_builtin_function(rt, &amf->bfo, nf, 0, &async_module_func_ops,
-            0, rjs_s_empty(rt), script->realm, NULL, NULL, NULL, f);
+    rjs_native_object_set_data(rt, f, NULL, mod, async_module_scan, NULL);
+    return RJS_OK;
 }
 
 /*Execute the valid modules.*/
@@ -748,13 +717,18 @@ static RJS_Result
 async_module_execution_fulfilled_nf (RJS_Runtime *rt, RJS_Value *f, RJS_Value *thiz, RJS_Value *args, size_t argc,
         RJS_Value *nt, RJS_Value *rv)
 {
-    RJS_AsyncModuleFunc *amf;
-
-    amf = (RJS_AsyncModuleFunc*)rjs_value_get_object(rt, f);
+    RJS_Module *mod  = rjs_native_object_get_data(rt, f);
+    size_t      top  = rjs_value_stack_save(rt);
+    RJS_Value  *modv = rjs_value_stack_push(rt);
+    RJS_Result  r;
 
     rjs_value_set_undefined(rt, rv);
+    rjs_value_set_gc_thing(rt, modv, mod);
 
-    return async_module_execution_fulfilled(rt, &amf->module);
+    r = async_module_execution_fulfilled(rt, modv);
+
+    rjs_value_stack_restore(rt, top);
+    return r;
 }
 
 /*Async module rejected.*/
@@ -795,14 +769,19 @@ static RJS_Result
 async_module_execution_rejected_nf (RJS_Runtime *rt, RJS_Value *f, RJS_Value *thiz, RJS_Value *args, size_t argc,
         RJS_Value *nt, RJS_Value *rv)
 {
-    RJS_AsyncModuleFunc *amf;
-    RJS_Value           *err = rjs_argument_get(rt, args, argc, 0);
-
-    amf = (RJS_AsyncModuleFunc*)rjs_value_get_object(rt, f);
+    RJS_Value  *err  = rjs_argument_get(rt, args, argc, 0);
+    RJS_Module *mod  = rjs_native_object_get_data(rt, f);
+    size_t      top  = rjs_value_stack_save(rt);
+    RJS_Value  *modv = rjs_value_stack_push(rt);
+    RJS_Result  r;
 
     rjs_value_set_undefined(rt, rv);
+    rjs_value_set_gc_thing(rt, modv, mod);
 
-    return async_module_execution_rejected(rt, &amf->module, err);
+    r = async_module_execution_rejected(rt, modv, err);
+
+    rjs_value_stack_restore(rt, top);
+    return r;
 }
 
 /*Execute the module in async mode.*/
@@ -1633,66 +1612,78 @@ rjs_module_from_file (RJS_Runtime *rt, RJS_Value *mod, const char *filename, RJS
     return module_from_file(rt, mod, filename, realm);
 }
 
-/*Module dynamic import function.*/
+/*Module dynamic import data.*/
 typedef struct {
-    RJS_BuiltinFuncObject bfo;       /**< Base built-in function object.*/
+    int                   ref;       /**< Reference counter.*/
     RJS_PromiseCapability pc;        /**< Dynamic import promise capability.*/
     RJS_Value             mod;       /**< The module.*/
     RJS_Value             promisev;  /**< Promise value of the pc.*/
     RJS_Value             resolvev;  /**< Resovle value of the pc.*/
     RJS_Value             rejectv;   /**< Reject value of the pc.*/
-} RJS_ModuleDynamicFunc;
+} RJS_ModuleDynamicData;
 
-/*Scan reference things in the module dynamic import function.*/
+/*Scan reference things in the module dynamic import data.*/
 static void
-module_dynamic_func_op_gc_scan (RJS_Runtime *rt, void *ptr)
+module_dynamic_data_scan (RJS_Runtime *rt, void *ptr)
 {
-    RJS_ModuleDynamicFunc *mdf = ptr;
+    RJS_ModuleDynamicData *mdd = ptr;
 
-    rjs_builtin_func_object_op_gc_scan(rt, &mdf->bfo);
-
-    rjs_gc_scan_value(rt, &mdf->mod);
-    rjs_gc_scan_value(rt, &mdf->promisev);
-    rjs_gc_scan_value(rt, &mdf->resolvev);
-    rjs_gc_scan_value(rt, &mdf->rejectv);
+    rjs_gc_scan_value(rt, &mdd->mod);
+    rjs_gc_scan_value(rt, &mdd->promisev);
+    rjs_gc_scan_value(rt, &mdd->resolvev);
+    rjs_gc_scan_value(rt, &mdd->rejectv);
 }
 
-/*Free the module dynamic import function.*/
+/*Free the module dynamic import data.*/
 static void
-module_dynamic_func_op_gc_free (RJS_Runtime *rt, void *ptr)
+module_dynamic_data_free (RJS_Runtime *rt, void *ptr)
 {
-    RJS_ModuleDynamicFunc *mdf = ptr;
+    RJS_ModuleDynamicData *mdd = ptr;
 
-    rjs_builtin_func_object_deinit(rt, &mdf->bfo);
+    mdd->ref --;
 
-    RJS_DEL(rt, mdf);
+    if (mdd->ref == 0) {
+        rjs_promise_capability_deinit(rt, &mdd->pc);
+        RJS_DEL(rt, mdd);
+    }
 }
 
-/*Module dynamic import function operation functions.*/
-static const RJS_ObjectOps
-module_dynamic_func_ops = {
-    {
-        RJS_GC_THING_BUILTIN_FUNC,
-        module_dynamic_func_op_gc_scan,
-        module_dynamic_func_op_gc_free
-    },
-    RJS_BUILTIN_FUNCTION_OBJECT_OPS
-};
+/*Allocate a new module dynamic data.*/
+static RJS_ModuleDynamicData*
+module_dynamic_data_new (RJS_Runtime *rt, RJS_Value *mod, RJS_PromiseCapability *pc)
+{
+    RJS_ModuleDynamicData *mdd;
+
+    RJS_NEW(rt, mdd);
+
+    mdd->ref = 1;
+
+    rjs_value_set_undefined(rt, &mdd->promisev);
+    rjs_value_set_undefined(rt, &mdd->resolvev);
+    rjs_value_set_undefined(rt, &mdd->rejectv);
+
+    rjs_promise_capability_init_vp(rt, &mdd->pc, &mdd->promisev, &mdd->resolvev, &mdd->rejectv);
+
+    rjs_value_copy(rt, &mdd->mod, mod);
+    rjs_promise_capability_copy(rt, &mdd->pc, pc);
+
+    return mdd;
+}
 
 /*Module dynamic imported resolve function.*/
 static RJS_NF(module_dynamic_resolve)
 {
-    RJS_ModuleDynamicFunc *mdf = (RJS_ModuleDynamicFunc*)rjs_value_get_object(rt, f);
+    RJS_ModuleDynamicData *mdd = rjs_native_object_get_data(rt, f);
     size_t                 top = rjs_value_stack_save(rt);
     RJS_Value             *ns  = rjs_value_stack_push(rt);
     RJS_Value             *err = rjs_value_stack_push(rt);
     RJS_Result             r;
 
-    if ((r = rjs_module_get_namespace(rt, &mdf->mod, ns)) == RJS_ERR) {
+    if ((r = rjs_module_get_namespace(rt, &mdd->mod, ns)) == RJS_ERR) {
         rjs_catch(rt, err);
-        rjs_call(rt, mdf->pc.reject, rjs_v_undefined(rt), err, 1, NULL);
+        rjs_call(rt, mdd->pc.reject, rjs_v_undefined(rt), err, 1, NULL);
     } else {
-        rjs_call(rt, mdf->pc.resolve, rjs_v_undefined(rt), ns, 1, NULL);
+        rjs_call(rt, mdd->pc.resolve, rjs_v_undefined(rt), ns, 1, NULL);
 
         r = RJS_OK;
     }
@@ -1704,10 +1695,10 @@ static RJS_NF(module_dynamic_resolve)
 /*Module dynamic imported reject function.*/
 static RJS_NF(module_dynamic_reject)
 {
-    RJS_ModuleDynamicFunc *mdf = (RJS_ModuleDynamicFunc*)rjs_value_get_object(rt, f);
+    RJS_ModuleDynamicData *mdd = rjs_native_object_get_data(rt, f);
     RJS_Value             *v   = rjs_argument_get(rt, args, argc, 0);
 
-    rjs_call(rt, mdf->pc.reject, rjs_v_undefined(rt), v, 1, NULL);
+    rjs_call(rt, mdd->pc.reject, rjs_v_undefined(rt), v, 1, NULL);
 
     return RJS_OK;
 }
@@ -1717,8 +1708,7 @@ static RJS_Result
 module_import_dynamically (RJS_Runtime *rt, RJS_Value *ref, RJS_Value *spec, RJS_PromiseCapability *pc)
 {
     RJS_Result             r;
-    RJS_ModuleDynamicFunc *resolvef;
-    RJS_ModuleDynamicFunc *rejectf;
+    RJS_ModuleDynamicData *mdd     = NULL;
     RJS_Module            *m;
     RJS_Script            *script1, *script2;
     size_t                 top     = rjs_value_stack_save(rt);
@@ -1748,27 +1738,19 @@ module_import_dynamically (RJS_Runtime *rt, RJS_Value *ref, RJS_Value *spec, RJS
         if ((r = rjs_module_evaluate(rt, mod, p)) == RJS_ERR)
             goto end;
 
-        RJS_NEW(rt, resolvef);
-        rjs_value_copy(rt, &resolvef->mod, mod);
-        rjs_value_set_undefined(rt, &resolvef->promisev);
-        rjs_value_set_undefined(rt, &resolvef->resolvev);
-        rjs_value_set_undefined(rt, &resolvef->rejectv);
-        rjs_promise_capability_init_vp(rt, &resolvef->pc, &resolvef->promisev,
-                &resolvef->resolvev, &resolvef->rejectv);
-        rjs_promise_capability_copy(rt, &resolvef->pc, pc);
-        rjs_builtin_func_object_init(rt, resolve, &resolvef->bfo, NULL, NULL,
-                NULL, module_dynamic_resolve, 0, &module_dynamic_func_ops);
+        mdd = module_dynamic_data_new(rt, mod, pc);
 
-        RJS_NEW(rt, rejectf);
-        rjs_value_copy(rt, &rejectf->mod, mod);
-        rjs_value_set_undefined(rt, &rejectf->promisev);
-        rjs_value_set_undefined(rt, &rejectf->resolvev);
-        rjs_value_set_undefined(rt, &rejectf->rejectv);
-        rjs_promise_capability_init_vp(rt, &rejectf->pc, &rejectf->promisev,
-                &rejectf->resolvev, &rejectf->rejectv);
-        rjs_promise_capability_copy(rt, &rejectf->pc, pc);
-        rjs_builtin_func_object_init(rt, reject, &rejectf->bfo, NULL, NULL,
-                NULL, module_dynamic_reject, 0, &module_dynamic_func_ops);
+        r = rjs_native_func_object_new(rt, resolve, NULL, NULL, NULL, module_dynamic_resolve, 0);
+        if (r == RJS_ERR)
+            goto end;
+        rjs_native_object_set_data(rt, resolve, NULL, mdd, module_dynamic_data_scan, module_dynamic_data_free);
+        mdd->ref ++;
+
+        r = rjs_native_func_object_new(rt, reject, NULL, NULL, NULL, module_dynamic_reject, 0);
+        if (r == RJS_ERR)
+            goto end;
+        rjs_native_object_set_data(rt, reject, NULL, mdd, module_dynamic_data_scan, module_dynamic_data_free);
+        mdd->ref ++;
 
         if ((r = rjs_invoke(rt, p, rjs_pn_then(rt), resolve, 2, NULL)) == RJS_ERR)
             goto end;
@@ -1782,6 +1764,9 @@ module_import_dynamically (RJS_Runtime *rt, RJS_Value *ref, RJS_Value *spec, RJS
 
     r = RJS_OK;
 end:
+    if (mdd)
+        module_dynamic_data_free(rt, mdd);
+
     if (r == RJS_ERR) {
         rjs_catch(rt, err);
         rjs_call(rt, pc->reject, rjs_v_undefined(rt), err, 1, NULL);

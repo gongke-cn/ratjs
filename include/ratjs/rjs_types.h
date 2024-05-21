@@ -253,7 +253,6 @@ typedef enum {
     RJS_GC_THING_BUILTIN_FUNC, /**< Built-in function.*/
     RJS_GC_THING_BOUND_FUNC,   /**< Bound function.*/
     RJS_GC_THING_PROMISE,      /**< Promise.*/
-    RJS_GC_THING_PROMISE_STATUS,    /**< The promise's status.*/
     RJS_GC_THING_DECL_ENV,     /**< Declarative environment.*/
     RJS_GC_THING_OBJECT_ENV,   /**< Object environment.*/
     RJS_GC_THING_FUNCTION_ENV, /**< Function environment.*/
@@ -271,7 +270,6 @@ typedef enum {
     RJS_GC_THING_REGEXP_STRING_ITERATOR, /**< Regular expression string iterator.*/
     RJS_GC_THING_VALUE_BUFFER, /**< Value buffer.*/
     RJS_GC_THING_VALUE_LIST,   /**< Value list.*/
-    RJS_GC_THING_INT,          /**< Integer value.*/
     RJS_GC_THING_REALM,        /**< Realm.*/
     RJS_GC_THING_RESOLVE_BINDING_LIST,   /**< Resolve binding list.*/
     RJS_GC_THING_BIG_INT,      /**< Big integer.*/
@@ -297,6 +295,7 @@ typedef enum {
     RJS_GC_THING_ASYNC_GENERATOR,       /**< Async generator.*/
     RJS_GC_THING_ASYNC_FROM_SYNC_ITER,  /**< Async from sync iterator object.*/
     RJS_GC_THING_NATIVE_OBJECT,/**< Native object.*/
+    RJS_GC_THING_NATIVE_FUNC,  /**< Native function object.*/
     RJS_GC_THING_CPTR,         /**< C pointer.*/
     RJS_GC_THING_MAX           /**< The maximum GC thing type value.*/
 } RJS_GcThingType;

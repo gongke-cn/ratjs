@@ -232,17 +232,17 @@ rjs_builtin_func_object_deinit (RJS_Runtime *rt, RJS_BuiltinFuncObject *bfo)
 /**
  * Make the built-in function object as constructor.
  * \param rt The current runtime.
- * \param f The script function object.
+ * \param f The built-in function object.
  * \retval RJS_OK On success.
  * \retval RJS_ERR On error.
  */
 RJS_Result
 rjs_builtin_func_object_make_constructor (RJS_Runtime *rt, RJS_Value *f)
 {
-    RJS_BuiltinFuncObject *bfo = (RJS_BuiltinFuncObject*)rjs_value_get_object(rt, f);
+    RJS_GcThing *gt = (RJS_GcThing*)rjs_value_get_object(rt, f);
 
-    if (bfo->bfo.object.gc_thing.ops == (RJS_GcThingOps*)&builtin_func_object_ops)
-        bfo->bfo.object.gc_thing.ops = (RJS_GcThingOps*)&builtin_constructor_object_ops;
+    if (gt->ops == (RJS_GcThingOps*)&builtin_func_object_ops)
+        gt->ops = (RJS_GcThingOps*)&builtin_constructor_object_ops;
 
     return RJS_OK;
 }
@@ -1020,7 +1020,9 @@ rjs_get_function_module (RJS_Runtime *rt, RJS_Value *func, RJS_Value *mod)
     RJS_GcThingType     gtt = rjs_value_get_gc_thing_type(rt, func);
     RJS_BaseFuncObject *bfo;
 
-    assert((gtt == RJS_GC_THING_SCRIPT_FUNC) || (gtt == RJS_GC_THING_BUILTIN_FUNC));
+    assert((gtt == RJS_GC_THING_SCRIPT_FUNC)
+            || (gtt == RJS_GC_THING_BUILTIN_FUNC)
+            || (gtt == RJS_GC_THING_NATIVE_FUNC));
 
     bfo = (RJS_BaseFuncObject*)rjs_value_get_object(rt, func);
 

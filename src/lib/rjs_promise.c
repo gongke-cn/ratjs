@@ -40,22 +40,15 @@ typedef struct {
 
 /**Promise status.*/
 typedef struct {
-    RJS_GcThing gc_thing; /**< The base GC thing data.*/
+    int         ref;      /**< Reference counter.*/
     RJS_Value   promise;  /**< The promise.*/
     RJS_Bool    resolved; /**< The primise is already resovled.*/
 } RJS_PromiseStatus;
 
-/**Resolve function.*/
-typedef struct {
-    RJS_BuiltinFuncObject bfo;    /**< Base built-in function data.*/
-    RJS_PromiseStatus    *status; /**< The promise's status.*/
-} RJS_PromiseResovleFunc;
-
 /**Promise capability new function.*/
 typedef struct {
-    RJS_BuiltinFuncObject  bfo;        /**< Base built-in function data.*/
-    RJS_PromiseCapability  capability; /**< The capability.*/
-} RJS_PromiseCapabilityNewFunc;
+    RJS_PromiseCapability pc; /**< The promise capability.*/
+} RJS_PromiseCapabilityData;
 
 /*Resolve native function.*/
 static RJS_Result
@@ -135,7 +128,7 @@ promise_ops = {
 
 /*Scan the referenced things in the promise status.*/
 static void
-promise_status_op_gc_scan (RJS_Runtime *rt, void *ptr)
+promise_status_scan (RJS_Runtime *rt, void *ptr)
 {
     RJS_PromiseStatus *ps = ptr;
 
@@ -144,72 +137,20 @@ promise_status_op_gc_scan (RJS_Runtime *rt, void *ptr)
 
 /*Free the promise status.*/
 static void
-promise_status_op_gc_free (RJS_Runtime *rt, void *ptr)
+promise_status_free (RJS_Runtime *rt, void *ptr)
 {
     RJS_PromiseStatus *ps = ptr;
 
-    RJS_DEL(rt, ps);
-}
+    ps->ref --;
 
-/*Operation functions of promise status.*/
-static const RJS_GcThingOps
-promise_status_ops = {
-    RJS_GC_THING_PROMISE_STATUS,
-    promise_status_op_gc_scan,
-    promise_status_op_gc_free
-};
-
-/*Scan the referenced things in the resolve function.*/
-static void
-promise_resolve_func_op_gc_scan (RJS_Runtime *rt, void *ptr)
-{
-    RJS_PromiseResovleFunc *prf = ptr;
-
-    rjs_builtin_func_object_op_gc_scan(rt, ptr);
-    rjs_gc_mark(rt, prf->status);
-}
-
-/*Free the resolve function.*/
-static void
-promise_resolve_func_op_gc_free (RJS_Runtime *rt, void *ptr)
-{
-    RJS_PromiseResovleFunc *prf = ptr;
-
-    rjs_builtin_func_object_deinit(rt, &prf->bfo);
-
-    RJS_DEL(rt, prf);
-}
-
-/*Resolve function operation functions.*/
-static const RJS_ObjectOps
-promise_resolve_func_ops = {
-    {
-        RJS_GC_THING_BUILTIN_FUNC,
-        promise_resolve_func_op_gc_scan,
-        promise_resolve_func_op_gc_free
-    },
-    RJS_BUILTIN_FUNCTION_OBJECT_OPS
-};
-
-/*Create resolve function.*/
-static RJS_Result
-create_resolving_function (RJS_Runtime *rt, RJS_Value *f, RJS_Value *p,
-        RJS_NativeFunc nf, RJS_PromiseStatus *status)
-{
-    RJS_Realm              *realm = rjs_realm_current(rt);
-    RJS_PromiseResovleFunc *prf;
-
-    RJS_NEW(rt, prf);
-
-    prf->status = status;
-
-    return rjs_init_builtin_function(rt, &prf->bfo, nf, 0, &promise_resolve_func_ops, 1,
-            rjs_s_empty(rt), realm, NULL, NULL, NULL, f);
+    if (ps->ref == 0) {
+        RJS_DEL(rt, ps);
+    }
 }
 
 /*Create a new promise status.*/
 static RJS_PromiseStatus*
-promise_status_new (RJS_Runtime *rt, RJS_Value *v, RJS_Value *promise)
+promise_status_new (RJS_Runtime *rt, RJS_Value *promise)
 {
     RJS_PromiseStatus *ps;
 
@@ -217,11 +158,26 @@ promise_status_new (RJS_Runtime *rt, RJS_Value *v, RJS_Value *promise)
 
     rjs_value_copy(rt, &ps->promise, promise);
     ps->resolved = RJS_FALSE;
-
-    rjs_value_set_gc_thing(rt, v, ps);
-    rjs_gc_add(rt, ps, &promise_status_ops);
+    ps->ref      = 1;
 
     return ps;
+}
+
+/*Create resolve function.*/
+static RJS_Result
+create_resolving_function (RJS_Runtime *rt, RJS_Value *f, RJS_NativeFunc nf,
+        RJS_PromiseStatus *status)
+{
+    RJS_Realm *realm = rjs_realm_current(rt);
+    RJS_Result r;
+
+    r = rjs_create_native_function(rt, NULL, nf, 1, rjs_s_empty(rt), realm, NULL, NULL, f);
+    if (r == RJS_ERR)
+        return r;
+
+    rjs_native_object_set_data(rt, f, NULL, status, promise_status_scan, promise_status_free);
+    status->ref ++;
+    return RJS_OK;
 }
 
 /*Then job.*/
@@ -233,14 +189,13 @@ promise_then_job (RJS_Runtime *rt, void *data)
     RJS_Value             *resolve = rjs_value_stack_push(rt);
     RJS_Value             *reject  = rjs_value_stack_push(rt);
     RJS_Value             *err     = rjs_value_stack_push(rt);
-    RJS_Value             *statusv = rjs_value_stack_push(rt);
     RJS_PromiseStatus     *ps;
     RJS_Result             r;
 
-    ps = promise_status_new(rt, statusv, &p->promise);
+    ps = promise_status_new(rt, &p->promise);
 
-    create_resolving_function(rt, resolve, &p->promise, promise_resolve_nf, ps);
-    create_resolving_function(rt, reject, &p->promise, promise_reject_nf, ps);
+    create_resolving_function(rt, resolve, promise_resolve_nf, ps);
+    create_resolving_function(rt, reject, promise_reject_nf, ps);
 
     if ((r = rjs_call(rt, &p->then, &p->thenable, resolve, 2, NULL)) == RJS_ERR) {
         rjs_catch(rt, err);
@@ -249,6 +204,7 @@ promise_then_job (RJS_Runtime *rt, void *data)
             goto end;
     }
 end:
+    promise_status_free(rt, ps);
     rjs_value_stack_restore(rt, top);
 }
 
@@ -425,11 +381,10 @@ static RJS_Result
 promise_resolve_nf (RJS_Runtime *rt, RJS_Value *f, RJS_Value *thiz, RJS_Value *args, size_t argc, RJS_Value *nt, RJS_Value *rv)
 {
     RJS_Value              *res  = rjs_argument_get(rt, args, argc, 0);
-    RJS_PromiseResovleFunc *prf  = (RJS_PromiseResovleFunc*)rjs_value_get_object(rt, f);
     size_t                  top  = rjs_value_stack_save(rt);
     RJS_Value              *err  = rjs_value_stack_push(rt);
     RJS_Value              *then = rjs_value_stack_push(rt);
-    RJS_PromiseStatus      *ps   = prf->status;
+    RJS_PromiseStatus      *ps   = rjs_native_object_get_data(rt, f);
     RJS_Realm              *realm;
     RJS_PromiseThenParams  *ptp;
     RJS_Result              r;
@@ -483,9 +438,8 @@ end:
 static RJS_Result
 promise_reject_nf (RJS_Runtime *rt, RJS_Value *f, RJS_Value *thiz, RJS_Value *args, size_t argc, RJS_Value *nt, RJS_Value *rv)
 {
-    RJS_Value              *reason = rjs_argument_get(rt, args, argc, 0);
-    RJS_PromiseResovleFunc *prf    = (RJS_PromiseResovleFunc*)rjs_value_get_object(rt, f);
-    RJS_PromiseStatus      *ps     = prf->status;
+    RJS_Value         *reason = rjs_argument_get(rt, args, argc, 0);
+    RJS_PromiseStatus *ps     = rjs_native_object_get_data(rt, f);
 
     if (!ps->resolved) {
         ps->resolved = RJS_TRUE;
@@ -513,10 +467,9 @@ rjs_promise_new (RJS_Runtime *rt, RJS_Value *v, RJS_Value *exec, RJS_Value *new_
     RJS_Value         *resolve = rjs_value_stack_push(rt);
     RJS_Value         *reject  = rjs_value_stack_push(rt);
     RJS_Value         *rv      = rjs_value_stack_push(rt);
-    RJS_Value         *statusv = rjs_value_stack_push(rt);
     RJS_Value         *err     = rjs_value_stack_push(rt);
     RJS_Promise       *p       = NULL;
-    RJS_PromiseStatus *ps;
+    RJS_PromiseStatus *ps      = NULL;
     RJS_Result         r;
 
     if (!new_target || rjs_value_is_undefined(rt, new_target)) {
@@ -543,10 +496,10 @@ rjs_promise_new (RJS_Runtime *rt, RJS_Value *v, RJS_Value *exec, RJS_Value *new_
         goto end;
     p = NULL;
 
-    ps = promise_status_new(rt, statusv, v);
+    ps = promise_status_new(rt, v);
 
-    create_resolving_function(rt, resolve, v, promise_resolve_nf, ps);
-    create_resolving_function(rt, reject, v, promise_reject_nf, ps);
+    create_resolving_function(rt, resolve, promise_resolve_nf, ps);
+    create_resolving_function(rt, reject, promise_reject_nf, ps);
 
     if ((r = rjs_call(rt, exec, rjs_v_undefined(rt), resolve, 2, rv)) == RJS_ERR) {
         rjs_catch(rt, err);
@@ -557,6 +510,9 @@ rjs_promise_new (RJS_Runtime *rt, RJS_Value *v, RJS_Value *exec, RJS_Value *new_
 
     r = RJS_OK;
 end:
+    if (ps)
+        promise_status_free(rt, ps);
+
     if (r == RJS_ERR) {
         if (p)
             RJS_DEL(rt, p);
@@ -566,54 +522,30 @@ end:
     return r;
 }
 
-/*Scan the referenced things in the promise capability new function.*/
+/*Free the promise capability data.*/
 static void
-promise_capability_new_func_op_gc_scan (RJS_Runtime *rt, void *ptr)
+promise_capability_data_free (RJS_Runtime *rt, void *ptr)
 {
-    RJS_PromiseCapabilityNewFunc *pcnf = ptr;
+    RJS_PromiseCapabilityData *pcd = ptr;
 
-    rjs_builtin_func_object_op_gc_scan(rt, &pcnf->bfo);
+    rjs_promise_capability_deinit(rt, &pcd->pc);
+    RJS_DEL(rt, pcd);
 }
-
-/*Free the promise capability new function.*/
-static void
-promise_capability_new_func_op_gc_free (RJS_Runtime *rt, void *ptr)
-{
-    RJS_PromiseCapabilityNewFunc *pcnf = ptr;
-
-    rjs_promise_capability_deinit(rt, &pcnf->capability);
-    rjs_builtin_func_object_deinit(rt, &pcnf->bfo);
-
-    RJS_DEL(rt, pcnf);
-}
-
-/*Promise capability new function operation functions.*/
-static const RJS_ObjectOps
-promise_capability_new_func_ops = {
-    {
-        RJS_GC_THING_BUILTIN_FUNC,
-        promise_capability_new_func_op_gc_scan,
-        promise_capability_new_func_op_gc_free
-    },
-    RJS_BUILTIN_FUNCTION_OBJECT_OPS
-};
 
 /*Create new promise capability.*/
 static RJS_Result
 promise_capalibity_new_nf (RJS_Runtime *rt, RJS_Value *f, RJS_Value *thiz, RJS_Value *args, size_t argc, RJS_Value *nt, RJS_Value *rv)
 {
-    RJS_PromiseCapabilityNewFunc *pcnf;
-    RJS_Value                    *resolve = rjs_argument_get(rt, args, argc, 0);
-    RJS_Value                    *reject  = rjs_argument_get(rt, args, argc, 1);
+    RJS_PromiseCapabilityData *pcd     = rjs_native_object_get_data(rt, f);
+    RJS_Value                 *resolve = rjs_argument_get(rt, args, argc, 0);
+    RJS_Value                 *reject  = rjs_argument_get(rt, args, argc, 1);
 
-    pcnf = (RJS_PromiseCapabilityNewFunc*)rjs_value_get_object(rt, f);
-
-    if (!rjs_value_is_undefined(rt, pcnf->capability.resolve)
-            || !rjs_value_is_undefined(rt, pcnf->capability.reject))
+    if (!rjs_value_is_undefined(rt, pcd->pc.resolve)
+            || !rjs_value_is_undefined(rt, pcd->pc.reject))
         return rjs_throw_type_error(rt, _("\"resolve\" or \"reject\" is undefined"));
 
-    rjs_value_copy(rt, pcnf->capability.resolve, resolve);
-    rjs_value_copy(rt, pcnf->capability.reject, reject);
+    rjs_value_copy(rt, pcd->pc.resolve, resolve);
+    rjs_value_copy(rt, pcd->pc.reject, reject);
 
     return RJS_OK;
 }
@@ -629,12 +561,12 @@ promise_capalibity_new_nf (RJS_Runtime *rt, RJS_Value *f, RJS_Value *thiz, RJS_V
 RJS_Result
 rjs_new_promise_capability (RJS_Runtime *rt, RJS_Value *constr, RJS_PromiseCapability *pc)
 {
-    RJS_Result                    r;
-    RJS_PromiseCapabilityNewFunc *pcnf;
-    RJS_Realm                    *realm   = rjs_realm_current(rt);
-    size_t                        top     = rjs_value_stack_save(rt);
-    RJS_Value                    *exec    = rjs_value_stack_push(rt);
-    RJS_Value                    *promise = rjs_value_stack_push(rt);
+    RJS_Result                 r;
+    RJS_PromiseCapabilityData *pcd;
+    RJS_Realm                 *realm   = rjs_realm_current(rt);
+    size_t                     top     = rjs_value_stack_save(rt);
+    RJS_Value                 *exec    = rjs_value_stack_push(rt);
+    RJS_Value                 *promise = rjs_value_stack_push(rt);
 
     if (!rjs_is_constructor(rt, constr)) {
         r = rjs_throw_type_error(rt, _("the value is not a constructor"));
@@ -645,14 +577,14 @@ rjs_new_promise_capability (RJS_Runtime *rt, RJS_Value *constr, RJS_PromiseCapab
     rjs_value_set_undefined(rt, pc->resolve);
     rjs_value_set_undefined(rt, pc->reject);
 
-    RJS_NEW(rt, pcnf);
+    r = rjs_create_native_function(rt, NULL, promise_capalibity_new_nf, 2, rjs_s_empty(rt),
+            realm, NULL, NULL, exec);
+    if (r == RJS_ERR)
+        goto end;
 
-    rjs_promise_capability_init_vp(rt, &pcnf->capability,
-            pc->promise, pc->resolve, pc->reject);
-
-    rjs_init_builtin_function(rt, &pcnf->bfo, promise_capalibity_new_nf, 0,
-            &promise_capability_new_func_ops, 2, rjs_s_empty(rt), realm,
-            NULL, NULL, NULL, exec);
+    RJS_NEW(rt, pcd);
+    rjs_promise_capability_init_vp(rt, &pcd->pc, pc->promise, pc->resolve, pc->reject);
+    rjs_native_object_set_data(rt, exec, NULL, pcd, NULL, promise_capability_data_free);
 
     if ((r = rjs_construct(rt, constr, exec, 1, NULL, promise)) == RJS_ERR)
         goto end;

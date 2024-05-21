@@ -900,7 +900,9 @@ create_c_func_wrapper (RJS_Runtime *rt, RJS_CType *ty, RJS_Value *f, void **cf)
         goto end;
     }
 
-    if ((gtt != RJS_GC_THING_SCRIPT_FUNC) && (gtt != RJS_GC_THING_BUILTIN_FUNC)) {
+    if ((gtt != RJS_GC_THING_SCRIPT_FUNC)
+            && (gtt != RJS_GC_THING_BUILTIN_FUNC)
+            && (gtt != RJS_GC_THING_NATIVE_FUNC)) {
         r = rjs_throw_type_error(rt, _("the value is not a function"));
         goto end;
     }
@@ -1023,7 +1025,7 @@ rjs_get_c_ptr (RJS_Runtime *rt, RJS_CType *ty, RJS_CPtrType ptype, RJS_Value *cp
 #endif /*ENABLE_ARRAY_BUFFER*/
     if ((!ty || (ty->model == RJS_CTYPE_MODEL_FUNC))
             && ((ptype == RJS_CPTR_TYPE_UNKNOWN) || (ptype == RJS_CPTR_TYPE_C_FUNC) || (ptype == RJS_CPTR_TYPE_C_WRAPPER))
-            && ((gtt == RJS_GC_THING_SCRIPT_FUNC) || (gtt == RJS_GC_THING_BUILTIN_FUNC))) {
+            && ((gtt == RJS_GC_THING_SCRIPT_FUNC) || (gtt == RJS_GC_THING_BUILTIN_FUNC) || (gtt == RJS_GC_THING_NATIVE_FUNC))) {
         /*Function.*/
         if (create_c_func_wrapper(rt, ty, cptrv, &r) == RJS_ERR)
             goto end;

@@ -198,12 +198,22 @@ rjs_builtin_func_object_deinit (RJS_Runtime *rt, RJS_BuiltinFuncObject *bfo);
 /**
  * Make the built-in function object as constructor.
  * \param rt The current runtime.
- * \param f The script function object.
+ * \param f The built-in function object.
  * \retval RJS_OK On success.
  * \retval RJS_ERR On error.
  */
 RJS_INTERNAL RJS_Result
 rjs_builtin_func_object_make_constructor (RJS_Runtime *rt, RJS_Value *f);
+
+/**
+ * Make the native function object as constructor.
+ * \param rt The current runtime.
+ * \param f The native function object.
+ * \retval RJS_OK On success.
+ * \retval RJS_ERR On error.
+ */
+RJS_INTERNAL RJS_Result
+rjs_native_func_object_make_constructor (RJS_Runtime *rt, RJS_Value *f);
 
 /**
  * Initialize a new built-in function.

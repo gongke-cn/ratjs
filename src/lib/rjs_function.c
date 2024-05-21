@@ -112,7 +112,9 @@ rjs_initialize_instance_elements (RJS_Runtime *rt, RJS_Value *o, RJS_Value *f)
     RJS_Result          r = RJS_OK;
 
     gtt = rjs_value_get_gc_thing_type(rt, f);
-    assert((gtt == RJS_GC_THING_SCRIPT_FUNC) || (gtt == RJS_GC_THING_BUILTIN_FUNC));
+    assert((gtt == RJS_GC_THING_SCRIPT_FUNC)
+            || (gtt == RJS_GC_THING_BUILTIN_FUNC)
+            || (gtt == RJS_GC_THING_NATIVE_FUNC));
 
     bfo = (RJS_BaseFuncObject*)rjs_value_get_object(rt, f);
 
