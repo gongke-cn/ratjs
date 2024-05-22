@@ -469,6 +469,30 @@ negative_check (RJS_Runtime *rt, int r)
 
 #if ENABLE_MODULE
 
+#ifdef __MINGW32__
+
+/**
+ * Get the absolute path of the file.
+ * \param path The input path.
+ * \param resolved_path The output path's buffer.
+ * \return The absolute path's pointer.
+ */
+static char*
+realpath(const char *path, char *resolved_path)
+{
+    char       *rstr;
+    struct stat sb;
+
+    rstr = _fullpath(resolved_path, path, PATH_MAX);
+
+    if (rstr && (stat(rstr, &sb) == -1))
+        rstr = NULL;
+
+    return rstr;
+}
+
+#endif /*__MINGW32__*/
+
 /*Check if the name is a relative name.*/
 static RJS_Bool
 is_rel_name (const char *name)
@@ -483,31 +507,36 @@ is_rel_name (const char *name)
     return RJS_FALSE;
 }
 
-/*Module path lookup function.*/
+/*Module lookup function.*/
 static RJS_Result
-module_path_func (RJS_Runtime *rt, const char *base,
-        const char *name, char *path, size_t size)
+module_lookup_func (RJS_Runtime *rt, const char *base,
+        const char *name, char *path)
 {
-    struct stat sb;
-    int         r;
-
     if (base && is_rel_name(name)) {
         char  bpbuf[PATH_MAX];
+        char  pbuf[PATH_MAX];
         char *bpath;
 
         snprintf(bpbuf, sizeof(bpbuf), "%s", base);
         bpath = dirname(bpbuf);
 
-        snprintf(path, size, "%s/%s", bpath, name);
+        snprintf(pbuf, sizeof(pbuf), "%s/%s", bpath, name);
 
-        if ((r = stat(path, &sb)) != -1)
+        if (realpath(pbuf, path))
             return RJS_OK;
     } else {
-        if ((r = stat(name, &sb)) != -1)
+        if (realpath(name, path))
             return RJS_OK;
     }
 
-    return RJS_FALSE;
+    return RJS_ERR;
+}
+
+/*Module load funciton.*/
+static RJS_Result
+module_load_func (RJS_Runtime *rt, const char *path, RJS_Value *mod)
+{
+    return rjs_load_module(rt, RJS_MODULE_TYPE_SCRIPT, path, NULL, mod);
 }
 
 #endif /*ENABLE_MODULE*/
@@ -526,7 +555,8 @@ run_case_once (char *test, RunMode mode)
     realm = rjs_realm_current(rt);
 
 #if ENABLE_MODULE
-    rjs_set_module_path_func(rt, module_path_func);
+    rjs_set_module_lookup_func(rt, module_lookup_func);
+    rjs_set_module_load_func(rt, module_load_func);
 #endif /*ENABLE_MODULE*/
 
     if (meta_flags & FLAG_CAN_BLOCK_TRUE)
@@ -606,9 +636,18 @@ run_case_once (char *test, RunMode mode)
             goto end;
         }
         break;
-    case RUN_MODE_MODULE:
+    case RUN_MODE_MODULE: {
 #if ENABLE_MODULE
-        r = rjs_module_from_file(rt, exec, test, realm);
+        char  pbuf[PATH_MAX];
+        char *path;
+
+        if (!(path = realpath(test, pbuf))) {
+            fprintf(stderr, "cannot find \"%s\"\n", test);
+            r = -1;
+            goto end;
+        }
+
+        r = rjs_load_module(rt, RJS_MODULE_TYPE_SCRIPT, path, realm, exec);
         if (meta_negative && (meta_error_phase == PHASE_PARSE)) {
             r = negative_check(rt, r);
             goto end;
@@ -638,6 +677,7 @@ run_case_once (char *test, RunMode mode)
         }
 #endif /*ENABLE_MODULE*/
         break;
+    }
     }
 
     if (meta_flags & FLAG_ASYNC) {

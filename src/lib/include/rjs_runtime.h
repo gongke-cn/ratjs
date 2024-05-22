@@ -62,7 +62,8 @@ struct RJS_Runtime_s {
     RJS_Parser      *parser;               /**< The parser.*/
     RJS_Environment *env;                  /**< The environment.*/
     RJS_List         job_list;             /**< Job list.*/
-    RJS_ModulePathFunc mod_path_func;      /**< Module path function.*/
+    RJS_ModuleLookupFunc mod_lookup_func;  /**< Module lookup function.*/
+    RJS_ModuleLoadFunc   mod_load_func;    /**< Module load function.*/
     RJS_NativeData   native_data;          /**< Native data of the runtime.*/
     RJS_Hash         sym_reg_key_hash;     /**< Symbol registry key hash table.*/
     RJS_Hash         sym_reg_sym_hash;     /**< Symbol registry symbol hash table.*/

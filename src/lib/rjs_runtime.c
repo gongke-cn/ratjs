@@ -87,15 +87,16 @@ rjs_runtime_new (void)
 
     rt->agent_can_block = RJS_TRUE;
 
-    rt->main_realm    = NULL;
-    rt->rb.bot_realm  = NULL;
-    rt->parser        = NULL;
-    rt->env           = NULL;
-    rt->error_ip      = 0;
-    rt->error_flag    = RJS_FALSE;
-    rt->throw_dump    = RJS_FALSE;
-    rt->error_context = NULL;
-    rt->mod_path_func = NULL;
+    rt->main_realm      = NULL;
+    rt->rb.bot_realm    = NULL;
+    rt->parser          = NULL;
+    rt->env             = NULL;
+    rt->error_ip        = 0;
+    rt->error_flag      = RJS_FALSE;
+    rt->throw_dump      = RJS_FALSE;
+    rt->error_context   = NULL;
+    rt->mod_lookup_func = NULL;
+    rt->mod_load_func   = NULL;
 
     rjs_native_data_init(&rt->native_data);
 
@@ -237,16 +238,31 @@ rjs_runtime_get_data (RJS_Runtime *rt)
 }
 
 /**
- * Set the module pathname function.
+ * Set the module lookup function.
  * \param rt The current runtime.
  * \param fn The function.
  * \retval RJS_OK On success.
  * \retval RJS_ERR On error.
  */
 RJS_Result
-rjs_set_module_path_func (RJS_Runtime *rt, RJS_ModulePathFunc fn)
+rjs_set_module_lookup_func (RJS_Runtime *rt, RJS_ModuleLookupFunc fn)
 {
-    rt->mod_path_func = fn;
+    rt->mod_lookup_func = fn;
+
+    return RJS_OK;
+}
+
+/**
+ * Set the module loading function.
+ * \param rt The current runtime.
+ * \param fn The function.
+ * \retval RJS_OK On success.
+ * \retval RJS_ERR On error.
+ */
+RJS_Result
+rjs_set_module_load_func (RJS_Runtime *rt, RJS_ModuleLoadFunc fn)
+{
+    rt->mod_load_func = fn;
 
     return RJS_OK;
 }

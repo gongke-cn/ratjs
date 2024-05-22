@@ -41,6 +41,13 @@ extern "C" {
  * @{
  */
 
+/**Module type.*/
+typedef enum {
+    RJS_MODULE_TYPE_SCRIPT, /**< Script module.*/
+    RJS_MODULE_TYPE_NATIVE, /**< Native module.*/
+    RJS_MODULE_TYPE_JSON    /**< JSON module.*/
+} RJS_ModuleType;
+
 /**Resolve binding.*/
 typedef struct {
     RJS_Value *module; /**< The target module.*/
@@ -85,16 +92,19 @@ rjs_resolve_binding_deinit (RJS_Runtime *rt, RJS_ResolveBinding *rb)
 }
 
 /**
- * Create a module from the file.
+ * Load the module.
  * \param rt The current runtime.
+ * \param type The module's type.
+ * \param path The path name of the module.
+ *  The path name of each module must be different.
+ * \param realm The realm of the module.
  * \param[out] mod Return the new module.
- * \param filename The module's filename.
- * \param realm The realm.
  * \retval RJS_OK On success.
  * \retval RJS_ERR On error.
  */
 extern RJS_Result
-rjs_module_from_file (RJS_Runtime *rt, RJS_Value *mod, const char *filename, RJS_Realm *realm);
+rjs_load_module (RJS_Runtime *rt, RJS_ModuleType type, const char *path,
+        RJS_Realm *realm, RJS_Value *mod);
 
 /**
  * Import the module dynamically.

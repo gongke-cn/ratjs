@@ -1261,45 +1261,39 @@ load_native_module (RJS_Runtime *rt, RJS_Value *mod, const char *path, RJS_Realm
 
 #endif /*ENABLE_NATIVE_MODULE*/
 
-/*Create the module from the filename.*/
+/*Load a module.*/
 static RJS_Result
-module_from_file (RJS_Runtime *rt, RJS_Value *mod, const char *path, RJS_Realm *realm)
+load_module (RJS_Runtime *rt, RJS_ModuleType type, const char *path, RJS_Realm *realm, RJS_Value *mod)
 {
-    char           rpath_buf[PATH_MAX];
-    char          *rpath, *sub;
+    char          *sub;
     RJS_HashEntry *he, **phe;
     RJS_Module    *m;
     RJS_Script    *script;
     RJS_Result     r;
 
-    /*Get the full path.*/
-    rpath = realpath(path, rpath_buf);
-    if (!rpath)
-        return RJS_ERR;
-
     /*Check if the module is already loaded.*/
-    r = rjs_hash_lookup(&rt->mod_hash, rpath, &he, &phe, &rjs_hash_char_star_ops, rt);
+    r = rjs_hash_lookup(&rt->mod_hash, (void*)path, &he, &phe, &rjs_hash_char_star_ops, rt);
     if (r) {
         m = RJS_CONTAINER_OF(he, RJS_Module, he);
         rjs_value_set_gc_thing(rt, mod, m);
         return RJS_OK;
     }
 
-    sub = strrchr(rpath, '.');
+    sub = strrchr(path, '.');
 
     /*Load the module.*/
 #if ENABLE_JSON
     if (sub && !strcasecmp(sub, ".json")) {
-        r = load_json_module(rt, mod, rpath, realm);
+        r = load_json_module(rt, mod, path, realm);
     } else
 #endif /*ENABLE_JSON*/
 #if ENABLE_NATIVE_MODULE
     if (sub && !strcasecmp(sub, ".njs")) {
-        r = load_native_module(rt, mod, rpath, realm);
+        r = load_native_module(rt, mod, path, realm);
     } else
 #endif /*ENABLE_NATIVE_MODULE*/
     {
-        r = load_script_module(rt, mod, rpath, realm);
+        r = load_script_module(rt, mod, path, realm);
     }
 
     if (r == RJS_ERR)
@@ -1309,7 +1303,7 @@ module_from_file (RJS_Runtime *rt, RJS_Value *mod, const char *path, RJS_Realm *
     m      = rjs_value_get_gc_thing(rt, mod);
     script = &m->script;
 
-    script->path = rjs_char_star_dup(rt, rpath);
+    script->path = rjs_char_star_dup(rt, path);
 
     rjs_hash_insert(&rt->mod_hash, script->path, &m->he, phe, &rjs_hash_char_star_ops, rt);
 
@@ -1322,7 +1316,8 @@ resolve_imported_module (RJS_Runtime *rt, RJS_Value *script, RJS_Value *name, RJ
 {
     const char *nstr, *bstr;
     char        path[PATH_MAX];
-    RJS_Result  r = RJS_FALSE;
+    RJS_Result  r;
+    RJS_Bool    found = RJS_FALSE;
 
     if (script) {
         RJS_Script *base;
@@ -1336,22 +1331,33 @@ resolve_imported_module (RJS_Runtime *rt, RJS_Value *script, RJS_Value *name, RJ
 
     nstr = rjs_string_to_enc_chars(rt, name, NULL, NULL);
 
-    if (rt->mod_path_func
-            && (r = rt->mod_path_func(rt, bstr, nstr, path, sizeof(path))) == RJS_OK) {
-        RJS_Realm *realm = rjs_realm_current(rt);
-
-        nstr = path;
-
-        if ((r = module_from_file(rt, rmod, path, realm)) == RJS_ERR)
-            rjs_throw_syntax_error(rt, _("load module \"%s\" failed"), path);
+    if (!rt->mod_lookup_func) {
+        r = RJS_ERR;
+        goto end;
     }
 
-    if (r == RJS_FALSE) {
-        if (dynamic)
+    if ((r = rt->mod_lookup_func(rt, bstr, nstr, path)) == RJS_ERR)
+        goto end;
+
+    if (!rt->mod_load_func) {
+        r = RJS_ERR;
+        goto end;
+    }
+
+    found = RJS_TRUE;
+
+    if ((r = rt->mod_load_func(rt, path, rmod)) == RJS_ERR)
+        goto end;
+
+    r = RJS_OK;
+end:
+    if (r == RJS_ERR) {
+        if (found)
+            rjs_throw_syntax_error(rt, _("syntax error in module \"%s\""), nstr);
+        else if (dynamic)
             rjs_throw_type_error(rt, _("cannot resolve the module \"%s\""), nstr);
         else
             rjs_throw_reference_error(rt, _("cannot resolve the module \"%s\""), nstr);
-        r = RJS_ERR;
     }
 
     return r;
@@ -1595,21 +1601,23 @@ rjs_resolve_imported_module (RJS_Runtime *rt, RJS_Value *script, RJS_Value *name
 }
 
 /**
- * Create a module from the file.
+ * Load the module.
  * \param rt The current runtime.
+ * \param type The module's type.
+ * \param path The path name of the module.
+ * \param realm The realm of the module.
  * \param[out] mod Return the new module.
- * \param filename The module's filename.
- * \param realm The realm.
  * \retval RJS_OK On success.
  * \retval RJS_ERR On error.
  */
 RJS_Result
-rjs_module_from_file (RJS_Runtime *rt, RJS_Value *mod, const char *filename, RJS_Realm *realm)
+rjs_load_module (RJS_Runtime *rt, RJS_ModuleType type, const char *path,
+        RJS_Realm *realm, RJS_Value *mod)
 {
     if (!realm)
         realm = rjs_realm_current(rt);
         
-    return module_from_file(rt, mod, filename, realm);
+    return load_module(rt, type, path, realm, mod);
 }
 
 /*Module dynamic import data.*/

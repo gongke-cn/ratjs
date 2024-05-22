@@ -625,22 +625,29 @@ typedef void (*RJS_FreeFunc) (RJS_Runtime *rt, void *data);
 typedef RJS_Result (*RJS_EventFunc) (RJS_Runtime *rt);
 
 /**
- * The callback function check the new loading module's pathname.
- * 
- * This function is invoked when the engine try to load a new module.
- * This function check if the module can be loaded and return the pathname of the module.
- * 
+ * The callback function lookup the module.
  * \param rt The current runtime.
  * \param base The base module's pathname which try to load the new module.
  * If the new module is loading by the native code, "base" is NULL.
  * \param name The new module's name.
- * \param path The new module's pathname output buffer.
- * \param size The size of the pathname output buffer.
- * \retval RJS_OK The new module can be loaded. And its pathname is stored in "path".
- * \retval RJS_ERR The new module cannot be loaded.
+ * \param path The new module's pathname's output buffer.
+ * The path name of each module must be different.
+ * \retval RJS_OK Find the new module. And its pathname is stored in "path".
+ * \retval RJS_ERR The new module cannot be found.
  */
-typedef RJS_Result (*RJS_ModulePathFunc) (RJS_Runtime *rt, const char *base,
-        const char *name, char *path, size_t size);
+typedef RJS_Result (*RJS_ModuleLookupFunc) (RJS_Runtime *rt, const char *base,
+        const char *name, char *path);
+
+/**
+ * The callback function to load the module.
+ * \param rt The current runtime.
+ * \param path The new module's pathname.
+ * \param[out] mod Store the new loaded module.
+ * \retval RJS_OK On success.
+ * \retval RJS_ERR Cannot load the module.
+ */
+typedef RJS_Result (*RJS_ModuleLoadFunc) (RJS_Runtime *rt, const char *path,
+        RJS_Value *mod);
 
 /**
  * @}

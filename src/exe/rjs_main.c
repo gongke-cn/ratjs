@@ -79,6 +79,30 @@ static RJS_Result   main_result;
 /*Main function's retuen value.*/
 static RJS_Value   *main_rv;
 
+#ifdef __MINGW32__
+
+/**
+ * Get the absolute path of the file.
+ * \param path The input path.
+ * \param resolved_path The output path's buffer.
+ * \return The absolute path's pointer.
+ */
+static char*
+realpath(const char *path, char *resolved_path)
+{
+    char       *rstr;
+    struct stat sb;
+
+    rstr = _fullpath(resolved_path, path, PATH_MAX);
+
+    if (rstr && (stat(rstr, &sb) == -1))
+        rstr = NULL;
+
+    return rstr;
+}
+
+#endif /*__MINGW32__*/
+
 /*Show version information.*/
 static void
 show_version (void)
@@ -157,84 +181,87 @@ is_abs_name (const char *name)
 
 /*Check if the module exist.*/
 static RJS_Result
-module_exist (char *path, size_t size)
+module_exist (const char *path, char *resolve)
 {
-    struct stat sb;
-    int         r;
-    size_t      len, space;
+    char   tbuf[PATH_MAX];
+    size_t len;
 
-    if ((r = stat(path, &sb)) != -1) {
-        if ((sb.st_mode & S_IFMT) == S_IFREG)
-            return RJS_OK;
-    }
+    if (realpath(path, resolve))
+        return RJS_OK;
 
     len = strlen(path);
     if ((len >= 3) && !strcasecmp(path + len - 3, ".js"))
-        return RJS_FALSE;
+        return RJS_ERR;
     if ((len >= 4) && !strcasecmp(path + len - 4, ".njs"))
-        return RJS_FALSE;
+        return RJS_ERR;
     if ((len >= 5) && !strcasecmp(path + len - 5, ".json"))
-        return RJS_FALSE;
+        return RJS_ERR;
 
-    space = size - len;
+    snprintf(tbuf, sizeof(tbuf), "%s.njs", path);
+    if (realpath(tbuf, resolve))
+        return RJS_OK;
 
-    if (space > 4) {
-        snprintf(path + len, size - len, ".njs");
+    snprintf(tbuf, sizeof(tbuf), "%s.js", path);
+    if (realpath(tbuf, resolve))
+        return RJS_OK;
 
-        if ((r = stat(path, &sb)) != -1)
-            return RJS_OK;
-    }
+    snprintf(tbuf, sizeof(tbuf), "%s.json", path);
+    if (realpath(tbuf, resolve))
+        return RJS_OK;
 
-    if (space > 3) {
-        snprintf(path + len, size - len, ".js");
-
-        if ((r = stat(path, &sb)) != -1)
-            return RJS_OK;
-    }
-    
-    if (space > 5) {
-        snprintf(path + len, size - len, ".json");
-
-        if ((r = stat(path, &sb)) != -1)
-            return RJS_OK;
-    }
-
-    return RJS_FALSE;
+    return RJS_ERR;
 }
 
-/*Module pathname lookup function.*/
+/*Module lookup function.*/
 static RJS_Result
-module_path_func (RJS_Runtime *rt, const char *base, const char *name,
-        char *path, size_t size)
+module_lookup_func (RJS_Runtime *rt, const char *base, const char *name, char *path)
 {
     if (base && is_rel_name(name)) {
         char  bpbuf[PATH_MAX];
+        char  pbuf[PATH_MAX];
         char *bpath;
 
         snprintf(bpbuf, sizeof(bpbuf), "%s", base);
         bpath = dirname(bpbuf);
 
-        snprintf(path, size, "%s/%s", bpath, name);
+        snprintf(pbuf, sizeof(pbuf), "%s/%s", bpath, name);
 
-        if (module_exist(path, size) == RJS_OK)
+        if (module_exist(pbuf, path) == RJS_OK)
             return RJS_OK;
     } else if (is_abs_name(name)) {
-        snprintf(path, size, "%s", name);
-
-        if (module_exist(path, size) == RJS_OK)
+        if (module_exist(name, path) == RJS_OK)
             return RJS_OK;
     } else {
         ModuleDirectory *md;
 
         rjs_list_foreach_c(&module_dir_list, md, ModuleDirectory, ln) {
-            snprintf(path, size, "%s/%s", md->dir, name);
+            char pbuf[PATH_MAX];
 
-            if (module_exist(path, size) == RJS_OK)
+            snprintf(pbuf, sizeof(pbuf), "%s/%s", md->dir, name);
+
+            if (module_exist(pbuf, path) == RJS_OK)
                 return RJS_OK;
         }
     }
 
-    return RJS_FALSE;
+    return RJS_ERR;
+}
+
+/*Module load function.*/
+static RJS_Result
+module_load_func (RJS_Runtime *rt, const char *path, RJS_Value *mod)
+{
+    char          *sup;
+    RJS_ModuleType type = RJS_MODULE_TYPE_SCRIPT;
+
+    sup = strrchr(path, '.');
+    if (sup && !strcasecmp(sup, ".njs")) {
+        type = RJS_MODULE_TYPE_NATIVE;
+    } else if (sup && !strcasecmp(sup, ".json")) {
+        type = RJS_MODULE_TYPE_JSON;
+    }
+
+    return rjs_load_module(rt, type, path, NULL, mod);
 }
 
 /*Initialize the module lookup directory.*/
@@ -243,7 +270,8 @@ module_dir_list_init (void)
 {
     rjs_list_init(&module_dir_list);
 
-    rjs_set_module_path_func(rt, module_path_func);
+    rjs_set_module_lookup_func(rt, module_lookup_func);
+    rjs_set_module_load_func(rt, module_load_func);
 }
 
 /*Release the module lookup directory.*/
@@ -662,8 +690,16 @@ main (int argc, char **argv)
 #endif /*ENABLE_SCRIPT && ENABLE_MODULE*/
 #if ENABLE_MODULE
         {
+            char  pbuf[PATH_MAX];
+            char *path;
+
+            if (!(path = realpath(js_filename, pbuf))) {
+                fprintf(stderr, "cannot find module \"%s\"\n", js_filename);
+                goto end;
+            }
+
             /*Load the module.*/
-            if ((r = rjs_module_from_file(rt, exec, js_filename, realm)) == RJS_ERR)
+            if ((r = rjs_load_module(rt, RJS_MODULE_TYPE_SCRIPT, path, realm, exec)) == RJS_ERR)
                 goto end;
 
             /*Disassemble.*/

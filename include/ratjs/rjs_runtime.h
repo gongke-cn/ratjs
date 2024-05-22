@@ -87,14 +87,24 @@ extern RJS_Result
 rjs_set_agent_can_block (RJS_Runtime *rt, RJS_Bool f);
 
 /**
- * Set the module pathname function.
+ * Set the module lookup function.
  * \param rt The current runtime.
  * \param fn The function.
  * \retval RJS_OK On success.
  * \retval RJS_ERR On error.
  */
 extern RJS_Result
-rjs_set_module_path_func (RJS_Runtime *rt, RJS_ModulePathFunc fn);
+rjs_set_module_lookup_func (RJS_Runtime *rt, RJS_ModuleLookupFunc fn);
+
+/**
+ * Set the module load function.
+ * \param rt The current runtime.
+ * \param fn The function.
+ * \retval RJS_OK On success.
+ * \retval RJS_ERR On error.
+ */
+extern RJS_Result
+rjs_set_module_load_func (RJS_Runtime *rt, RJS_ModuleLoadFunc fn);
 
 /**
  * Enable or disable stack dump function when throw an error.
