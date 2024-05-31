@@ -47,20 +47,6 @@ extern "C" {
 /**Convert \r\n to \n*/
 #define RJS_INPUT_FL_CRLF_TO_LF 8
 
-/**Character stream input.*/
-typedef struct RJS_Input_s RJS_Input;
-
-/**Character stream input.*/
-struct RJS_Input_s {
-    int        flags;  /**< the flags of the input.*/
-    int        line;   /**< The current line number.*/
-    int        column; /**< The current column number.*/
-    char      *name;   /**< The input's name.*/
-    RJS_Value *str;    /**< The string value.*/
-    size_t     length; /**< The length of the string.*/
-    size_t     pos;    /**< The current read position.*/
-};
-
 /**The location.*/
 typedef struct {
     int    first_line;    /**< The first character's line number*/
@@ -80,38 +66,6 @@ typedef enum {
 
 /**End of the input.*/
 #define RJS_INPUT_END -1
-
-/**
- * Initialize a string input.
- * \param rt The current runtime.
- * \param si The string input to be initialized.
- * \param s The string.
- * \retval RJS_OK On success.
- * \retval RJS_ERR On error.
- */
-RJS_INTERNAL RJS_Result
-rjs_string_input_init (RJS_Runtime *rt, RJS_Input *si, RJS_Value *s);
-
-/**
- * Initialize a file input.
- * \param rt The current runtime.
- * \param fi The file input to be inintialized.
- * \param filename The filename.
- * \param enc The file's character encoding.
- * \retval RJS_OK On success.
- * \retval RJS_ERR On error.
- */
-RJS_INTERNAL RJS_Result
-rjs_file_input_init (RJS_Runtime *rt, RJS_Input *fi, const char *filename,
-        const char *enc);
-
-/**
- * Release an unused input.
- * \param rt The current runtime.
- * \param input The input to be released.
- */
-RJS_INTERNAL void
-rjs_input_deinit (RJS_Runtime *rt, RJS_Input *input);
 
 /**
  * Check if the input has error.

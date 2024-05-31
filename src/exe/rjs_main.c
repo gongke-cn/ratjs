@@ -68,16 +68,12 @@ typedef struct {
 
 /*Module lookup directory list.*/
 static RJS_List     module_dir_list;
-/*Module evaluation result.*/
-static RJS_Result   module_eval_result;
-/*Module evaluation return value.*/
-static RJS_Value   *module_eval_rv;
 #endif /*ENABLE_MODULE*/
 
-/*Main function's result.*/
-static RJS_Result   main_result;
-/*Main function's retuen value.*/
-static RJS_Value   *main_rv;
+/*Module evaluation result.*/
+static RJS_Result   callback_result;
+/*Module evaluation return value.*/
+static RJS_Value   *callback_rv;
 
 #ifdef __MINGW32__
 
@@ -249,19 +245,46 @@ module_lookup_func (RJS_Runtime *rt, const char *base, const char *name, char *p
 
 /*Module load function.*/
 static RJS_Result
-module_load_func (RJS_Runtime *rt, const char *path, RJS_Value *mod)
+module_load_func (RJS_Runtime *rt, const char *id, RJS_PromiseCapability *pc)
 {
     char          *sup;
+    RJS_Result     r;
+    RJS_Input      input;
+    RJS_Bool       has_input = RJS_FALSE;
     RJS_ModuleType type = RJS_MODULE_TYPE_SCRIPT;
+    size_t         top  = rjs_value_stack_save(rt);
+    RJS_Value     *mod  = rjs_value_stack_push(rt);
+    RJS_Value     *err  = rjs_value_stack_push(rt);
 
-    sup = strrchr(path, '.');
+    sup = strrchr(id, '.');
     if (sup && !strcasecmp(sup, ".njs")) {
         type = RJS_MODULE_TYPE_NATIVE;
     } else if (sup && !strcasecmp(sup, ".json")) {
         type = RJS_MODULE_TYPE_JSON;
     }
 
-    return rjs_load_module(rt, type, path, NULL, mod);
+    if (type != RJS_MODULE_TYPE_NATIVE) {
+        if ((r = rjs_file_input_init(rt, &input, id, NULL)) == RJS_ERR)
+            goto end;
+        has_input = RJS_TRUE;
+    }
+
+    if ((r = rjs_load_module(rt, type, &input, id, NULL, mod)) == RJS_ERR)
+        goto end;
+
+    r = RJS_OK;
+end:
+    if (has_input)
+        rjs_input_deinit(rt, &input);
+
+    if (r == RJS_ERR) {
+        rjs_catch(rt, err);
+        r = rjs_call(rt, pc->reject, rjs_v_undefined(rt), err, 1, NULL);
+    } else {
+        r = rjs_call(rt, pc->resolve, rjs_v_undefined(rt), mod, 1, NULL);
+    }
+    rjs_value_stack_restore(rt, top);
+    return r;
 }
 
 /*Initialize the module lookup directory.*/
@@ -347,25 +370,25 @@ module_dir_function (void)
     rjs_value_stack_restore(rt, top);
 }
 
-/*Module evaluation ok callback.*/
-static RJS_NF(on_module_eval_ok)
+/*Callback OK.*/
+static RJS_NF(on_callback_ok)
 {
     RJS_Value *arg = rjs_argument_get(rt, args, argc, 0);
 
-    rjs_value_copy(rt, module_eval_rv, arg);
+    rjs_value_copy(rt, callback_rv, arg);
     rjs_value_set_undefined(rt, rv);
-    module_eval_result = RJS_OK;
+    callback_result = RJS_OK;
     return RJS_OK;
 }
 
-/*Module evaluation error callback.*/
-static RJS_NF(on_module_eval_error)
+/*Callback error.*/
+static RJS_NF(on_callback_error)
 {
     RJS_Value *arg = rjs_argument_get(rt, args, argc, 0);
 
-    rjs_value_copy(rt, module_eval_rv, arg);
+    rjs_value_copy(rt, callback_rv, arg);
     rjs_value_set_undefined(rt, rv);
-    module_eval_result = RJS_ERR;
+    callback_result = RJS_ERR;
     return RJS_OK;
 }
 
@@ -383,25 +406,58 @@ module_load (const char *name)
 
     rjs_string_from_enc_chars(rt, str, name, -1, NULL);
 
-    if ((r = rjs_resolve_imported_module(rt, NULL, str, mod)) == RJS_ERR)
+    callback_result = 0;
+    callback_rv     = res;
+
+    /*Lookup the module.*/
+    if ((r = rjs_lookup_module(rt, NULL, str, promise)) == RJS_ERR)
         goto end;
 
+    while (callback_result == 0)
+        rjs_solve_jobs(rt);
+
+    if (callback_result == RJS_ERR) {
+        rjs_throw(rt, res);
+        r = RJS_ERR;
+        goto end;
+    }
+
+    rjs_value_copy(rt, mod, res);
+
+    /*Load requested modules.*/
+    callback_result = 0;
+
+    if ((r = rjs_module_load_requested(rt, mod, promise)) == RJS_ERR)
+        goto end;
+
+    if ((r = rjs_promise_then_native(rt, promise, on_callback_ok, on_callback_error, NULL)) == RJS_ERR)
+        goto end;
+
+    while (callback_result == 0)
+        rjs_solve_jobs(rt);
+
+    if (callback_result == RJS_ERR) {
+        rjs_throw(rt, res);
+        r = RJS_ERR;
+        goto end;
+    }
+
+    /*Link the module.*/
     if ((r = rjs_module_link(rt, mod)) == RJS_ERR)
         goto end;
 
-    module_eval_result = 0;
-    module_eval_rv     = res;
+    callback_result = 0;
 
     if ((r = rjs_module_evaluate(rt, mod, promise)) == RJS_ERR)
         goto end;
 
-    if ((r = rjs_promise_then_native(rt, promise, on_module_eval_ok, on_module_eval_error, NULL)) == RJS_ERR)
+    if ((r = rjs_promise_then_native(rt, promise, on_callback_ok, on_callback_error, NULL)) == RJS_ERR)
         goto end;
 
-    while (module_eval_result == 0)
+    while (callback_result == 0)
         rjs_solve_jobs(rt);
 
-    if (module_eval_result == RJS_ERR) {
+    if (callback_result == RJS_ERR) {
         rjs_throw(rt, res);
         r = RJS_ERR;
         goto end;
@@ -572,9 +628,9 @@ static RJS_NF(on_main_ok)
 {
     RJS_Value *arg = rjs_argument_get(rt, args, argc, 0);
 
-    rjs_value_copy(rt, main_rv, arg);
+    rjs_value_copy(rt, callback_rv, arg);
     rjs_value_set_undefined(rt, rv);
-    main_result = RJS_OK;
+    callback_result = RJS_OK;
     return RJS_OK;
 }
 
@@ -583,9 +639,9 @@ static RJS_NF(on_main_error)
 {
     RJS_Value *arg = rjs_argument_get(rt, args, argc, 0);
 
-    rjs_value_copy(rt, main_rv, arg);
+    rjs_value_copy(rt, callback_rv, arg);
     rjs_value_set_undefined(rt, rv);
-    main_result = RJS_ERR;
+    callback_result = RJS_ERR;
     return RJS_OK;
 }
 
@@ -690,16 +746,22 @@ main (int argc, char **argv)
 #endif /*ENABLE_SCRIPT && ENABLE_MODULE*/
 #if ENABLE_MODULE
         {
-            char  pbuf[PATH_MAX];
-            char *path;
+            char      pbuf[PATH_MAX];
+            char     *path;
+            RJS_Input input;
 
             if (!(path = realpath(js_filename, pbuf))) {
                 fprintf(stderr, "cannot find module \"%s\"\n", js_filename);
                 goto end;
             }
 
+            if ((r = rjs_file_input_init(rt, &input, path, NULL)) == RJS_ERR)
+                goto end;
+
             /*Load the module.*/
-            if ((r = rjs_load_module(rt, RJS_MODULE_TYPE_SCRIPT, path, realm, exec)) == RJS_ERR)
+            r = rjs_load_module(rt, RJS_MODULE_TYPE_SCRIPT, &input, path, realm, exec);
+            rjs_input_deinit(rt, &input);
+            if (r == RJS_ERR)
                 goto end;
 
             /*Disassemble.*/
@@ -712,6 +774,33 @@ main (int argc, char **argv)
                 RJS_BindingName  bn;
                 RJS_Value       *promise;
 
+                promise = rjs_value_stack_push(rt);
+
+                callback_result = 0;
+                callback_rv     = rv;
+
+                /*Load requested modules.*/
+                if ((r = rjs_module_load_requested(rt, exec, promise)) == RJS_ERR) {
+                    dump_error();
+                    goto end;
+                }
+
+                /*Wait the evaluation end.*/
+                if ((r = rjs_promise_then_native(rt, promise, on_callback_ok,
+                        on_callback_error, NULL)) == RJS_ERR) {
+                    dump_error();
+                    goto end;
+                }
+
+                while (callback_result == 0)
+                    rjs_solve_jobs(rt);
+
+                if (callback_result == RJS_ERR) {
+                    rjs_throw(rt, rv);
+                    dump_error();
+                    goto end;
+                }
+
                 /*Link the module.*/
                 if ((r = rjs_module_link(rt, exec)) == RJS_ERR) {
                     dump_error();
@@ -719,10 +808,7 @@ main (int argc, char **argv)
                 }
 
                 /*Evaluate the module.*/
-                promise = rjs_value_stack_push(rt);
-
-                module_eval_result = 0;
-                module_eval_rv     = rv;
+                callback_result = 0;
 
                 if ((r = rjs_module_evaluate(rt, exec, promise)) == RJS_ERR) {
                     dump_error();
@@ -730,16 +816,16 @@ main (int argc, char **argv)
                 }
 
                 /*Wait the evaluation end.*/
-                if ((r = rjs_promise_then_native(rt, promise, on_module_eval_ok,
-                        on_module_eval_error, NULL)) == RJS_ERR) {
+                if ((r = rjs_promise_then_native(rt, promise, on_callback_ok,
+                        on_callback_error, NULL)) == RJS_ERR) {
                     dump_error();
                     goto end;
                 }
 
-                while (module_eval_result == 0)
+                while (callback_result == 0)
                     rjs_solve_jobs(rt);
 
-                if (module_eval_result == RJS_ERR) {
+                if (callback_result == RJS_ERR) {
                     rjs_throw(rt, rv);
                     dump_error();
                     goto end;
@@ -820,18 +906,18 @@ main (int argc, char **argv)
 
             rjs_value_copy(rt, promise, rv);
 
-            main_result = 0;
-            main_rv     = rv;
+            callback_result = 0;
+            callback_rv     = rv;
 
             if ((r = rjs_promise_then_native(rt, promise, on_main_ok, on_main_error, NULL)) == RJS_ERR) {
                 dump_error();
                 goto end;
             }
 
-            while (main_result == 0)
+            while (callback_result == 0)
                 rjs_solve_jobs(rt);
 
-            if (main_result == RJS_ERR) {
+            if (callback_result == RJS_ERR) {
                 rjs_throw(rt, rv);
                 dump_error();
                 goto end;

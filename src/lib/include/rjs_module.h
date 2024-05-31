@@ -69,6 +69,10 @@ typedef struct {
 
 /**Module status.*/
 typedef enum {
+    RJS_MODULE_STATUS_ALLOCATED,         /**< The module is allocated.*/
+    RJS_MODULE_STATUS_LOADED,            /**< The module is loaded.*/
+    RJS_MODULE_STATUS_LOADING_FAILED,    /**< Loading failed.*/
+    RJS_MODULE_STATUS_LOADING_REQUESTED, /**< Loading the requested modules.*/
     RJS_MODULE_STATUS_UNLINKED,          /**< The module is unlinked.*/
     RJS_MODULE_STATUS_LINKING,           /**< In linking process.*/
     RJS_MODULE_STATUS_LINKED,            /**< The module is linked.*/
@@ -92,7 +96,7 @@ typedef struct {
     int                   dfs_index;               /**< DFS index value.*/
     int                   dfs_ancestor_index;      /**< DFA ancestor index value.*/
 #if ENABLE_ASYNC
-    RJS_Bool              async_eval;              /**< Evaluate in async mode.*/
+    int                   async_eval;              /**< Evaluate in async mode.*/
     int                   pending_async;           /**< Pending on async counter.*/
     RJS_Value             cycle_root;              /**< The cycle root module.*/
     RJS_PromiseCapability capability;              /**< The promise capability for async evaluation.*/
@@ -130,11 +134,12 @@ typedef struct {
  * Create a new module.
  * \param rt The current runtime.
  * \param[out] v Return the module value.
+ * \param id The module's indentifier.
  * \param realm The realm.
  * \return The new module.
  */
 RJS_INTERNAL RJS_Module*
-rjs_module_new (RJS_Runtime *rt, RJS_Value *v, RJS_Realm *realm);
+rjs_module_new (RJS_Runtime *rt, RJS_Value *v, const char *id, RJS_Realm *realm);
 
 /**
  * Initialize the module data in the rt.

@@ -36,26 +36,24 @@
 #include <ratjs.h>
 
 /*
- * Module path check function.
- * When the engine try to load a module, this function will be invoked to check if the module can be loaded.
+ * Module lookup function.
+ * When the engine try to load a module, this function will be invoked to lookup the module's path name.
  * Parameter "base" is the path name of the base module which try to import the new module.
  * If "base" == NULL, it means the new module is loaded by the native code, not another module.
  * Parameter "name" is the new module's name.
- * Parameter "path" is the output buffer to store the new module's pathname.
- * Parameter "size" is the size of the buffer "path".
- * If the module can be loaded, this function return RJS_OK.
- * If the module cannot be loaded, this function return RJS_ERR.
+ * Parameter "path" is the output buffer to store the new module's pathname. Its size must >= PATH_MAX.
+ * If find the module, this function return RJS_OK.
+ * If cannot find the module, this function return RJS_ERR.
  */
 static RJS_Result
-module_path_check (RJS_Runtime *rt, const char *base,
-        const char *name, char *path, size_t size)
+module_lookup (RJS_Runtime *rt, const char *base, const char *name, char *path)
 {
     char        base_buf[PATH_MAX];
     char       *dir;
     struct stat sb;
     int         r;
 
-    printf("try to load \"%s\"\n", name);
+    printf("lookup \"%s\"\n", name);
 
     if (base) {
         /*Import from another module.*/
@@ -66,10 +64,10 @@ module_path_check (RJS_Runtime *rt, const char *base,
         dir = dirname(base_buf);
 
         /*Relative pathname from the base directory.*/
-        snprintf(path, size, "%s/%s", dir, name);
+        snprintf(path, PATH_MAX, "%s/%s", dir, name);
     } else {
         /*Use name as the pathname.*/
-        snprintf(path, size, "%s", name);
+        snprintf(path, PATH_MAX, "%s", name);
     }
 
     /*Check if the module exist.*/
@@ -78,6 +76,20 @@ module_path_check (RJS_Runtime *rt, const char *base,
         return RJS_ERR;
 
     return RJS_OK;
+}
+
+/**
+ * Module load function.
+ * Parameter "rt" is the current runtime.
+ * Parameter "path" The new module's pathname.
+ * Parameter "mod" Store the new loaded module.
+ * If load the module successfully, this function return RJS_OK.
+ * If cannot load the module, this function return RJS_ERR.
+ */
+static RJS_Result
+module_load (RJS_Runtime *rt, const char *path, RJS_Value *mod)
+{
+    return rjs_load_module(rt, RJS_MODULE_TYPE_SCRIPT, path, NULL, mod);
 }
 
 /*Module evaluation result.*/
@@ -122,8 +134,11 @@ main (int argc, char **argv)
      */
     top = rjs_value_stack_save(rt);
 
-    /*Set the module path check function.*/
-    rjs_set_module_path_func(rt, module_path_check);
+    /*Set the module lookup function.*/
+    rjs_set_module_lookup_func(rt, module_lookup);
+
+    /*Set the module load function.*/
+    rjs_set_module_load_func(rt, module_load);
 
     /*Allocate a value from native value stack to store the module value.*/
     modv = rjs_value_stack_push(rt);
@@ -131,7 +146,7 @@ main (int argc, char **argv)
     mod_name = "entry.js";
 
     /*Load the module*/
-    r = rjs_module_from_file(rt, modv, mod_name, NULL);
+    r = rjs_load_module(rt, RJS_MODULE_TYPE_SCRIPT, mod_name, NULL, modv);
     if (r == RJS_ERR) {
         fprintf(stderr, "load module failed\n");
         goto end;

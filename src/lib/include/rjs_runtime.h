@@ -72,6 +72,9 @@ struct RJS_Runtime_s {
 #endif /*ENABLE_GENERATOR || ENABLE_ASYNC*/
 #if ENABLE_MODULE
     RJS_Hash         mod_hash;             /**< Module hash table.*/
+#if ENABLE_ASYNC
+    int              async_eval_cnt;       /**< Async eval counter.*/
+#endif /*ENABLE_ASYNC*/
 #endif /*ENABLE_MODULE*/
 #if ENABLE_WEAK_REF
     RJS_List         weak_ref_list;        /**< Weak references' list.*/

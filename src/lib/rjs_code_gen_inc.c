@@ -579,7 +579,7 @@ gen_export (RJS_Runtime *rt, RJS_ExportEntry *ee, RJS_AstExport *ast)
 
 /*Generate module.*/
 static RJS_Result
-gen_module_internal (RJS_Runtime *rt, RJS_Realm *realm, RJS_Value *rv)
+gen_module_internal (RJS_Runtime *rt, const char *id, RJS_Realm *realm, RJS_Value *rv)
 {
     RJS_Result  r;
     RJS_Module *mod;
@@ -588,7 +588,7 @@ gen_module_internal (RJS_Runtime *rt, RJS_Realm *realm, RJS_Value *rv)
     RJS_Parser *parser = rt->parser;
 
     /*Allocate the module.*/
-    mod = rjs_module_new(rt, rv, realm);
+    mod = rjs_module_new(rt, rv, id, realm);
 
     /*Store the module request.*/
     mod->module_request_num = parser->module_request_hash.entry_num;
@@ -722,7 +722,7 @@ gen_script (RJS_Runtime *rt, RJS_Realm *realm, RJS_Value *rv)
 
 /*Generate module.*/
 static RJS_Result
-gen_module (RJS_Runtime *rt, RJS_Realm *realm, RJS_Value *rv)
+gen_module (RJS_Runtime *rt, const char *id, RJS_Realm *realm, RJS_Value *rv)
 {
     RJS_Parser *parser = rt->parser;
     RJS_BcGen   bg;
@@ -732,7 +732,7 @@ gen_module (RJS_Runtime *rt, RJS_Realm *realm, RJS_Value *rv)
     parser->code_gen   = &bg;
     parser->decl_stack = NULL;
 
-    r = gen_module_internal(rt, realm, rv);
+    r = gen_module_internal(rt, id, realm, rv);
 
     rjs_bc_gen_deinit(rt, &bg);
 

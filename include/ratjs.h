@@ -46,6 +46,7 @@
 #include <ratjs/rjs_uchar_buffer.h>
 #include <ratjs/rjs_list.h>
 #include <ratjs/rjs_hash.h>
+#include <ratjs/rjs_input.h>
 #include <ratjs/rjs_gc.h>
 #include <ratjs/rjs_value.h>
 #include <ratjs/rjs_value_list.h>

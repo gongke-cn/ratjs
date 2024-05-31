@@ -290,13 +290,14 @@ rjs_parse_script (RJS_Runtime *rt, RJS_Input *input, RJS_Realm *realm, int flags
  * Parse the module.
  * \param rt The current runtime.
  * \param input The input.
+ * \param id The identifier of the module.
  * \param realm The realm.
  * \param[out] rv The return module value.
  * \retval RJS_OK On success.
  * \retval RJS_ERR On error.
  */
 RJS_INTERNAL RJS_Result
-rjs_parse_module (RJS_Runtime *rt, RJS_Input *input, RJS_Realm *realm, RJS_Value *rv);
+rjs_parse_module (RJS_Runtime *rt, RJS_Input *input, const char *id, RJS_Realm *realm, RJS_Value *rv);
 #endif /*ENABLE_MODULE*/
 
 /**
