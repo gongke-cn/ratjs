@@ -25,9 +25,10 @@
 
 #include "ratjs_internal.h"
 
-/*Resolve the imported module.*/
+/*Lookup the imported module.*/
 static RJS_Result
-resolve_imported_module (RJS_Runtime *rt, RJS_Value *script, RJS_Value *name, RJS_Value *rmod, RJS_Bool dynamic);
+lookup_module (RJS_Runtime *rt, RJS_Value *script, RJS_Value *name,
+        RJS_Value *promise, RJS_Value *modv, RJS_Bool dynamic);
 
 /*Scan the referneced things in the module.*/
 static void
@@ -167,19 +168,31 @@ async_module_scan (RJS_Runtime *rt, void *ptr)
  * Create a new module.
  * \param rt The current runtime.
  * \param[out] v Return the module value.
+ * \param id The identifier of the module.
  * \param realm The realm.
  * \return The new module.
  */
 RJS_Module*
-rjs_module_new (RJS_Runtime *rt, RJS_Value *v, RJS_Realm *realm)
+rjs_module_new (RJS_Runtime *rt, RJS_Value *v, const char *id, RJS_Realm *realm)
 {
-    RJS_Module *mod;
+    RJS_Module    *mod;
+    RJS_HashEntry *e, **pe = NULL;
+    RJS_Result     r;
+
+    if (id) {
+        r = rjs_hash_lookup(&rt->mod_hash, (void*)id, &e, &pe, &rjs_hash_char_star_ops, rt);
+        if (r) {
+            mod = RJS_CONTAINER_OF(e, RJS_Module, he);
+            rjs_value_set_gc_thing(rt, v, mod);
+            return mod;
+        }
+    }
 
     RJS_NEW(rt, mod);
 
     rjs_script_init(rt, &mod->script, realm);
 
-    mod->status                 = RJS_MODULE_STATUS_UNLINKED;
+    mod->status                 = RJS_MODULE_STATUS_ALLOCATED;
     mod->dfs_index              = 0;
     mod->dfs_ancestor_index     = 0;
     mod->eval_result            = RJS_OK;
@@ -227,6 +240,14 @@ rjs_module_new (RJS_Runtime *rt, RJS_Value *v, RJS_Realm *realm)
 
     rjs_value_set_gc_thing(rt, v, mod);
     rjs_gc_add(rt, mod, &mod_gc_ops);
+
+    if (id) {
+        RJS_Script *script = &mod->script;
+
+        script->path = rjs_char_star_dup(rt, id);
+
+        rjs_hash_insert(&rt->mod_hash, script->path, &mod->he, pe, &rjs_hash_char_star_ops, rt);
+    }
 
     return mod;
 }
@@ -406,12 +427,313 @@ end:
     return r;
 }
 
+/**Module load requested module data.*/
+typedef struct {
+    int       ref;      /**< Reference counter.*/
+    int       wait_cnt; /**< Waiting module's counter.*/
+    RJS_Hash  mod_hash; /**< Module hash table.*/
+    RJS_List  mod_list; /**< The module list.*/
+    RJS_PromiseCapability pc; /**< Promise capability.*/
+    RJS_Value promise;  /**< The proimise.*/
+    RJS_Value resolve;  /**< The resolve function.*/
+    RJS_Value reject;   /**< The reject function.*/
+    RJS_Value module;   /**< The module.*/
+    RJS_Value error;    /**< The error value.*/
+} RJS_ModuleLoadRequestedData;
+
+/*Scan the reference data in the module load requested data.*/
+static void
+module_load_req_data_scan (RJS_Runtime *rt, void *ptr)
+{
+    RJS_ModuleLoadRequestedData *mlrd = ptr;
+
+    rjs_gc_scan_value(rt, &mlrd->promise);
+    rjs_gc_scan_value(rt, &mlrd->resolve);
+    rjs_gc_scan_value(rt, &mlrd->reject);
+    rjs_gc_scan_value(rt, &mlrd->module);
+    rjs_gc_scan_value(rt, &mlrd->error);
+}
+
+/*Free the module load requested data.*/
+static void
+module_load_req_data_free (RJS_Runtime *rt, void *ptr)
+{
+    RJS_ModuleLoadRequestedData *mlrd = ptr;
+
+    mlrd->ref --;
+
+    if (mlrd->ref == 0) {
+        RJS_HashEntry *e, *ne;
+        size_t         i;
+
+        rjs_hash_foreach_safe(&mlrd->mod_hash, i, e, ne) {
+            RJS_DEL(rt, e);
+        }
+
+        rjs_hash_deinit(&mlrd->mod_hash, &rjs_hash_size_ops, rt);
+        RJS_DEL(rt, mlrd);
+    }
+}
+
+/*Check the module load requested result.*/
+static RJS_Result
+module_load_req_result (RJS_Runtime *rt, RJS_ModuleLoadRequestedData *mlrd)
+{
+    if (mlrd->wait_cnt == 0) {
+        RJS_Bool failed = RJS_FALSE;
+
+        while (!rjs_list_is_empty(&mlrd->mod_list)) {
+            RJS_Module *m, *nm;
+            RJS_Bool action = RJS_FALSE;
+
+            rjs_list_foreach_safe_c(&mlrd->mod_list, m, nm, RJS_Module, ln) {
+                RJS_Bool mod_failed  = RJS_FALSE;
+                RJS_Bool mod_not_end = RJS_FALSE;
+                size_t   i;
+
+                for (i = 0; i < m->module_request_num; i ++) {
+                    RJS_ModuleRequest *mr = &m->module_requests[i];
+
+                    if (rjs_value_is_undefined(rt, &mr->module)) {
+                        mod_failed = RJS_TRUE;
+                    } else {
+                        RJS_Module *rm = rjs_value_get_gc_thing(rt, &mr->module);
+
+                        if (rm->status == RJS_MODULE_STATUS_LOADING_FAILED)
+                            mod_failed = RJS_TRUE;
+                        else if (rm->status == RJS_MODULE_STATUS_LOADING_REQUESTED)
+                            mod_not_end = RJS_TRUE;
+                    }
+
+                    if (mod_failed)
+                        break;
+                }
+
+                if (mod_failed) {
+                    m->status = RJS_MODULE_STATUS_LOADING_FAILED;
+                    failed = RJS_TRUE;
+                    mod_not_end = RJS_FALSE;
+                }
+
+                if (!mod_not_end) {
+                    m->status = RJS_MODULE_STATUS_UNLINKED;
+                    rjs_value_set_undefined(rt, m->top_level_capability.promise);
+                    rjs_list_remove(&m->ln);
+                    action = RJS_TRUE;
+                }
+            }
+
+            if (!action) {
+                rjs_list_foreach_safe_c(&mlrd->mod_list, m, nm, RJS_Module, ln) {
+                    m->status = RJS_MODULE_STATUS_UNLINKED;
+                    rjs_value_set_undefined(rt, m->top_level_capability.promise);
+                    rjs_list_remove(&m->ln);
+                }
+            }
+        }
+        
+        if (failed) {
+            rjs_call(rt, mlrd->pc.reject, rjs_v_undefined(rt), &mlrd->error, 1, NULL);
+        } else {
+            rjs_call(rt, mlrd->pc.resolve, rjs_v_undefined(rt), NULL, 0, NULL);
+        }
+    }
+
+    return RJS_OK;
+}
+
+/*Add a module to the load requested data's hash table.*/
+static RJS_Result
+module_load_req_data_add (RJS_Runtime *rt, RJS_ModuleLoadRequestedData *mlrd, RJS_Value *modv);
+
+/*Load all the requested moudles.*/
+static RJS_Result
+module_load_req_modules (RJS_Runtime *rt, RJS_ModuleLoadRequestedData *mlrd, RJS_Value *modv)
+{
+    RJS_Module *mod    = rjs_value_get_gc_thing(rt, modv);
+    size_t      top    = rjs_value_stack_save(rt);
+    RJS_Value  *p      = rjs_value_stack_push(rt);
+    RJS_Script *script = &mod->script;
+    size_t      i;
+    RJS_Result  r;
+
+    for (i = 0; i < mod->module_request_num; i ++) {
+        RJS_ModuleRequest *mr   = &mod->module_requests[i];
+        RJS_Value         *name = &script->value_table[mr->module_name_idx];
+
+        if (rjs_value_is_undefined(rt, &mr->module)) {
+            if ((r = lookup_module(rt, modv, name, p, &mr->module, RJS_FALSE)) == RJS_ERR) {
+                rjs_catch(rt, &mlrd->error);
+                goto end;
+            }
+        }
+
+        if ((r = module_load_req_data_add(rt, mlrd, &mr->module)) == RJS_ERR) {
+            rjs_catch(rt, &mlrd->error);
+            goto end;
+        }
+    }
+end:
+    rjs_value_stack_restore(rt, top);
+    return RJS_OK;
+}
+
+/*Load module ok.*/
+static RJS_NF(module_load_ok)
+{
+    RJS_ModuleLoadRequestedData *mlrd = rjs_native_object_get_data(rt, f);
+    RJS_Value                   *modv = rjs_argument_get(rt, args, argc, 0);
+    RJS_Module                  *mod  = rjs_value_get_gc_thing(rt, modv);
+
+    mlrd->wait_cnt --;
+
+    if (mod->status == RJS_MODULE_STATUS_LOADED) {
+        mod->status = RJS_MODULE_STATUS_LOADING_REQUESTED;
+        module_load_req_modules(rt, mlrd, modv);
+    }
+
+    return module_load_req_result(rt, mlrd);
+}
+
+/*Load module error.*/
+static RJS_NF(module_load_error)
+{
+    RJS_ModuleLoadRequestedData *mlrd = rjs_native_object_get_data(rt, f);
+    RJS_Value                   *err  = rjs_argument_get(rt, args, argc, 0);
+
+    mlrd->wait_cnt --;
+    rjs_value_copy(rt, &mlrd->error, err);
+
+    return module_load_req_result(rt, mlrd);
+}
+
+/*Add a module to the load requested data's hash table.*/
+static RJS_Result
+module_load_req_data_add (RJS_Runtime *rt, RJS_ModuleLoadRequestedData *mlrd, RJS_Value *modv)
+{
+    RJS_Realm     *realm   = rjs_realm_current(rt);
+    RJS_Module    *mod     = rjs_value_get_gc_thing(rt, modv);
+    size_t         top     = rjs_value_stack_save(rt);
+    RJS_Value     *fulfill = rjs_value_stack_push(rt);
+    RJS_Value     *reject  = rjs_value_stack_push(rt);
+    RJS_Value     *rv      = rjs_value_stack_push(rt);
+    RJS_HashEntry *e, **pe;
+    RJS_Result     r;
+
+    r = rjs_hash_lookup(&mlrd->mod_hash, mod, &e, &pe, &rjs_hash_size_ops, rt);
+    if (r)
+        goto end;
+
+    RJS_NEW(rt, e);
+    rjs_hash_insert(&mlrd->mod_hash, mod, e, pe, &rjs_hash_size_ops, rt);
+
+    switch (mod->status) {
+    case RJS_MODULE_STATUS_ALLOCATED:
+        rjs_native_func_object_new(rt, fulfill, realm, NULL, NULL, module_load_ok, 0);
+        rjs_native_object_set_data(rt, fulfill, NULL, mlrd, module_load_req_data_scan, module_load_req_data_free);
+        mlrd->ref ++;
+        rjs_native_func_object_new(rt, reject, realm, NULL, NULL, module_load_error, 0);
+        rjs_native_object_set_data(rt, reject, NULL, mlrd, module_load_req_data_scan, module_load_req_data_free);
+        mlrd->ref ++;
+        rjs_promise_then(rt, mod->top_level_capability.promise, fulfill, reject, rv);
+        mlrd->wait_cnt ++;
+        break;
+    case RJS_MODULE_STATUS_LOADED:
+        mod->status = RJS_MODULE_STATUS_LOADING_REQUESTED;
+    case RJS_MODULE_STATUS_LOADING_REQUESTED:
+        module_load_req_modules(rt, mlrd, modv);
+        rjs_list_append(&mlrd->mod_list, &mod->ln);
+        break;
+    case RJS_MODULE_STATUS_LOADING_FAILED:
+        rjs_value_copy(rt, &mlrd->error, &mod->eval_error);
+        break;
+    default:
+        break;
+    }
+
+    r = RJS_OK;
+end:
+    rjs_value_stack_restore(rt, top);
+    return r;
+}
+
+/*Allocate a new module load requested modules data.*/
+static RJS_ModuleLoadRequestedData*
+module_load_req_data_new (RJS_Runtime *rt, RJS_Value *modv, RJS_PromiseCapability *pc)
+{
+    RJS_ModuleLoadRequestedData *mlrd;
+
+    RJS_NEW(rt, mlrd);
+
+    mlrd->ref      = 1;
+    mlrd->wait_cnt = 0;
+
+    rjs_value_set_undefined(rt, &mlrd->promise);
+    rjs_value_set_undefined(rt, &mlrd->resolve);
+    rjs_value_set_undefined(rt, &mlrd->reject);
+    rjs_value_set_undefined(rt, &mlrd->error);
+
+    rjs_value_copy(rt, &mlrd->module, modv);
+
+    rjs_hash_init(&mlrd->mod_hash);
+    rjs_list_init(&mlrd->mod_list);
+
+    rjs_promise_capability_init_vp(rt, &mlrd->pc, &mlrd->promise, &mlrd->resolve, &mlrd->reject);
+    rjs_promise_capability_copy(rt, &mlrd->pc, pc);
+
+    module_load_req_data_add(rt, mlrd, modv);
+
+    return mlrd;
+}
+
+/**
+ * Load the requested modules.
+ * \param rt The current runtime.
+ * \param modv The module.
+ * \param[out] promise Return the promise.
+ * \retval RJS_OK On success.
+ * \retval RJS_ERR On error.
+ */
+RJS_Result
+rjs_module_load_requested (RJS_Runtime *rt, RJS_Value *modv, RJS_Value *promise)
+{
+    RJS_Module *mod;
+    RJS_Result  r;
+    RJS_ModuleLoadRequestedData *mlrd = NULL;
+    size_t      top   = rjs_value_stack_save(rt);
+    RJS_Realm  *realm = rjs_realm_current(rt);
+    RJS_PromiseCapability pc;
+
+    rjs_promise_capability_init(rt, &pc); 
+
+    assert(rjs_value_is_module(rt, modv));
+
+    mod = rjs_value_get_gc_thing(rt, modv);
+
+    assert(mod->status == RJS_MODULE_STATUS_LOADED);
+
+    rjs_new_promise_capability(rt, rjs_o_Promise(realm), &pc);
+
+    mlrd = module_load_req_data_new(rt, modv, &pc);
+
+    r = module_load_req_result(rt, mlrd);
+
+    if (promise)
+        rjs_value_copy(rt, promise, mlrd->pc.promise);
+
+    if (mlrd)
+        module_load_req_data_free(rt, mlrd);
+
+    rjs_promise_capability_deinit(rt, &pc);
+    rjs_value_stack_restore(rt, top);
+    return r;
+}
+
 /*Link the module.*/
 static RJS_Result
 inner_module_link (RJS_Runtime *rt, RJS_Value *modv, RJS_List *stack, int index)
 {
-    RJS_Module *mod    = rjs_value_get_gc_thing(rt, modv);
-    RJS_Script *script = &mod->script;
+    RJS_Module *mod = rjs_value_get_gc_thing(rt, modv);
     size_t      i;
     RJS_Result  r;
 
@@ -433,23 +755,18 @@ inner_module_link (RJS_Runtime *rt, RJS_Value *modv, RJS_List *stack, int index)
 
     for (i = 0; i < mod->module_request_num; i ++) {
         RJS_ModuleRequest *mr = &mod->module_requests[i];
+        RJS_Module        *rmod;
 
-        if (rjs_value_is_undefined(rt, &mr->module)) {
-            RJS_Value  *name = &script->value_table[mr->module_name_idx];
-            RJS_Module *rmod;
+        assert(!rjs_value_is_undefined(rt, &mr->module));
 
-            if ((r = resolve_imported_module(rt, modv, name, &mr->module, RJS_FALSE)) == RJS_ERR)
-                return RJS_ERR;
+        if ((r = inner_module_link(rt, &mr->module, stack, index)) == RJS_ERR)
+            return r;
 
-            if ((r = inner_module_link(rt, &mr->module, stack, index)) == RJS_ERR)
-                return r;
+        index = r;
 
-            index = r;
-
-            rmod = rjs_value_get_gc_thing(rt, &mr->module);
-            if (rmod->status == RJS_MODULE_STATUS_LINKING)
-                mod->dfs_ancestor_index = RJS_MIN(rmod->dfs_ancestor_index, mod->dfs_ancestor_index);
-        }
+        rmod = rjs_value_get_gc_thing(rt, &mr->module);
+        if (rmod->status == RJS_MODULE_STATUS_LINKING)
+            mod->dfs_ancestor_index = RJS_MIN(rmod->dfs_ancestor_index, mod->dfs_ancestor_index);
     }
 
     if ((r = module_init_env(rt, modv)) == RJS_ERR)
@@ -653,6 +970,11 @@ execute_valid_modules (RJS_Runtime *rt, RJS_Value *modv, RJS_Hash *hash)
             } else {
                 RJS_Result r;
 
+                {
+                    RJS_Module *m = rjs_value_get_gc_thing(rt, &parent->module);
+
+                    RJS_LOGD("exec: %s", m->script.path);
+                }
                 r = execute_module(rt, &parent->module, NULL);
                 if (r == RJS_ERR) {
                     rjs_catch(rt, err);
@@ -898,11 +1220,20 @@ inner_module_evaluation (RJS_Runtime *rt, RJS_Value *modv, RJS_List *stack, int 
 
         mod->async_eval = RJS_TRUE;
 
-        if (mod->pending_async == 0)
+        if (mod->pending_async == 0) {
+            {
+            RJS_Module *m = rjs_value_get_gc_thing(rt, modv);
+            RJS_LOGD("async exec %s", m->script.path);
+        }
             execute_async_module(rt, modv);
+        }
     } else
 #endif /*ENABLE_ASYNC*/
     {
+        {
+            RJS_Module *m = rjs_value_get_gc_thing(rt, modv);
+            RJS_LOGD("exec %s", m->script.path);
+        }
         if ((r = execute_module(rt, modv, NULL)) == RJS_ERR)
             return r;
     }
@@ -1138,20 +1469,15 @@ rjs_module_disassemble (RJS_Runtime *rt, RJS_Value *v, FILE *fp, int flags)
 
 /*Load the script module.*/
 static RJS_Result
-load_script_module (RJS_Runtime *rt, RJS_Value *mod, const char *path, RJS_Realm *realm)
+load_script_module (RJS_Runtime *rt, RJS_Value *mod, RJS_Input *input, const char *id, RJS_Realm *realm)
 {
-    RJS_Input  fi;
     RJS_Result r;
 
-    /*Load the module.*/
-    if ((r = rjs_file_input_init(rt, &fi, path, NULL)) == RJS_ERR)
-        return r;
+    input->flags |= RJS_INPUT_FL_CRLF_TO_LF;
 
-    fi.flags |= RJS_INPUT_FL_CRLF_TO_LF;
-
-    r = rjs_parse_module(rt, &fi, realm, mod);
-
-    rjs_input_deinit(rt, &fi);
+    r = rjs_parse_module(rt, input, id, realm, mod);
+    if (r == RJS_ERR)
+        rjs_throw_syntax_error(rt, _("illegal module"));
 
     return r;
 }
@@ -1160,14 +1486,14 @@ load_script_module (RJS_Runtime *rt, RJS_Value *mod, const char *path, RJS_Realm
 
 /*Load the JSON module.*/
 static RJS_Result
-load_json_module (RJS_Runtime *rt, RJS_Value *mod, const char *path, RJS_Realm *realm)
+load_json_module (RJS_Runtime *rt, RJS_Value *mod, RJS_Input *input, const char *id, RJS_Realm *realm)
 {
     RJS_Result  r;
     size_t      top  = rjs_value_stack_save(rt);
     RJS_Value  *json = rjs_value_stack_push(rt);
 
     /*Load the module.*/
-    if ((r = rjs_json_from_file(rt, json, path, NULL)) == RJS_OK) {
+    if ((r = rjs_json_from_input(rt, json, input)) == RJS_OK) {
         RJS_Module      *m;
         RJS_Script      *s;
         RJS_Value       *v;
@@ -1175,7 +1501,7 @@ load_json_module (RJS_Runtime *rt, RJS_Value *mod, const char *path, RJS_Realm *
         RJS_BindingName  bn;
         RJS_String      *key;
 
-        rjs_module_new(rt, mod, realm);
+        rjs_module_new(rt, mod, id, realm);
 
         m = rjs_value_get_gc_thing(rt, mod);
         s = &m->script;
@@ -1229,95 +1555,122 @@ static RJS_Result
 load_native_module (RJS_Runtime *rt, RJS_Value *mod, const char *path, RJS_Realm *realm)
 {
     RJS_Module        *m;
-    void              *handle;
+    void              *handle = NULL;
     RJS_ModuleInitFunc init;
     RJS_Result         r;
 
     if (!(handle = dlopen(path, RTLD_LAZY))) {
         RJS_LOGE("cannot open native module \"%s\"", path);
-        return RJS_ERR;
+        r = RJS_ERR;
+        goto end;
     }
 
     init = dlsym(handle, "ratjs_module_init");
     if (!init) {
         RJS_LOGE("cannot find symbol \"ratjs_module_init\" in the \"%s\"", path);
-        dlclose(handle);
-        return RJS_ERR;
+        r = RJS_ERR;
+        goto end;
     }
 
-    rjs_module_new(rt, mod, realm);
+    rjs_module_new(rt, mod, path, realm);
 
     m = rjs_value_get_gc_thing(rt, mod);
 
     if ((r = init(rt, mod)) == RJS_ERR) {
         RJS_LOGE("initialize native module \"%s\" failed", path);
-        dlclose(handle);
-        return RJS_ERR;
+        r = RJS_ERR;
+        goto end;
     }
 
     m->native_handle = handle;
-    return RJS_OK;
+    r = RJS_OK;
+end:
+    if (r == RJS_ERR) {
+        if (handle)
+            dlclose(handle);
+        rjs_throw_syntax_error(rt, _("illegal native module \"%s\""), path);
+    }
+    return r;
 }
 
 #endif /*ENABLE_NATIVE_MODULE*/
 
 /*Load a module.*/
 static RJS_Result
-load_module (RJS_Runtime *rt, RJS_ModuleType type, const char *path, RJS_Realm *realm, RJS_Value *mod)
+load_module (RJS_Runtime *rt, RJS_ModuleType type, RJS_Input *input, const char *id,
+        RJS_Realm *realm, RJS_Value *mod)
 {
     char          *sub;
     RJS_HashEntry *he, **phe;
     RJS_Module    *m;
-    RJS_Script    *script;
     RJS_Result     r;
 
     /*Check if the module is already loaded.*/
-    r = rjs_hash_lookup(&rt->mod_hash, (void*)path, &he, &phe, &rjs_hash_char_star_ops, rt);
+    r = rjs_hash_lookup(&rt->mod_hash, (void*)id, &he, &phe, &rjs_hash_char_star_ops, rt);
     if (r) {
         m = RJS_CONTAINER_OF(he, RJS_Module, he);
-        rjs_value_set_gc_thing(rt, mod, m);
-        return RJS_OK;
+        if (m->status == RJS_MODULE_STATUS_LOADING_FAILED) {
+            r = rjs_throw_syntax_error(rt, _("illegal module"));
+            return r;
+        }
+
+        if (m->status != RJS_MODULE_STATUS_ALLOCATED) {
+            rjs_value_set_gc_thing(rt, mod, m);
+            return RJS_OK;
+        }
     }
 
-    sub = strrchr(path, '.');
+    sub = strrchr(id, '.');
 
     /*Load the module.*/
 #if ENABLE_JSON
     if (sub && !strcasecmp(sub, ".json")) {
-        r = load_json_module(rt, mod, path, realm);
+        r = load_json_module(rt, mod, input, id, realm);
     } else
 #endif /*ENABLE_JSON*/
 #if ENABLE_NATIVE_MODULE
     if (sub && !strcasecmp(sub, ".njs")) {
-        r = load_native_module(rt, mod, path, realm);
+        r = load_native_module(rt, mod, id, realm);
     } else
 #endif /*ENABLE_NATIVE_MODULE*/
     {
-        r = load_script_module(rt, mod, path, realm);
+        r = load_script_module(rt, mod, input, id, realm);
     }
 
-    if (r == RJS_ERR)
+    if (r == RJS_ERR) {
+        if (rjs_hash_lookup(&rt->mod_hash, (void*)id, &he, &phe, &rjs_hash_char_star_ops, rt)) {
+            m = RJS_CONTAINER_OF(he, RJS_Module, he);
+            m->status = RJS_MODULE_STATUS_LOADING_FAILED;
+            rjs_catch(rt, &m->eval_error);
+        }
         return r;
-
-    /*Add the module to the hash table.*/
-    m      = rjs_value_get_gc_thing(rt, mod);
-    script = &m->script;
-
-    script->path = rjs_char_star_dup(rt, path);
-
-    rjs_hash_insert(&rt->mod_hash, script->path, &m->he, phe, &rjs_hash_char_star_ops, rt);
+    } else {
+        m = rjs_value_get_gc_thing(rt, mod);
+        m->status = RJS_MODULE_STATUS_LOADED;
+    }
 
     return RJS_OK;
 }
 
-/*Resolve the imported module.*/
+/*Lookup the module.*/
 static RJS_Result
-resolve_imported_module (RJS_Runtime *rt, RJS_Value *script, RJS_Value *name, RJS_Value *rmod, RJS_Bool dynamic)
+lookup_module (RJS_Runtime *rt, RJS_Value *script, RJS_Value *name, RJS_Value *promise,
+        RJS_Value *mod, RJS_Bool dynamic)
 {
-    const char *nstr, *bstr;
-    char        path[PATH_MAX];
-    RJS_Result  r;
-    RJS_Bool    found = RJS_FALSE;
+    const char    *nstr, *bstr;
+    char           id[PATH_MAX];
+    RJS_Result     r;
+    RJS_Module    *modp  = NULL;
+    RJS_Realm     *realm = rjs_realm_current(rt);
+    size_t         top   = rjs_value_stack_save(rt);
+    RJS_Value     *err   = rjs_value_stack_push(rt);
+    RJS_Bool       done  = RJS_FALSE;
+    RJS_PromiseCapability pc;
+
+    if (!mod)
+        mod = rjs_value_stack_push(rt);
+
+    rjs_promise_capability_init(rt, &pc);
 
     if (script) {
         RJS_Script *base;
@@ -1331,35 +1684,74 @@ resolve_imported_module (RJS_Runtime *rt, RJS_Value *script, RJS_Value *name, RJ
 
     nstr = rjs_string_to_enc_chars(rt, name, NULL, NULL);
 
-    if (!rt->mod_lookup_func) {
+    if (!rt->mod_lookup_func
+            || (r = rt->mod_lookup_func(rt, bstr, nstr, id)) == RJS_ERR) {
+        if (dynamic)
+            rjs_throw_type_error(rt, _("cannot resolve the module \"%s\""), nstr);
+        else
+            rjs_throw_reference_error(rt, _("cannot resolve the module \"%s\""), nstr);
+
         r = RJS_ERR;
         goto end;
     }
 
-    if ((r = rt->mod_lookup_func(rt, bstr, nstr, path)) == RJS_ERR)
+    if ((r = rjs_new_promise_capability(rt, rjs_o_Promise(realm), &pc)) == RJS_ERR)
         goto end;
 
+    /*Check if the module is already loaded.*/
+    if (!(modp = rjs_module_new(rt, mod, id, realm))) {
+        r = RJS_ERR;
+        goto end;
+    }
+
+    if (modp->status == RJS_MODULE_STATUS_LOADING_FAILED) {
+        if (dynamic)
+            rjs_throw_type_error(rt, _("cannot resolve the module \"%s\""), nstr);
+        else
+            rjs_throw_reference_error(rt, _("cannot resolve the module \"%s\""), nstr);
+
+        rjs_catch(rt, err);
+        r = rjs_call(rt, pc.reject, rjs_v_undefined(rt), err, 1, NULL);
+        goto end;
+    } else if (modp->status != RJS_MODULE_STATUS_ALLOCATED) {
+        r = rjs_call(rt, pc.resolve, rjs_v_undefined(rt), mod, 1, NULL);
+        goto end;
+    }
+
+    rjs_value_copy(rt, modp->top_level_capability.promise, pc.promise);
+
+    /*Try to load the module.*/
     if (!rt->mod_load_func) {
+        if (dynamic)
+            rjs_throw_type_error(rt, _("cannot load the module \"%s\""), id);
+        else
+            rjs_throw_reference_error(rt, _("cannot load the module \"%s\""), id);
+
         r = RJS_ERR;
         goto end;
     }
 
-    found = RJS_TRUE;
-
-    if ((r = rt->mod_load_func(rt, path, rmod)) == RJS_ERR)
+    done = RJS_TRUE;
+    if ((r = rt->mod_load_func(rt, id, &pc)) == RJS_ERR)
         goto end;
 
     r = RJS_OK;
 end:
-    if (r == RJS_ERR) {
-        if (found)
-            rjs_throw_syntax_error(rt, _("syntax error in module \"%s\""), nstr);
-        else if (dynamic)
-            rjs_throw_type_error(rt, _("cannot resolve the module \"%s\""), nstr);
-        else
-            rjs_throw_reference_error(rt, _("cannot resolve the module \"%s\""), nstr);
+    if (modp) {
+        if ((modp->status == RJS_MODULE_STATUS_ALLOCATED) && (r == RJS_ERR)) {
+            modp->status = RJS_MODULE_STATUS_LOADING_FAILED;
+            rjs_catch(rt, &modp->eval_error);
+
+            if (!done)
+                rjs_call(rt, pc.reject, rjs_v_undefined(rt), &modp->eval_error, 1, NULL);
+        }
+
+        if (promise && (r == RJS_OK))
+            rjs_value_copy(rt, promise, pc.promise);
     }
 
+    rjs_promise_capability_deinit(rt, &pc);
+    rjs_value_stack_restore(rt, top);
     return r;
 }
 
@@ -1586,38 +1978,39 @@ rjs_module_get_env (RJS_Runtime *rt, RJS_Value *modv)
 }
 
 /**
- * Resolve the imported module.
+ * Lookup the module.
  * \param rt The current runtime.
  * \param script The base script.
- * \param name The name of the imported module.
- * \param[out] imod Return the imported module.
+ * \param name The name of the module.
+ * \param[out] promise Return the promise.
  * \retval RJS_OK On success.
  * \retval RJS_ERR On error.
  */
 RJS_Result
-rjs_resolve_imported_module (RJS_Runtime *rt, RJS_Value *script, RJS_Value *name, RJS_Value *imod)
+rjs_lookup_module (RJS_Runtime *rt, RJS_Value *script, RJS_Value *name, RJS_Value *promise)
 {
-    return resolve_imported_module(rt, script, name, imod, RJS_FALSE);
+    return lookup_module(rt, script, name, promise, NULL, RJS_FALSE);
 }
 
 /**
  * Load the module.
  * \param rt The current runtime.
  * \param type The module's type.
- * \param path The path name of the module.
+ * \param input The module source input.
+ * \param id The module's idneitifer.
  * \param realm The realm of the module.
  * \param[out] mod Return the new module.
  * \retval RJS_OK On success.
  * \retval RJS_ERR On error.
  */
 RJS_Result
-rjs_load_module (RJS_Runtime *rt, RJS_ModuleType type, const char *path,
-        RJS_Realm *realm, RJS_Value *mod)
+rjs_load_module (RJS_Runtime *rt, RJS_ModuleType type, RJS_Input *input,
+        const char *id, RJS_Realm *realm, RJS_Value *mod)
 {
     if (!realm)
         realm = rjs_realm_current(rt);
         
-    return load_module(rt, type, path, realm, mod);
+    return load_module(rt, type, input, id, realm, mod);
 }
 
 /*Module dynamic import data.*/
@@ -1658,7 +2051,7 @@ module_dynamic_data_free (RJS_Runtime *rt, void *ptr)
 
 /*Allocate a new module dynamic data.*/
 static RJS_ModuleDynamicData*
-module_dynamic_data_new (RJS_Runtime *rt, RJS_Value *mod, RJS_PromiseCapability *pc)
+module_dynamic_data_new (RJS_Runtime *rt, RJS_PromiseCapability *pc)
 {
     RJS_ModuleDynamicData *mdd;
 
@@ -1669,17 +2062,16 @@ module_dynamic_data_new (RJS_Runtime *rt, RJS_Value *mod, RJS_PromiseCapability 
     rjs_value_set_undefined(rt, &mdd->promisev);
     rjs_value_set_undefined(rt, &mdd->resolvev);
     rjs_value_set_undefined(rt, &mdd->rejectv);
+    rjs_value_set_undefined(rt, &mdd->mod);
 
     rjs_promise_capability_init_vp(rt, &mdd->pc, &mdd->promisev, &mdd->resolvev, &mdd->rejectv);
-
-    rjs_value_copy(rt, &mdd->mod, mod);
     rjs_promise_capability_copy(rt, &mdd->pc, pc);
 
     return mdd;
 }
 
-/*Module dynamic imported resolve function.*/
-static RJS_NF(module_dynamic_resolve)
+/*Module evaluate resolve function.*/
+static RJS_NF(module_eval_resolve)
 {
     RJS_ModuleDynamicData *mdd = rjs_native_object_get_data(rt, f);
     size_t                 top = rjs_value_stack_save(rt);
@@ -1700,8 +2092,8 @@ static RJS_NF(module_dynamic_resolve)
     return r;
 }
 
-/*Module dynamic imported reject function.*/
-static RJS_NF(module_dynamic_reject)
+/*Module dynamic load reject function.*/
+static RJS_NF(module_load_reject)
 {
     RJS_ModuleDynamicData *mdd = rjs_native_object_get_data(rt, f);
     RJS_Value             *v   = rjs_argument_get(rt, args, argc, 0);
@@ -1711,64 +2103,137 @@ static RJS_NF(module_dynamic_reject)
     return RJS_OK;
 }
 
+/*Module dynamic load resolve function.*/
+static RJS_Result
+module_load_requested (RJS_Runtime *rt, RJS_ModuleDynamicData *mdd)
+{
+    size_t      top     = rjs_value_stack_save(rt);
+    RJS_Value  *p       = rjs_value_stack_push(rt);
+    RJS_Value  *resolve = rjs_value_stack_push(rt);
+    RJS_Value  *reject  = rjs_value_stack_push(rt);
+    RJS_Value  *err     = rjs_value_stack_push(rt);
+    RJS_Result  r;
+
+    if ((r = rjs_module_link(rt, &mdd->mod)) == RJS_ERR)
+        goto end;
+
+    if ((r = rjs_module_evaluate(rt, &mdd->mod, p)) == RJS_ERR)
+        goto end;
+
+    r = rjs_native_func_object_new(rt, resolve, NULL, NULL, NULL, module_eval_resolve, 0);
+    if (r == RJS_ERR)
+        goto end;
+    rjs_native_object_set_data(rt, resolve, NULL, mdd, module_dynamic_data_scan, module_dynamic_data_free);
+    mdd->ref ++;
+
+    r = rjs_native_func_object_new(rt, reject, NULL, NULL, NULL, module_load_reject, 0);
+    if (r == RJS_ERR)
+        goto end;
+    rjs_native_object_set_data(rt, reject, NULL, mdd, module_dynamic_data_scan, module_dynamic_data_free);
+    mdd->ref ++;
+
+    if ((r = rjs_invoke(rt, p, rjs_pn_then(rt), resolve, 2, NULL)) == RJS_ERR)
+        goto end;
+end:
+    if (r == RJS_ERR) {
+        rjs_catch(rt, err);
+        rjs_call(rt, mdd->pc.reject, rjs_v_undefined(rt), err, 1, NULL);
+        r = RJS_OK;
+    }
+    rjs_value_stack_restore(rt, top);
+    return r;
+}
+
+/*Module dynamic load resolve function.*/
+static RJS_NF(module_load_requested_resolve)
+{
+    RJS_ModuleDynamicData *mdd = rjs_native_object_get_data(rt, f);
+
+    return module_load_requested(rt, mdd);
+}
+
+/*Module dynamic load resolve function.*/
+static RJS_NF(module_load_resolve)
+{
+    RJS_ModuleDynamicData *mdd     = rjs_native_object_get_data(rt, f);
+    RJS_Value             *mod     = rjs_argument_get(rt, args, argc, 0);
+    size_t                 top     = rjs_value_stack_save(rt);
+    RJS_Value             *p       = rjs_value_stack_push(rt);
+    RJS_Value             *resolve = rjs_value_stack_push(rt);
+    RJS_Value             *reject  = rjs_value_stack_push(rt);
+    RJS_Value             *err     = rjs_value_stack_push(rt);
+    RJS_Module            *modp    = rjs_value_get_gc_thing(rt, mod);
+    RJS_Result             r;
+
+    rjs_value_copy(rt, &mdd->mod, mod);
+
+    if (modp->status != RJS_MODULE_STATUS_LOADED) {
+        r = module_load_requested(rt, mdd);
+        goto end;
+    }
+
+    if ((r = rjs_module_load_requested(rt, mod, p)) == RJS_ERR)
+        goto end;
+
+    r = rjs_native_func_object_new(rt, resolve, NULL, NULL, NULL, module_load_requested_resolve, 0);
+    if (r == RJS_ERR)
+        goto end;
+    rjs_native_object_set_data(rt, resolve, NULL, mdd, module_dynamic_data_scan, module_dynamic_data_free);
+    mdd->ref ++;
+
+    r = rjs_native_func_object_new(rt, reject, NULL, NULL, NULL, module_load_reject, 0);
+    if (r == RJS_ERR)
+        goto end;
+    rjs_native_object_set_data(rt, reject, NULL, mdd, module_dynamic_data_scan, module_dynamic_data_free);
+    mdd->ref ++;
+
+    if ((r = rjs_invoke(rt, p, rjs_pn_then(rt), resolve, 2, NULL)) == RJS_ERR)
+        goto end;
+end:
+    if (r == RJS_ERR) {
+        rjs_catch(rt, err);
+        rjs_call(rt, mdd->pc.reject, rjs_v_undefined(rt), err, 1, NULL);
+        r = RJS_OK;
+    }
+    rjs_value_stack_restore(rt, top);
+    return r;
+}
+
 /*Import the module dynamically.*/
 static RJS_Result
 module_import_dynamically (RJS_Runtime *rt, RJS_Value *ref, RJS_Value *spec, RJS_PromiseCapability *pc)
 {
     RJS_Result             r;
     RJS_ModuleDynamicData *mdd     = NULL;
-    RJS_Module            *m;
-    RJS_Script            *script1, *script2;
     size_t                 top     = rjs_value_stack_save(rt);
     RJS_Value             *str     = rjs_value_stack_push(rt);
-    RJS_Value             *mod     = rjs_value_stack_push(rt);
     RJS_Value             *err     = rjs_value_stack_push(rt);
     RJS_Value             *p       = rjs_value_stack_push(rt);
     RJS_Value             *resolve = rjs_value_stack_push(rt);
     RJS_Value             *reject  = rjs_value_stack_push(rt);
-    RJS_Value             *ns      = rjs_value_stack_push(rt);
 
     if ((r = rjs_to_string(rt, spec, str)) == RJS_ERR)
         goto end;
 
-    if ((r = resolve_imported_module(rt, ref, str, mod, RJS_TRUE)) == RJS_ERR)
+    if ((r = lookup_module(rt, ref, str, p, NULL, RJS_TRUE)) == RJS_ERR)
         goto end;
 
-    m       = rjs_value_get_gc_thing(rt, mod);
-    script1 = rjs_value_get_gc_thing(rt, ref);
-    script2 = &m->script;
+    mdd = module_dynamic_data_new(rt, pc);
 
-    if (script1 != script2) {
-        /*Link and evaluate the module.*/
-        if ((r = rjs_module_link(rt, mod)) == RJS_ERR)
-            goto end;
+    r = rjs_native_func_object_new(rt, resolve, NULL, NULL, NULL, module_load_resolve, 0);
+    if (r == RJS_ERR)
+        goto end;
+    rjs_native_object_set_data(rt, resolve, NULL, mdd, module_dynamic_data_scan, module_dynamic_data_free);
+    mdd->ref ++;
 
-        if ((r = rjs_module_evaluate(rt, mod, p)) == RJS_ERR)
-            goto end;
+    r = rjs_native_func_object_new(rt, reject, NULL, NULL, NULL, module_load_reject, 0);
+    if (r == RJS_ERR)
+        goto end;
+    rjs_native_object_set_data(rt, reject, NULL, mdd, module_dynamic_data_scan, module_dynamic_data_free);
+    mdd->ref ++;
 
-        mdd = module_dynamic_data_new(rt, mod, pc);
-
-        r = rjs_native_func_object_new(rt, resolve, NULL, NULL, NULL, module_dynamic_resolve, 0);
-        if (r == RJS_ERR)
-            goto end;
-        rjs_native_object_set_data(rt, resolve, NULL, mdd, module_dynamic_data_scan, module_dynamic_data_free);
-        mdd->ref ++;
-
-        r = rjs_native_func_object_new(rt, reject, NULL, NULL, NULL, module_dynamic_reject, 0);
-        if (r == RJS_ERR)
-            goto end;
-        rjs_native_object_set_data(rt, reject, NULL, mdd, module_dynamic_data_scan, module_dynamic_data_free);
-        mdd->ref ++;
-
-        if ((r = rjs_invoke(rt, p, rjs_pn_then(rt), resolve, 2, NULL)) == RJS_ERR)
-            goto end;
-    } else {
-        /*Imported module is just the referenced module.*/
-        if ((r = rjs_module_get_namespace(rt, mod, ns)) == RJS_ERR)
-            goto end;
-
-        rjs_call(rt, pc->resolve, rjs_v_undefined(rt), ns, 1, NULL);
-    }
+    if ((r = rjs_invoke(rt, p, rjs_pn_then(rt), resolve, 2, NULL)) == RJS_ERR)
+        goto end;
 
     r = RJS_OK;
 end:

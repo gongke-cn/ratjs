@@ -95,16 +95,30 @@ rjs_resolve_binding_deinit (RJS_Runtime *rt, RJS_ResolveBinding *rb)
  * Load the module.
  * \param rt The current runtime.
  * \param type The module's type.
- * \param path The path name of the module.
- *  The path name of each module must be different.
+ * \param input The module source input.
+ * \param id The module's identifier. The identifier for each module must be unique.
  * \param realm The realm of the module.
  * \param[out] mod Return the new module.
  * \retval RJS_OK On success.
  * \retval RJS_ERR On error.
  */
 extern RJS_Result
-rjs_load_module (RJS_Runtime *rt, RJS_ModuleType type, const char *path,
-        RJS_Realm *realm, RJS_Value *mod);
+rjs_load_module (RJS_Runtime *rt, RJS_ModuleType type, RJS_Input *input,
+        const char *id, RJS_Realm *realm, RJS_Value *mod);
+
+/**
+ * Lookup the module.
+ * \param rt The current runtime.
+ * \param script The base script.
+ * \param name The name of the module.
+ * \param[out] promise Return the promise.
+ * The the module is loaded, resolve the promise.
+ * Reject the promise on error.
+ * \retval RJS_OK On success.
+ * \retval RJS_ERR On error.
+ */
+extern RJS_Result
+rjs_lookup_module (RJS_Runtime *rt, RJS_Value *script, RJS_Value *name, RJS_Value *promise);
 
 /**
  * Import the module dynamically.
@@ -176,16 +190,15 @@ extern RJS_Result
 rjs_module_import_meta (RJS_Runtime *rt, RJS_Value *modv, RJS_Value *v);
 
 /**
- * Resolve the imported module.
+ * Load the requested modules.
  * \param rt The current runtime.
- * \param script The base script.
- * \param name The name of the imported module.
- * \param[out] imod Return the imported module.
+ * \param mod The module.
+ * \param[out] promise Return the promise.
  * \retval RJS_OK On success.
  * \retval RJS_ERR On error.
  */
 extern RJS_Result
-rjs_resolve_imported_module (RJS_Runtime *rt, RJS_Value *script, RJS_Value *name, RJS_Value *imod);
+rjs_module_load_requested (RJS_Runtime *rt, RJS_Value *mod, RJS_Value *promise);
 
 /**
  * Link the module.

@@ -396,8 +396,25 @@ json_from_input (RJS_Runtime *rt, RJS_Input *input, RJS_Value *res)
 
     json_parser_deinit(rt, &jp);
 
+    if (r == RJS_ERR)
+        rjs_throw_syntax_error(rt, _("JSON parse error"));
+
     rjs_value_stack_restore(rt, top);
     return r;
+}
+
+/**
+ * Create a JSON from an input.
+ * \param rt The current runtime.
+ * \param[out] res Store the output value.
+ * \param input The text input.
+ * \retval RJS_OK On success.
+ * \retval RJS_ERR On error.
+ */
+RJS_Result
+rjs_json_from_input (RJS_Runtime *rt, RJS_Value *res, RJS_Input *input)
+{
+    return json_from_input(rt, input, res);
 }
 
 /**

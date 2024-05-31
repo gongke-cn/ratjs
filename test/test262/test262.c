@@ -534,9 +534,56 @@ module_lookup_func (RJS_Runtime *rt, const char *base,
 
 /*Module load funciton.*/
 static RJS_Result
-module_load_func (RJS_Runtime *rt, const char *path, RJS_Value *mod)
+module_load_func (RJS_Runtime *rt, const char *path, RJS_PromiseCapability *pc)
 {
-    return rjs_load_module(rt, RJS_MODULE_TYPE_SCRIPT, path, NULL, mod);
+    size_t     top = rjs_value_stack_save(rt);
+    RJS_Value *mod = rjs_value_stack_push(rt);
+    RJS_Value *err = rjs_value_stack_push(rt);
+    RJS_Input  input;
+    RJS_Result r;
+
+    if ((r = rjs_file_input_init(rt, &input, path, NULL)) == RJS_ERR)
+        return r;
+
+    r = rjs_load_module(rt, RJS_MODULE_TYPE_SCRIPT, &input, path, NULL, mod);
+    rjs_input_deinit(rt, &input);
+
+    if (r == RJS_ERR) {
+        rjs_catch(rt, err);
+        r = rjs_call(rt, pc->reject, rjs_v_undefined(rt), err, 1, NULL);
+    } else {
+        r = rjs_call(rt, pc->resolve, rjs_v_undefined(rt), mod, 1, NULL);
+    }
+
+    rjs_value_stack_restore(rt, top);
+    return r;
+}
+
+/*Module evaluation result.*/
+static RJS_Result   callback_result;
+/*Module evaluation return value.*/
+static RJS_Value   *callback_rv;
+
+/*Callback OK.*/
+static RJS_NF(on_callback_ok)
+{
+    RJS_Value *arg = rjs_argument_get(rt, args, argc, 0);
+
+    rjs_value_copy(rt, callback_rv, arg);
+    rjs_value_set_undefined(rt, rv);
+    callback_result = RJS_OK;
+    return RJS_OK;
+}
+
+/*Callback error.*/
+static RJS_NF(on_callback_error)
+{
+    RJS_Value *arg = rjs_argument_get(rt, args, argc, 0);
+
+    rjs_value_copy(rt, callback_rv, arg);
+    rjs_value_set_undefined(rt, rv);
+    callback_result = RJS_ERR;
+    return RJS_OK;
 }
 
 #endif /*ENABLE_MODULE*/
@@ -638,8 +685,11 @@ run_case_once (char *test, RunMode mode)
         break;
     case RUN_MODE_MODULE: {
 #if ENABLE_MODULE
-        char  pbuf[PATH_MAX];
-        char *path;
+        char       pbuf[PATH_MAX];
+        char      *path;
+        RJS_Input  input;
+        RJS_Value *promise = rjs_value_stack_push(rt);
+        RJS_Value *rv      = rjs_value_stack_push(rt);
 
         if (!(path = realpath(test, pbuf))) {
             fprintf(stderr, "cannot find \"%s\"\n", test);
@@ -647,12 +697,50 @@ run_case_once (char *test, RunMode mode)
             goto end;
         }
 
-        r = rjs_load_module(rt, RJS_MODULE_TYPE_SCRIPT, path, realm, exec);
+        if ((r = rjs_file_input_init(rt, &input, path, NULL)) == RJS_ERR)
+            goto end;
+
+        r = rjs_load_module(rt, RJS_MODULE_TYPE_SCRIPT, &input, path, realm, exec);
+        rjs_input_deinit(rt, &input);
+
         if (meta_negative && (meta_error_phase == PHASE_PARSE)) {
             r = negative_check(rt, r);
             goto end;
         } else if (r == -1) {
             fprintf(stderr, "parse error\n");
+            goto end;
+        }
+
+        callback_result = 0;
+        callback_rv     = rv;
+
+        r = rjs_module_load_requested(rt, exec, promise);
+        if (meta_negative
+                && (r == -1)
+                && ((meta_error_phase == PHASE_RESOLUTION) || (meta_error_phase == PHASE_RUNTIME))) {
+            r = negative_check(rt, r);
+            goto end;
+        } else if (r == -1) {
+            failed_on_error(rt);
+            goto end;
+        }
+
+        if ((r = rjs_promise_then_native(rt, promise, on_callback_ok, on_callback_error, NULL)) == RJS_ERR)
+            goto end;
+
+        while (callback_result == 0)
+            rjs_solve_jobs(rt);
+
+        if (callback_result == RJS_ERR)
+            rjs_throw(rt, rv);
+        r = callback_result;
+        if (meta_negative
+                && (r == -1)
+                && ((meta_error_phase == PHASE_RESOLUTION) || (meta_error_phase == PHASE_RUNTIME))) {
+            r = negative_check(rt, r);
+            goto end;
+        } else if (r == -1) {
+            failed_on_error(rt);
             goto end;
         }
 
@@ -667,7 +755,29 @@ run_case_once (char *test, RunMode mode)
             goto end;
         }
 
-        r = rjs_module_evaluate(rt, exec, NULL);
+        callback_result = 0;
+
+        r = rjs_module_evaluate(rt, exec, promise);
+        if (meta_negative
+                && (r == -1)
+                && (meta_error_phase == PHASE_RUNTIME)) {
+            r = negative_check(rt, r);
+            goto end;
+        } else if (r == -1) {
+            failed_on_error(rt);
+            goto end;
+        }
+
+        if ((r = rjs_promise_then_native(rt, promise, on_callback_ok, on_callback_error, NULL)) == RJS_ERR)
+            goto end;
+
+        while (callback_result == 0)
+            rjs_solve_jobs(rt);
+
+        if (callback_result == RJS_ERR)
+            rjs_throw(rt, rv);
+        r = callback_result;
+
         if (meta_negative && (meta_error_phase == PHASE_RUNTIME)) {
             r = negative_check(rt, r);
             goto end;

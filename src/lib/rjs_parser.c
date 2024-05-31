@@ -9605,7 +9605,7 @@ rjs_parse_eval (RJS_Runtime *rt, RJS_Input *input, RJS_Realm *realm, int flags,
 
 /*Parse the module.*/
 static RJS_Result
-parse_module (RJS_Runtime *rt, RJS_Realm *realm, RJS_Value *rv)
+parse_module (RJS_Runtime *rt, const char *id, RJS_Realm *realm, RJS_Value *rv)
 {
     RJS_AstFunc   *func;
     RJS_Result     r;
@@ -9702,7 +9702,7 @@ parse_module (RJS_Runtime *rt, RJS_Realm *realm, RJS_Value *rv)
 
     r = parser_has_error(rt) ? RJS_ERR : RJS_OK;
     if (r == RJS_OK)
-        r = gen_module(rt, realm, rv);
+        r = gen_module(rt, id, realm, rv);
 
     rjs_value_stack_restore(rt, top);
     return r;
@@ -9712,20 +9712,21 @@ parse_module (RJS_Runtime *rt, RJS_Realm *realm, RJS_Value *rv)
  * Parse the module.
  * \param rt The current runtime.
  * \param input The input.
+ * \param id The identifier of the module.
  * \param realm The realm.
  * \param[out] rv The return module value.
  * \retval RJS_OK On success.
  * \retval RJS_ERR On error.
  */
 RJS_Result
-rjs_parse_module (RJS_Runtime *rt, RJS_Input *input, RJS_Realm *realm, RJS_Value *rv)
+rjs_parse_module (RJS_Runtime *rt, RJS_Input *input, const char *id, RJS_Realm *realm, RJS_Value *rv)
 {
     RJS_Parser parser;
     RJS_Result r;
     size_t     top = rjs_value_stack_save(rt);
 
     parser_init(rt, &parser, input);
-    r = parse_module(rt, realm, rv);
+    r = parse_module(rt, id, realm, rv);
     parser_deinit(rt);
 
     rjs_value_stack_restore(rt, top);

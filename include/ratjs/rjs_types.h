@@ -630,24 +630,23 @@ typedef RJS_Result (*RJS_EventFunc) (RJS_Runtime *rt);
  * \param base The base module's pathname which try to load the new module.
  * If the new module is loading by the native code, "base" is NULL.
  * \param name The new module's name.
- * \param path The new module's pathname's output buffer.
- * The path name of each module must be different.
+ * \param id The module's identifier. Each module's identifier must be unique.
  * \retval RJS_OK Find the new module. And its pathname is stored in "path".
  * \retval RJS_ERR The new module cannot be found.
  */
 typedef RJS_Result (*RJS_ModuleLookupFunc) (RJS_Runtime *rt, const char *base,
-        const char *name, char *path);
+        const char *name, char *id);
 
 /**
- * The callback function to load the module.
+ * The callback function load the module.
  * \param rt The current runtime.
- * \param path The new module's pathname.
- * \param[out] mod Store the new loaded module.
+ * \param id The module's identifier.
+ * \param pc The promise capability.
  * \retval RJS_OK On success.
  * \retval RJS_ERR Cannot load the module.
  */
-typedef RJS_Result (*RJS_ModuleLoadFunc) (RJS_Runtime *rt, const char *path,
-        RJS_Value *mod);
+typedef RJS_Result (*RJS_ModuleLoadFunc) (RJS_Runtime *rt, const char *id,
+        RJS_PromiseCapability *pc);
 
 /**
  * @}

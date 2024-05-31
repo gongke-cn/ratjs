@@ -151,10 +151,8 @@ static RJS_NF(JSON_parse)
     if ((r = rjs_to_string(rt, text, str)) == RJS_ERR)
         goto end;
 
-    if ((r = rjs_json_from_string(rt, json, str)) == RJS_ERR) {
-        r = rjs_throw_syntax_error(rt, _("JSON parse error"));
+    if ((r = rjs_json_from_string(rt, json, str)) == RJS_ERR)
         goto end;
-    }
 
     if (rjs_is_callable(rt, reviver)) {
         RJS_PropertyName pn;

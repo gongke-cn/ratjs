@@ -25,73 +25,61 @@
 
 /**
  * \file
- * JSON.
+ * Character stream input.
  */
 
-#ifndef _RJS_JSON_H_
-#define _RJS_JSON_H_
+#ifndef _RJS_INPUT_H_
+#define _RJS_INPUT_H_
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-/**
- * \defgroup json JSON
- * JSON parser and generator
- * @{
- */
+/**Character stream input.*/
+typedef struct RJS_Input_s RJS_Input;
+
+/**Character stream input.*/
+struct RJS_Input_s {
+    int        flags;  /**< the flags of the input.*/
+    int        line;   /**< The current line number.*/
+    int        column; /**< The current column number.*/
+    char      *name;   /**< The input's name.*/
+    RJS_Value *str;    /**< The string value.*/
+    size_t     length; /**< The length of the string.*/
+    size_t     pos;    /**< The current read position.*/
+};
 
 /**
- * Create a JSON from an input.
+ * Initialize a string input.
  * \param rt The current runtime.
- * \param[out] res Store the output value.
- * \param input The text input.
+ * \param si The string input to be initialized.
+ * \param s The string.
  * \retval RJS_OK On success.
  * \retval RJS_ERR On error.
  */
-extern RJS_Result
-rjs_json_from_input (RJS_Runtime *rt, RJS_Value *res, RJS_Input *input);
+RJS_Result
+rjs_string_input_init (RJS_Runtime *rt, RJS_Input *si, RJS_Value *s);
 
 /**
- * Create a JSON from a file.
+ * Initialize a file input.
  * \param rt The current runtime.
- * \param[out] res Store the output value.
+ * \param fi The file input to be inintialized.
  * \param filename The filename.
  * \param enc The file's character encoding.
  * \retval RJS_OK On success.
  * \retval RJS_ERR On error.
  */
-extern RJS_Result
-rjs_json_from_file (RJS_Runtime *rt, RJS_Value *res, const char *filename, const char *enc);
+RJS_Result
+rjs_file_input_init (RJS_Runtime *rt, RJS_Input *fi, const char *filename,
+        const char *enc);
 
 /**
- * Parse the JSON from a string.
+ * Release an unused input.
  * \param rt The current runtime.
- * \param[out] res Store the output value.
- * \param str The string.
- * \retval RJS_OK On success.
- * \retval RJS_ERR On error.
+ * \param input The input to be released.
  */
-extern RJS_Result
-rjs_json_from_string (RJS_Runtime *rt, RJS_Value *res, RJS_Value *str);
-
-/**
- * Convert the value to JSON string.
- * \param rt The current runtime.
- * \param v The input value.
- * \param replacer The replacer function.
- * \param space The space value.
- * \param[out] str The result string.
- * \retval RJS_OK On success.
- * \retval RJS_ERR On error.
- */
-extern RJS_Result
-rjs_json_stringify (RJS_Runtime *rt, RJS_Value *v, RJS_Value *replacer,
-        RJS_Value *space, RJS_Value *str);
-
-/**
- * @}
- */
+void
+rjs_input_deinit (RJS_Runtime *rt, RJS_Input *input);
 
 #ifdef __cplusplus
 }
