@@ -110,7 +110,6 @@ typedef struct {
     RJS_Value             top_resolve;             /**< Resovle function of the top capability.*/
     RJS_Value             top_reject;              /**< Reject function of the top capability.*/
     RJS_List              ln;                      /**< List node data.*/
-    RJS_List              star_ln;                 /**< List node data used for star export.*/
     RJS_HashEntry         he;                      /**< Hash table entries.*/
     RJS_ModuleRequest    *module_requests;         /**< Module request entries.*/
     size_t                module_request_num;      /**< Number of module request entries.*/

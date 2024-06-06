@@ -371,22 +371,23 @@ typedef struct {
 } RJS_ExportName;
 
 static RJS_Result
-get_export_names (RJS_Runtime *rt, RJS_Value *mod, RJS_Hash *hash, RJS_List *list, RJS_List *star_set)
+get_export_names (RJS_Runtime *rt, RJS_Value *mod, RJS_Hash *hash, RJS_List *list, RJS_Hash *star_set)
 {
-    RJS_Module *m, *oldm;
-    RJS_Script *script;
-    RJS_Result  r;
-    size_t      i, cnt;
+    RJS_Module    *m;
+    RJS_Script    *script;
+    RJS_Result     r;
+    size_t         i, cnt;
+    RJS_HashEntry *e, **pe;
 
     m      = rjs_value_get_gc_thing(rt, mod);
     script = &m->script;
 
-    rjs_list_foreach_c(star_set, oldm, RJS_Module, star_ln) {
-        if (oldm == m)
-            return RJS_OK;
-    }
+    r = rjs_hash_lookup(star_set, m, &e, &pe, &rjs_hash_size_ops, rt);
+    if (r)
+        return RJS_OK;
 
-    rjs_list_append(star_set, &m->star_ln);
+    RJS_NEW(rt, e);
+    rjs_hash_insert(star_set, m, e, pe, &rjs_hash_size_ops, rt);
 
     cnt = m->local_export_entry_num + m->indir_export_entry_num + m->star_export_entry_num;
     for (i = 0; i < cnt; i ++) {
@@ -461,10 +462,11 @@ RJS_Result
 rjs_module_ns_object_new (RJS_Runtime *rt, RJS_Value *v, RJS_Value *mod)
 {
     RJS_Result          r;
-    RJS_Hash            export_hash;
-    RJS_List            export_list, star_list;
+    RJS_Hash            export_hash, star_hash;
+    RJS_List            export_list;
     RJS_ResolveBinding  rb;
     RJS_ExportName     *n, *nn;
+    RJS_HashEntry      *e, *ne;
     size_t              en_cap, en_num, i;
     RJS_ModuleNsObject *mno;
     RJS_Value          *export_names = NULL;
@@ -476,10 +478,10 @@ rjs_module_ns_object_new (RJS_Runtime *rt, RJS_Value *v, RJS_Value *mod)
 
     rjs_hash_init(&export_hash);
     rjs_list_init(&export_list);
-    rjs_list_init(&star_list);
+    rjs_hash_init(&star_hash);
 
     /*Get export names.*/
-    if ((r = get_export_names(rt, mod, &export_hash, &export_list, &star_list)) == RJS_ERR)
+    if ((r = get_export_names(rt, mod, &export_hash, &export_list, &star_hash)) == RJS_ERR)
         goto end;
 
     /*Resolve export names.*/
@@ -543,6 +545,11 @@ end:
         RJS_DEL(rt, n);
     }
     rjs_hash_deinit(&export_hash, &rjs_hash_size_ops, rt);
+
+    rjs_hash_foreach_safe(&star_hash, i, e, ne) {
+        RJS_DEL(rt, e);
+    }
+    rjs_hash_deinit(&star_hash, &rjs_hash_size_ops, rt);
 
     rjs_value_stack_restore(rt, top);
     return r;
