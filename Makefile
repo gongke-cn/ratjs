@@ -35,7 +35,7 @@ AR := $(CROSS_COMPILE)ar
 RANLIB := $(CROSS_COMPILE)ranlib
 
 # Compiling flags
-CFLAGS += -Wall -Iinclude -I$(O)/include -I$(O)/src/lib
+CFLAGS += -Wall -Iinclude -I$(O)/include -I$(O)/src/lib -DMODULE_DIR=\"$(INSTALL_PREFIX)/lib/ratjs/module\"
 # Linked libraries and flags
 LIBS += -lm
 
@@ -616,6 +616,13 @@ install: uninstall
 	$(Q)mkdir -m 755 $(INSTALL_PREFIX)/include/ratjs
 	$(Q)install -m 644 include/ratjs/*.h $(INSTALL_PREFIX)/include/ratjs
 	$(Q)install -m 644 $(O)/include/ratjs/rjs_config.h $(INSTALL_PREFIX)/include/ratjs
+	$(Q)mkdir -m 755 $(INSTALL_PREFIX)/lib/ratjs
+	$(Q)mkdir -m 755 $(INSTALL_PREFIX)/lib/ratjs/module
+	$(Q)install -m 644 module/*.js $(INSTALL_PREFIX)/lib/ratjs/module
+	$(Q)mkdir -m 755 $(INSTALL_PREFIX)/lib/ratjs/module/njsgen
+	$(Q)install -m 644 module/njsgen/* $(INSTALL_PREFIX)/lib/ratjs/module/njsgen
+	$(Q)cd $(INSTALL_PREFIX)/bin; ln -s $(INSTALL_PREFIX)/lib/ratjs/module/njsgen/njsgen.js njsgen; chmod a+x njsgen
+	$(Q)install -m 644 $(O)/njs/*.njs $(INSTALL_PREFIX)/lib/ratjs/module
 
 uninstall:
 	$(info UNINSTALL)
@@ -624,6 +631,8 @@ uninstall:
 	$(Q)$(RM) $(INSTALL_PREFIX)/bin/ratjs$(EXE_SUFFIX)
 	$(Q)$(RMDIR) $(INSTALL_PREFIX)/include/ratjs
 	$(Q)$(RM) $(INSTALL_PREFIX)/include/ratjs.h
+	$(Q)$(RMDIR) $(INSTALL_PREFIX)/lib/ratjs
+	$(Q)$(RM) $(INSTALL_PREFIX)/bin/njsgen
 
 clean:
 	$(info CLEAN $(TARGETS) $(OBJS))

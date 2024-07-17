@@ -697,6 +697,10 @@ main (int argc, char **argv)
 #if ENABLE_MODULE
     module_dir_list_init();
 
+#ifdef MODULE_DIR
+    module_dir_add(MODULE_DIR);
+#endif
+
     module_dir_function();
 #endif /*ENABLE_MODULE*/
 
