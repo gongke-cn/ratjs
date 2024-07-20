@@ -622,7 +622,7 @@ install: uninstall
 	$(Q)mkdir -m 755 $(INSTALL_PREFIX)/lib/ratjs/module/njsgen
 	$(Q)install -m 644 module/njsgen/* $(INSTALL_PREFIX)/lib/ratjs/module/njsgen
 	$(Q)cd $(INSTALL_PREFIX)/bin; ln -s $(INSTALL_PREFIX)/lib/ratjs/module/njsgen/njsgen.js njsgen; chmod a+x njsgen
-	$(Q)install -m 644 $(O)/njs/*.njs $(INSTALL_PREFIX)/lib/ratjs/module
+	$(Q)if test -n "$(wildcard $(NJS_MODULES))"; then install -m 644 $(O)/njs/*.njs $(INSTALL_PREFIX)/lib/ratjs/module; fi
 
 uninstall:
 	$(info UNINSTALL)
